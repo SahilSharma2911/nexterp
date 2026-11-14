@@ -3,6 +3,8 @@ import { SalesOrdersTable } from "@/features/sales-order/sales-orders-table";
 
 export const metadata = { title: "Sales Orders · nexterp" };
 
+export const dynamic = "force-dynamic";
+
 export default function SalesOrderListPage() {
   return (
     <>

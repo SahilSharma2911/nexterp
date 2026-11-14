@@ -3,6 +3,8 @@ import { PurchaseOrdersTable } from "@/features/purchase-order/purchase-orders-t
 
 export const metadata = { title: "Purchase Orders · nexterp" };
 
+export const dynamic = "force-dynamic";
+
 export default function PurchaseOrderListPage() {
   return (
     <>

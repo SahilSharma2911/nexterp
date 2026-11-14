@@ -3,6 +3,8 @@ import { CustomersTable } from "@/features/customers/customers-table";
 
 export const metadata = { title: "Customers · nexterp" };
 
+export const dynamic = "force-dynamic";
+
 export default function CustomersPage() {
   return (
     <>

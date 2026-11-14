@@ -3,6 +3,8 @@ import { BomsTable } from "@/features/bom/boms-table";
 
 export const metadata = { title: "BOM · nexterp" };
 
+export const dynamic = "force-dynamic";
+
 export default function BomListPage() {
   return (
     <>

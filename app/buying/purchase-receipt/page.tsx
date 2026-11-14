@@ -3,6 +3,8 @@ import { PurchaseReceiptsTable } from "@/features/purchase-receipt/purchase-rece
 
 export const metadata = { title: "Purchase Receipts · nexterp" };
 
+export const dynamic = "force-dynamic";
+
 export default function PurchaseReceiptListPage() {
   return (
     <>

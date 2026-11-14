@@ -3,6 +3,8 @@ import { DeliveryNotesTable } from "@/features/delivery-note/delivery-notes-tabl
 
 export const metadata = { title: "Delivery Notes · nexterp" };
 
+export const dynamic = "force-dynamic";
+
 export default function DeliveryNoteListPage() {
   return (
     <>

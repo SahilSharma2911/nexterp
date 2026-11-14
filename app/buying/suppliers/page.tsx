@@ -3,6 +3,8 @@ import { SuppliersTable } from "@/features/suppliers/suppliers-table";
 
 export const metadata = { title: "Suppliers · nexterp" };
 
+export const dynamic = "force-dynamic";
+
 export default function SuppliersPage() {
   return (
     <>

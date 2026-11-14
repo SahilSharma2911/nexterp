@@ -3,6 +3,8 @@ import { WarehousesTable } from "@/features/warehouses/warehouses-table";
 
 export const metadata = { title: "Warehouses · nexterp" };
 
+export const dynamic = "force-dynamic";
+
 export default function WarehousesPage() {
   return (
     <>

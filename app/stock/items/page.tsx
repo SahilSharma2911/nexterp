@@ -3,6 +3,8 @@ import { ItemsTable } from "@/features/items/items-table";
 
 export const metadata = { title: "Items · nexterp" };
 
+export const dynamic = "force-dynamic";
+
 export default function ItemsPage() {
   return (
     <>
