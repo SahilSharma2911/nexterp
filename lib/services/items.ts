@@ -178,13 +178,30 @@ export async function getItemById(id: string): Promise<Item | null> {
   return r ? toItem(r) : null;
 }
 
+// Next free auto SKU like ITEM-00042 (used when no code is given).
+async function nextItemCode(): Promise<string> {
+  let n = (await prisma.item.count()) + 1;
+  for (let i = 0; i < 100000; i++) {
+    const code = `ITEM-${String(n).padStart(5, "0")}`;
+    const exists = await prisma.item.findUnique({ where: { itemCode: code } });
+    if (!exists) return code;
+    n++;
+  }
+  throw new Error("Could not allocate an item code");
+}
+
 export async function createItem(values: ItemFormValues): Promise<Item> {
-  const code = values.itemCode.trim();
-  const dupe = await prisma.item.findUnique({ where: { itemCode: code } });
-  if (dupe) throw new Error(`Item Code "${code}" already exists`);
+  let code = values.itemCode.trim();
+  if (!code) {
+    code = await nextItemCode();
+  } else {
+    const dupe = await prisma.item.findUnique({ where: { itemCode: code } });
+    if (dupe) throw new Error(`Item Code "${code}" already exists`);
+  }
   const r = await prisma.item.create({
     data: {
       ...toScalarData(values),
+      itemCode: code,
       specifications: { create: specCreate(values) },
       variantAttributes: { create: variantAttrCreate(values) },
     },
@@ -199,7 +216,8 @@ export async function updateItem(
 ): Promise<Item> {
   const existing = await prisma.item.findUnique({ where: { id } });
   if (!existing) throw new Error("Item not found");
-  const code = values.itemCode.trim();
+  // Blank keeps the existing code (don't wipe it on edit).
+  const code = values.itemCode.trim() || existing.itemCode;
   if (code !== existing.itemCode) {
     const dupe = await prisma.item.findUnique({ where: { itemCode: code } });
     if (dupe) throw new Error(`Item Code "${code}" already exists`);
@@ -211,6 +229,7 @@ export async function updateItem(
       where: { id },
       data: {
         ...toScalarData(values),
+        itemCode: code,
         specifications: { create: specCreate(values) },
         variantAttributes: { create: variantAttrCreate(values) },
       },

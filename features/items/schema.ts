@@ -13,7 +13,7 @@ export const itemVariantAttrSchema = z.object({
 // Single source of truth for the Item form — used by react-hook-form on the
 // client AND by the route handler for validation.
 export const itemFormSchema = z.object({
-  itemCode: z.string().trim().min(1, "Item Code is required"),
+  itemCode: z.string().trim(), // blank -> auto-generated SKU (e.g. ITEM-00042)
   itemName: z.string().trim().min(1, "Item Name is required"),
   description: z.string().trim().optional(),
   itemGroup: z.string().trim().optional(),

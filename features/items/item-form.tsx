@@ -187,9 +187,12 @@ export function ItemForm({ itemId }: { itemId?: string }) {
                 <FormItem>
                   <FormLabel>Item Code (SKU)</FormLabel>
                   <FormControl>
-                    <Input placeholder="WIDGET-01" {...field} />
+                    <Input placeholder="Leave blank to auto-generate" {...field} />
                   </FormControl>
-                  <FormDescription>Unique identifier / stock-keeping unit.</FormDescription>
+                  <FormDescription>
+                    Unique SKU. Leave blank and we&apos;ll assign one like
+                    ITEM-00042.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
