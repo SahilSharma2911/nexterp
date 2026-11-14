@@ -1,0 +1,175 @@
+// nexterp — a generic ERP, data model ported from ERPNext (frappe/erpnext)
+// into Next.js + Prisma + Postgres. Names mirror ERPNext DocTypes.
+// See docs/stock-ledger.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/* ============================== Masters ============================== */
+
+// ERPNext: Item
+model Item {
+  id           String   @id @default(uuid()) @db.Uuid
+  itemCode     String   @unique
+  itemName     String
+  description  String?
+  itemGroup    String?
+  stockUom     String   @default("Nos")
+  isStockItem  Boolean  @default(true)
+  hasSerialNo  Boolean  @default(false)
+  hasBatchNo   Boolean  @default(false)
+  // Default/standard valuation rate used when no prior stock exists.
+  valuationRate Decimal @default(0) @db.Decimal(18, 6)
+  disabled     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ledgerEntries   StockLedgerEntry[]
+  bins            Bin[]
+  stockEntryItems StockEntryDetail[]
+
+  @@index([itemGroup])
+  @@index([disabled])
+}
+
+// ERPNext: Warehouse
+model Warehouse {
+  id            String   @id @default(uuid()) @db.Uuid
+  warehouseName String   @unique
+  warehouseType String?
+  isGroup       Boolean  @default(false)
+  disabled      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  ledgerEntries    StockLedgerEntry[]
+  bins             Bin[]
+  stockEntriesFrom StockEntry[]       @relation("SEFrom")
+  stockEntriesTo   StockEntry[]       @relation("SETo")
+  sedFrom          StockEntryDetail[] @relation("SEDFrom")
+  sedTo            StockEntryDetail[] @relation("SEDTo")
+
+  @@index([disabled])
+}
+
+/* ============================== Stock ledger ============================== */
+
+enum StockEntryPurpose {
+  MATERIAL_RECEIPT
+  MATERIAL_ISSUE
+  MATERIAL_TRANSFER
+  MANUFACTURE
+  REPACK
+}
+
+enum DocStatus {
+  DRAFT
+  SUBMITTED
+  CANCELLED
+}
+
+// ERPNext: Stock Ledger Entry — immutable, append-only.
+model StockLedgerEntry {
+  id                   String   @id @default(uuid()) @db.Uuid
+  itemId               String   @db.Uuid
+  warehouseId          String   @db.Uuid
+  postingAt            DateTime
+  voucherType          String
+  voucherNo            String
+  voucherDetailId      String?  @db.Uuid
+  actualQty            Float
+  qtyAfterTransaction  Float
+  incomingRate         Decimal  @default(0) @db.Decimal(18, 6)
+  valuationRate        Decimal  @default(0) @db.Decimal(18, 6)
+  stockValue           Decimal  @default(0) @db.Decimal(18, 2)
+  stockValueDifference Decimal  @default(0) @db.Decimal(18, 2)
+  batchNo              String?
+  serialNos            String?
+  isCancelled          Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  createdBy            String?
+
+  item      Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+
+  @@index([itemId, warehouseId, postingAt])
+  @@index([voucherType, voucherNo])
+  @@index([isCancelled])
+}
+
+// ERPNext: Bin — cached running balance per (item, warehouse).
+model Bin {
+  id            String   @id @default(uuid()) @db.Uuid
+  itemId        String   @db.Uuid
+  warehouseId   String   @db.Uuid
+  actualQty     Float    @default(0)
+  reservedQty   Float    @default(0)
+  orderedQty    Float    @default(0)
+  plannedQty    Float    @default(0)
+  projectedQty  Float    @default(0)
+  valuationRate Decimal  @default(0) @db.Decimal(18, 6)
+  stockValue    Decimal  @default(0) @db.Decimal(18, 2)
+  updatedAt     DateTime @updatedAt
+
+  item      Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+
+  @@unique([itemId, warehouseId])
+  @@index([itemId])
+  @@index([warehouseId])
+}
+
+// ERPNext: Stock Entry (the voucher) — receipt / issue / transfer / manufacture.
+model StockEntry {
+  id                 String            @id @default(uuid()) @db.Uuid
+  name               String            @unique
+  purpose            StockEntryPurpose
+  status             DocStatus         @default(DRAFT)
+  postingAt          DateTime          @default(now())
+  fromWarehouseId    String?           @db.Uuid
+  toWarehouseId      String?           @db.Uuid
+  totalIncomingValue Decimal           @default(0) @db.Decimal(18, 2)
+  totalOutgoingValue Decimal           @default(0) @db.Decimal(18, 2)
+  valueDifference    Decimal           @default(0) @db.Decimal(18, 2)
+  remarks            String?
+  submittedAt        DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  createdBy          String?
+
+  fromWarehouse Warehouse?         @relation("SEFrom", fields: [fromWarehouseId], references: [id])
+  toWarehouse   Warehouse?         @relation("SETo", fields: [toWarehouseId], references: [id])
+  items         StockEntryDetail[]
+
+  @@index([status])
+  @@index([purpose])
+}
+
+// ERPNext: Stock Entry Detail
+model StockEntryDetail {
+  id             String  @id @default(uuid()) @db.Uuid
+  stockEntryId   String  @db.Uuid
+  itemId         String  @db.Uuid
+  sWarehouseId   String? @db.Uuid
+  tWarehouseId   String? @db.Uuid
+  qty            Float
+  uom            String  @default("Nos")
+  basicRate      Decimal @default(0) @db.Decimal(18, 6)
+  valuationRate  Decimal @default(0) @db.Decimal(18, 6)
+  amount         Decimal @default(0) @db.Decimal(18, 2)
+  isFinishedItem Boolean @default(false)
+  note           String?
+
+  stockEntry StockEntry @relation(fields: [stockEntryId], references: [id], onDelete: Cascade)
+  item       Item       @relation(fields: [itemId], references: [id])
+  sWarehouse Warehouse? @relation("SEDFrom", fields: [sWarehouseId], references: [id])
+  tWarehouse Warehouse? @relation("SEDTo", fields: [tWarehouseId], references: [id])
+
+  @@index([stockEntryId])
+  @@index([itemId])
+}
