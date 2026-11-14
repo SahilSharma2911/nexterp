@@ -14,6 +14,7 @@ const NAV: { heading: string; items: { href: string; label: string }[] }[] = [
       { href: "/stock/items", label: "Item" },
       { href: "/stock/warehouses", label: "Warehouse" },
       { href: "/stock/stock-entry", label: "Stock Entry" },
+      { href: "/stock/reconciliation", label: "Stock Reconciliation" },
       { href: "/stock/ledger", label: "Stock Ledger" },
       { href: "/stock/balance", label: "Stock Balance" },
     ],

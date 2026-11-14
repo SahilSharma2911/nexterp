@@ -108,3 +108,59 @@ export async function postStockLedger(
 
   return { qtyAfterTransaction: qtyAfter, valuationRate: newRate, stockValue: newValue, stockValueDifference: valueDiff };
 }
+
+export type SetStockParams = {
+  itemId: string;
+  warehouseId: string;
+  qty: number; // absolute on-hand qty to set
+  rate?: number; // absolute valuation rate; defaults to current
+  voucherType: string;
+  voucherNo: string;
+  voucherDetailId?: string | null;
+  postingAt: Date;
+  createdBy?: string | null;
+};
+
+// Set an absolute balance (ERPNext Stock Reconciliation): posts the SLE that
+// takes the bin to `qty` at `rate`, and returns the prior values so a cancel
+// can restore them. Returns null when nothing changed.
+export async function setStockBalance(
+  tx: Prisma.TransactionClient,
+  p: SetStockParams
+): Promise<{ prevQty: number; prevRate: number; actualQty: number } | null> {
+  if (p.qty < 0) throw new Error("Reconciled quantity can't be negative");
+  const bin = await tx.bin.findUnique({
+    where: { itemId_warehouseId: { itemId: p.itemId, warehouseId: p.warehouseId } },
+  });
+  const prevQty = bin?.actualQty ?? 0;
+  const prevRate = bin ? Number(bin.valuationRate) : 0;
+  const prevValue = bin ? Number(bin.stockValue) : 0;
+
+  const newRate = round6(p.rate != null ? p.rate : prevRate);
+  const qtyAfter = round6(p.qty);
+  const newValue = round2(qtyAfter * newRate);
+  const actualQty = round6(qtyAfter - prevQty);
+  const valueDiff = round2(newValue - prevValue);
+
+  if (actualQty === 0 && valueDiff === 0) return null;
+
+  await tx.stockLedgerEntry.create({
+    data: {
+      itemId: p.itemId, warehouseId: p.warehouseId, postingAt: p.postingAt,
+      voucherType: p.voucherType, voucherNo: p.voucherNo, voucherDetailId: p.voucherDetailId ?? null,
+      actualQty, qtyAfterTransaction: qtyAfter, incomingRate: actualQty > 0 ? newRate : 0,
+      valuationRate: newRate, stockValue: newValue, stockValueDifference: valueDiff, createdBy: p.createdBy ?? null,
+    },
+  });
+
+  const ordered = bin?.orderedQty ?? 0;
+  const planned = bin?.plannedQty ?? 0;
+  const reserved = bin?.reservedQty ?? 0;
+  await tx.bin.upsert({
+    where: { itemId_warehouseId: { itemId: p.itemId, warehouseId: p.warehouseId } },
+    update: { actualQty: qtyAfter, valuationRate: newRate, stockValue: newValue, projectedQty: round6(qtyAfter + ordered + planned - reserved) },
+    create: { itemId: p.itemId, warehouseId: p.warehouseId, actualQty: qtyAfter, valuationRate: newRate, stockValue: newValue, projectedQty: qtyAfter },
+  });
+
+  return { prevQty, prevRate, actualQty };
+}

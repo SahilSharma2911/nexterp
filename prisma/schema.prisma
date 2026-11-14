@@ -37,6 +37,7 @@ model Item {
   bomExplosions   BomExplosionItem[] @relation("BomExploded")
   workOrders      WorkOrder[]        @relation("WoProduction")
   workOrderItems  WorkOrderItem[]    @relation("WoItem")
+  reconItems      StockReconciliationItem[] @relation("SRItem")
 
   @@index([itemGroup])
   @@index([disabled])
@@ -59,6 +60,7 @@ model Warehouse {
   sedTo            StockEntryDetail[] @relation("SEDTo")
   woSource         WorkOrder[]        @relation("WoSource")
   woFg             WorkOrder[]        @relation("WoFg")
+  reconItems       StockReconciliationItem[] @relation("SRWh")
 
   @@index([disabled])
 }
@@ -263,6 +265,42 @@ model WorkOrderItem {
   item      Item      @relation("WoItem", fields: [itemId], references: [id])
 
   @@index([workOrderId])
+}
+
+// ERPNext: Stock Reconciliation — set absolute on-hand qty/valuation (physical
+// count or opening stock). Submittable.
+model StockReconciliation {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique
+  status      DocStatus @default(DRAFT)
+  postingAt   DateTime  @default(now())
+  remarks     String?
+  submittedAt DateTime?
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+
+  items StockReconciliationItem[]
+
+  @@index([status])
+}
+
+model StockReconciliationItem {
+  id               String  @id @default(uuid()) @db.Uuid
+  reconciliationId String  @db.Uuid
+  itemId           String  @db.Uuid
+  warehouseId      String  @db.Uuid
+  qty              Float // counted / target qty
+  valuationRate    Decimal @default(0) @db.Decimal(18, 6)
+  currentQty       Float   @default(0) // snapshot before submit (for cancel)
+  currentRate      Decimal @default(0) @db.Decimal(18, 6)
+
+  reconciliation StockReconciliation @relation(fields: [reconciliationId], references: [id], onDelete: Cascade)
+  item           Item                @relation("SRItem", fields: [itemId], references: [id])
+  warehouse      Warehouse           @relation("SRWh", fields: [warehouseId], references: [id])
+
+  @@index([reconciliationId])
 }
 
 // ERPNext: Stock Entry Detail
