@@ -15,6 +15,8 @@ import {
   LayoutDashboard,
   Package,
   PackageCheck,
+  PanelLeft,
+  PanelLeftClose,
   ReceiptText,
   Scale,
   ScrollText,
@@ -27,6 +29,11 @@ import {
   Warehouse,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type NavItem = { href: string; label: string; icon: React.ElementType };
 type NavGroup = { heading: string; items: NavItem[] };
@@ -88,7 +95,15 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+export function SidebarNav({
+  collapsed = false,
+  onToggleCollapse,
+  onNavigate,
+}: {
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
@@ -96,39 +111,77 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       <Link
         href="/"
         onClick={onNavigate}
-        className="flex h-14 items-center gap-2 border-b border-sidebar-border px-5"
+        className={cn(
+          "flex h-14 items-center border-b border-sidebar-border",
+          collapsed ? "justify-center px-0" : "gap-2 px-5",
+        )}
       >
-        <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
           <Boxes className="size-4" />
         </span>
-        <span className="text-[15px] font-semibold tracking-tight">nexterp</span>
+        {!collapsed && (
+          <span className="text-[15px] font-semibold tracking-tight">
+            nexterp
+          </span>
+        )}
       </Link>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        {NAV.map((group) => (
+      <nav className={cn("flex-1 overflow-y-auto py-4", collapsed ? "px-2" : "px-3")}>
+        {NAV.map((group, gi) => (
           <div key={group.heading} className="mb-5">
-            <p className="px-3 pb-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground/70 uppercase">
-              {group.heading}
-            </p>
+            {collapsed ? (
+              gi > 0 && (
+                <div className="mx-1 mb-2 border-t border-sidebar-border/60" />
+              )
+            ) : (
+              <p className="px-3 pb-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground/70 uppercase">
+                {group.heading}
+              </p>
+            )}
             <div className="space-y-0.5">
               {group.items.map((item) => {
                 const active = isActive(pathname, item.href);
                 const Icon = item.icon;
+                const className = cn(
+                  "flex items-center rounded-md text-sm transition-colors",
+                  collapsed ? "justify-center p-2.5" : "gap-2.5 px-3 py-2",
+                  active
+                    ? "bg-primary/10 font-medium text-primary"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                );
+                const content = (
+                  <>
+                    <Icon className="size-4 shrink-0" />
+                    {!collapsed && item.label}
+                  </>
+                );
+
+                if (collapsed) {
+                  return (
+                    <Tooltip key={item.href}>
+                      <TooltipTrigger asChild>
+                        <Link
+                          href={item.href}
+                          onClick={onNavigate}
+                          aria-current={active ? "page" : undefined}
+                          className={className}
+                        >
+                          {content}
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">{item.label}</TooltipContent>
+                    </Tooltip>
+                  );
+                }
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
-                      active
-                        ? "bg-primary/10 font-medium text-primary"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                    )}
+                    className={className}
                   >
-                    <Icon className="size-4 shrink-0" />
-                    {item.label}
+                    {content}
                   </Link>
                 );
               })}
@@ -136,6 +189,29 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         ))}
       </nav>
+
+      {onToggleCollapse && (
+        <div className="border-t border-sidebar-border p-2">
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={cn(
+              "flex w-full items-center rounded-md text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+              collapsed ? "justify-center p-2.5" : "gap-2.5 px-3 py-2",
+            )}
+          >
+            {collapsed ? (
+              <PanelLeft className="size-4" />
+            ) : (
+              <>
+                <PanelLeftClose className="size-4" />
+                Collapse
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

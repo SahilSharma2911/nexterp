@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, User, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -11,7 +12,21 @@ import { AccentPicker } from "@/components/accent-picker";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+
+  // Restore the collapsed preference.
+  useEffect(() => {
+    setCollapsed(localStorage.getItem("sidebar-collapsed") === "1");
+  }, []);
+
+  function toggleCollapsed() {
+    setCollapsed((c) => {
+      const next = !c;
+      localStorage.setItem("sidebar-collapsed", next ? "1" : "0");
+      return next;
+    });
+  }
 
   // Close the mobile drawer on navigation.
   useEffect(() => {
@@ -21,11 +36,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r bg-sidebar text-sidebar-foreground lg:block">
-        <SidebarNav />
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-30 hidden border-r bg-sidebar text-sidebar-foreground transition-[width] duration-200 lg:block",
+          collapsed ? "w-16" : "w-64",
+        )}
+      >
+        <SidebarNav collapsed={collapsed} onToggleCollapse={toggleCollapsed} />
       </aside>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer (always full width, never collapsed) */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
@@ -47,7 +67,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <div className="lg:pl-64">
+      <div
+        className={cn(
+          "transition-[padding] duration-200",
+          collapsed ? "lg:pl-16" : "lg:pl-64",
+        )}
+      >
         {/* Header */}
         <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:px-8">
           <Button
