@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getDashboard } from "@/actions/dashboard";
-import { PageHeader, Table, Th, Td } from "@/components/ui";
+import { PageHeader, Table, Th, Td } from "@/components/legacy-ui";
 import { fmtQty, fmtMoney } from "@/lib/format";
 
 export const dynamic = "force-dynamic";

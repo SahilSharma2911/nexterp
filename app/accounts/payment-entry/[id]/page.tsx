@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getPaymentEntry, submitPaymentEntry, cancelPaymentEntry } from "@/actions/payment-entry";
-import { PageHeader, LinkButton, StatusPill } from "@/components/ui";
+import { PageHeader, LinkButton, StatusPill } from "@/components/legacy-ui";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
 import DocActions from "@/components/DocActions";
 export const dynamic = "force-dynamic";

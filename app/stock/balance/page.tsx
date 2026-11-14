@@ -1,5 +1,5 @@
 import { getStockBalance } from "@/actions/reports";
-import { PageHeader, Table, Th, Td } from "@/components/ui";
+import { PageHeader, Table, Th, Td } from "@/components/legacy-ui";
 import { fmtQty, fmtRate, fmtMoney } from "@/lib/format";
 
 export const dynamic = "force-dynamic";

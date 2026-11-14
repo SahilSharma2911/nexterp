@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { submitStockReconciliation, cancelStockReconciliation } from "@/actions/stock-reconciliation";
-import { Button } from "@/components/ui";
+import { Button } from "@/components/legacy-ui";
 
 export default function ReconActions({ id, status }: { id: string; status: string }) {
   const router = useRouter();

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getPurchaseInvoices } from "@/actions/purchase-invoice";
-import { PageHeader, LinkButton, Table, Th, Td, StatusPill } from "@/components/ui";
+import { PageHeader, LinkButton, Table, Th, Td, StatusPill } from "@/components/legacy-ui";
 import { fmtMoney } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export default async function PiListPage() {

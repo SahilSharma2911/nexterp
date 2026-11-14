@@ -1,5 +1,5 @@
 import { getGeneralLedger } from "@/actions/accounts-reports";
-import { PageHeader, Table, Th, Td } from "@/components/ui";
+import { PageHeader, Table, Th, Td } from "@/components/legacy-ui";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export default async function GLPage() {

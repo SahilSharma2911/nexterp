@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui";
+import { Button } from "@/components/legacy-ui";
 
 export default function DocActions({
   id, status, onSubmit, onCancel,

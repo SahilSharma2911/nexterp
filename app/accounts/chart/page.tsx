@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getAccounts } from "@/actions/accounts";
-import { PageHeader, LinkButton, Table, Th, Td } from "@/components/ui";
+import { PageHeader, LinkButton, Table, Th, Td } from "@/components/legacy-ui";
 import { SeedAccountsButton } from "./ChartClients";
 export const dynamic = "force-dynamic";
 export default async function ChartPage() {

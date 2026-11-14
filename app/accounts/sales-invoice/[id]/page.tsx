@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getSalesInvoice, submitSalesInvoice, cancelSalesInvoice } from "@/actions/sales-invoice";
-import { PageHeader, LinkButton, Table, Th, Td, StatusPill } from "@/components/ui";
+import { PageHeader, LinkButton, Table, Th, Td, StatusPill } from "@/components/legacy-ui";
 import { fmtQty, fmtRate, fmtMoney, fmtDateTime } from "@/lib/format";
 import DocActions from "@/components/DocActions";
 export const dynamic = "force-dynamic";

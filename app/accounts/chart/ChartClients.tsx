@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { seedChartOfAccounts, upsertAccount } from "@/actions/accounts";
-import { PageHeader, Button, LinkButton, Input, Select, Field } from "@/components/ui";
+import { PageHeader, Button, LinkButton, Input, Select, Field } from "@/components/legacy-ui";
 
 const ROOTS = ["ASSET", "LIABILITY", "INCOME", "EXPENSE", "EQUITY"];
 

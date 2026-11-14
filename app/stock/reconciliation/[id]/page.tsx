@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getStockReconciliation } from "@/actions/stock-reconciliation";
-import { PageHeader, LinkButton, Table, Th, Td, StatusPill } from "@/components/ui";
+import { PageHeader, LinkButton, Table, Th, Td, StatusPill } from "@/components/legacy-ui";
 import { fmtQty, fmtRate, fmtDateTime } from "@/lib/format";
 import ReconActions from "../ReconActions";
 

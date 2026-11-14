@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createPaymentEntry } from "@/actions/payment-entry";
-import { PageHeader, Button, LinkButton, Input, Select, Field } from "@/components/ui";
+import { PageHeader, Button, LinkButton, Input, Select, Field } from "@/components/legacy-ui";
 
 type Opt = { id: string; name: string };
 type Prefill = { paymentType: "RECEIVE" | "PAY"; customerId?: string; supplierId?: string; salesInvoiceId?: string; purchaseInvoiceId?: string; amount: number; partyName: string; invoiceName: string };

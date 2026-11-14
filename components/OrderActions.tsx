@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui";
+import { Button } from "@/components/legacy-ui";
 
 export function OrderStatusPill({ status }: { status: string }) {
   const map: Record<string, string> = {

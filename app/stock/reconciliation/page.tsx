@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getStockReconciliations } from "@/actions/stock-reconciliation";
-import { PageHeader, LinkButton, Table, Th, Td, StatusPill } from "@/components/ui";
+import { PageHeader, LinkButton, Table, Th, Td, StatusPill } from "@/components/legacy-ui";
 import { fmtDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";

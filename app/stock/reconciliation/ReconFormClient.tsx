@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createStockReconciliation } from "@/actions/stock-reconciliation";
-import { PageHeader, Button, LinkButton, Input, Select, Field, Table, Th, Td } from "@/components/ui";
+import { PageHeader, Button, LinkButton, Input, Select, Field, Table, Th, Td } from "@/components/legacy-ui";
 import { fmtQty } from "@/lib/format";
 
 type ItemOpt = { id: string; itemCode: string; itemName: string; valuationRate: number };
