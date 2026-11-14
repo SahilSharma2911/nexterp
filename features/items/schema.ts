@@ -18,11 +18,15 @@ export const itemFormSchema = z.object({
   description: z.string().trim().optional(),
   itemGroup: z.string().trim().optional(),
   brand: z.string().trim().optional(),
+  barcode: z.string().trim().optional(),
+  taxCode: z.string().trim().optional(),
   stockUom: z.string().trim().min(1, "UOM is required"),
   isStockItem: z.boolean(),
   hasSerialNo: z.boolean(),
   hasBatchNo: z.boolean(),
   valuationRate: z.number().min(0, "Must be ≥ 0"),
+  salesRate: z.number().min(0, "Must be ≥ 0"),
+  reorderLevel: z.number().min(0, "Must be ≥ 0"),
   disabled: z.boolean(),
   hasVariants: z.boolean(),
   specifications: z.array(itemSpecSchema),
@@ -37,11 +41,15 @@ export const emptyItem: ItemFormValues = {
   description: "",
   itemGroup: "",
   brand: "",
+  barcode: "",
+  taxCode: "",
   stockUom: "Nos",
   isStockItem: true,
   hasSerialNo: false,
   hasBatchNo: false,
   valuationRate: 0,
+  salesRate: 0,
+  reorderLevel: 0,
   disabled: false,
   hasVariants: false,
   specifications: [],
@@ -59,11 +67,15 @@ export type Item = {
   description: string | null;
   itemGroup: string | null;
   brand: string | null;
+  barcode: string | null;
+  taxCode: string | null;
   stockUom: string;
   isStockItem: boolean;
   hasSerialNo: boolean;
   hasBatchNo: boolean;
   valuationRate: number;
+  salesRate: number;
+  reorderLevel: number;
   disabled: boolean;
   hasVariants: boolean;
   variantOfId: string | null;

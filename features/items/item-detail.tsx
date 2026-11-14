@@ -90,7 +90,11 @@ export function ItemDetail({ itemId }: { itemId: string }) {
           <Meta label="Unit of Measure" value={it.stockUom} />
           <Meta label="Item Group" value={it.itemGroup ?? "—"} />
           <Meta label="Brand" value={it.brand ?? "—"} />
-          <Meta label="Valuation Rate" value={fmtMoney(it.valuationRate)} />
+          <Meta label="Barcode" value={it.barcode ?? "—"} />
+          <Meta label="Tax / HSN Code" value={it.taxCode ?? "—"} />
+          <Meta label="Valuation Rate (cost)" value={fmtMoney(it.valuationRate)} />
+          <Meta label="Standard Selling Rate" value={fmtMoney(it.salesRate)} />
+          <Meta label="Reorder Level" value={it.reorderLevel || "—"} />
           <Meta label="Maintain Stock" value={it.isStockItem ? "Yes" : "No"} />
           <Meta label="Serial No." value={it.hasSerialNo ? "Yes" : "No"} />
           <Meta label="Batch No." value={it.hasBatchNo ? "Yes" : "No"} />

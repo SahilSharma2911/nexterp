@@ -21,11 +21,17 @@ model Item {
   itemGroup    String?
   stockUom     String   @default("Nos")
   brand        String?
+  barcode      String?
+  taxCode      String?  // HSN / tax classification code
   isStockItem  Boolean  @default(true)
   hasSerialNo  Boolean  @default(false)
   hasBatchNo   Boolean  @default(false)
-  // Default/standard valuation rate used when no prior stock exists.
+  // Default/standard valuation (cost) rate used when no prior stock exists.
   valuationRate Decimal @default(0) @db.Decimal(18, 6)
+  // Standard selling price.
+  salesRate    Decimal  @default(0) @db.Decimal(18, 6)
+  // Reorder when projected stock falls below this (0 = no reorder).
+  reorderLevel Float    @default(0)
   disabled     Boolean  @default(false)
 
   // Variants (ERPNext: Item Variants). A template item defines variant

@@ -24,25 +24,80 @@ import { emptyItem, itemFormSchema, type ItemFormValues } from "./schema";
 import { COMMON_UOMS } from "./uom";
 import { useCreateItem, useItem, useUpdateItem } from "./queries";
 
-function CheckboxField({
+type FlagName =
+  | "isStockItem"
+  | "hasSerialNo"
+  | "hasBatchNo"
+  | "hasVariants"
+  | "disabled";
+
+function FlagField({
   form,
   name,
   label,
+  description,
 }: {
   form: ReturnType<typeof useForm<ItemFormValues>>;
-  name: "isStockItem" | "hasSerialNo" | "hasBatchNo" | "disabled" | "hasVariants";
+  name: FlagName;
   label: string;
+  description: string;
 }) {
   return (
     <FormField
       control={form.control}
       name={name}
       render={({ field }) => (
-        <FormItem className="flex flex-row items-center gap-2 space-y-0">
+        <FormItem className="flex flex-row items-start gap-3 space-y-0 rounded-lg border p-3">
           <FormControl>
-            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+            <Checkbox
+              className="mt-0.5"
+              checked={field.value}
+              onCheckedChange={field.onChange}
+            />
           </FormControl>
-          <FormLabel className="font-normal">{label}</FormLabel>
+          <div className="space-y-0.5">
+            <FormLabel className="font-normal">{label}</FormLabel>
+            <FormDescription className="text-xs">{description}</FormDescription>
+          </div>
+        </FormItem>
+      )}
+    />
+  );
+}
+
+function NumberField({
+  form,
+  name,
+  label,
+  description,
+  step = "0.01",
+}: {
+  form: ReturnType<typeof useForm<ItemFormValues>>;
+  name: "valuationRate" | "salesRate" | "reorderLevel";
+  label: string;
+  description?: string;
+  step?: string;
+}) {
+  return (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <Input
+              type="number"
+              step={step}
+              min="0"
+              value={field.value}
+              onChange={(e) =>
+                field.onChange(e.target.value === "" ? 0 : Number(e.target.value))
+              }
+            />
+          </FormControl>
+          {description && <FormDescription>{description}</FormDescription>}
+          <FormMessage />
         </FormItem>
       )}
     />
@@ -74,11 +129,15 @@ export function ItemForm({ itemId }: { itemId?: string }) {
         description: existing.description ?? "",
         itemGroup: existing.itemGroup ?? "",
         brand: existing.brand ?? "",
+        barcode: existing.barcode ?? "",
+        taxCode: existing.taxCode ?? "",
         stockUom: existing.stockUom,
         isStockItem: existing.isStockItem,
         hasSerialNo: existing.hasSerialNo,
         hasBatchNo: existing.hasBatchNo,
         valuationRate: existing.valuationRate,
+        salesRate: existing.salesRate,
+        reorderLevel: existing.reorderLevel,
         disabled: existing.disabled,
         hasVariants: existing.hasVariants,
         specifications: existing.specifications,
@@ -115,7 +174,7 @@ export function ItemForm({ itemId }: { itemId?: string }) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">Basic details</CardTitle>
@@ -126,10 +185,11 @@ export function ItemForm({ itemId }: { itemId?: string }) {
               name="itemCode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Item Code</FormLabel>
+                  <FormLabel>Item Code (SKU)</FormLabel>
                   <FormControl>
                     <Input placeholder="WIDGET-01" {...field} />
                   </FormControl>
+                  <FormDescription>Unique identifier / stock-keeping unit.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -138,7 +198,7 @@ export function ItemForm({ itemId }: { itemId?: string }) {
               control={form.control}
               name="itemName"
               render={({ field }) => (
-                <FormItem className="sm:col-span-1 lg:col-span-2">
+                <FormItem className="lg:col-span-2">
                   <FormLabel>Item Name</FormLabel>
                   <FormControl>
                     <Input placeholder="Stainless Steel Widget" {...field} />
@@ -154,18 +214,14 @@ export function ItemForm({ itemId }: { itemId?: string }) {
                 <FormItem>
                   <FormLabel>Unit of Measure</FormLabel>
                   <FormControl>
-                    <Input
-                      list="uom-list"
-                      placeholder="Nos"
-                      {...field}
-                    />
+                    <Input list="uom-list" placeholder="Nos" {...field} />
                   </FormControl>
                   <datalist id="uom-list">
                     {COMMON_UOMS.map((u) => (
                       <option key={u} value={u} />
                     ))}
                   </datalist>
-                  <FormDescription>How this item is counted or sold.</FormDescription>
+                  <FormDescription>How it&apos;s counted or sold.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -198,22 +254,25 @@ export function ItemForm({ itemId }: { itemId?: string }) {
             />
             <FormField
               control={form.control}
-              name="valuationRate"
+              name="barcode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valuation Rate</FormLabel>
+                  <FormLabel>Barcode</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={field.value}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value === "" ? 0 : Number(e.target.value),
-                        )
-                      }
-                    />
+                    <Input placeholder="EAN / UPC (optional)" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="taxCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tax / HSN Code</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Optional" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -232,12 +291,74 @@ export function ItemForm({ itemId }: { itemId?: string }) {
                 </FormItem>
               )}
             />
-            <div className="flex flex-wrap gap-6 rounded-lg border bg-muted/30 p-3 sm:col-span-2 lg:col-span-3">
-              <CheckboxField form={form} name="isStockItem" label="Maintain stock" />
-              <CheckboxField form={form} name="hasSerialNo" label="Has serial no." />
-              <CheckboxField form={form} name="hasBatchNo" label="Has batch no." />
-              <CheckboxField form={form} name="hasVariants" label="Has variants (template)" />
-              <CheckboxField form={form} name="disabled" label="Disabled" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Pricing</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <NumberField
+              form={form}
+              name="valuationRate"
+              label="Valuation Rate (cost)"
+              description="Default cost when no prior stock exists."
+            />
+            <NumberField
+              form={form}
+              name="salesRate"
+              label="Standard Selling Rate"
+              description="Default price on sales documents."
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Inventory &amp; tracking</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <FlagField
+                form={form}
+                name="isStockItem"
+                label="Maintain stock"
+                description="Track this item in inventory (uncheck for services/fees)."
+              />
+              <FlagField
+                form={form}
+                name="hasSerialNo"
+                label="Has serial numbers"
+                description="Each unit has a unique serial, entered during receipt/delivery."
+              />
+              <FlagField
+                form={form}
+                name="hasBatchNo"
+                label="Has batch numbers"
+                description="Units move in lots/batches (e.g. with an expiry date)."
+              />
+              <FlagField
+                form={form}
+                name="hasVariants"
+                label="Has variants (template)"
+                description="A template that generates child items from attributes."
+              />
+              <FlagField
+                form={form}
+                name="disabled"
+                label="Disabled"
+                description="Hide this item from pickers and new documents."
+              />
+            </div>
+            <div className="sm:max-w-xs">
+              <NumberField
+                form={form}
+                name="reorderLevel"
+                label="Reorder Level"
+                description="Flag for restock when stock falls below (0 = off)."
+                step="0.001"
+              />
             </div>
           </CardContent>
         </Card>
@@ -324,9 +445,7 @@ export function ItemForm({ itemId }: { itemId?: string }) {
                 child items for every combination.
               </p>
               {attrs.fields.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No attributes yet.
-                </p>
+                <p className="text-sm text-muted-foreground">No attributes yet.</p>
               ) : (
                 <div className="space-y-2">
                   {attrs.fields.map((row, i) => (
