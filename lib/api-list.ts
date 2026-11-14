@@ -16,6 +16,14 @@ export type ListResponse<T> = {
   limit: number;
 };
 
+// Client-side query shape mirrored into the URL (?page&limit&q&sort).
+export type ListQuery = {
+  page: number;
+  limit: number;
+  q: string;
+  sort: string;
+};
+
 // Parse ?page&limit&q&sort off a URLSearchParams into a normalised shape.
 export function parseListParams(sp: URLSearchParams): ListParams {
   const page = Math.max(1, Number(sp.get("page")) || 1);
