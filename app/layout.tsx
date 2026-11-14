@@ -26,6 +26,20 @@ const NAV: { heading: string; items: { href: string; label: string }[] }[] = [
       { href: "/manufacturing/work-order", label: "Work Order" },
     ],
   },
+  {
+    heading: "Buying",
+    items: [
+      { href: "/buying/suppliers", label: "Supplier" },
+      { href: "/buying/purchase-receipt", label: "Purchase Receipt" },
+    ],
+  },
+  {
+    heading: "Selling",
+    items: [
+      { href: "/selling/customers", label: "Customer" },
+      { href: "/selling/delivery-note", label: "Delivery Note" },
+    ],
+  },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

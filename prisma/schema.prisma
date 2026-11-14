@@ -38,6 +38,8 @@ model Item {
   workOrders      WorkOrder[]        @relation("WoProduction")
   workOrderItems  WorkOrderItem[]    @relation("WoItem")
   reconItems      StockReconciliationItem[] @relation("SRItem")
+  prItems         PurchaseReceiptItem[]     @relation("PRItem")
+  dnItems         DeliveryNoteItem[]        @relation("DNItem")
 
   @@index([itemGroup])
   @@index([disabled])
@@ -61,6 +63,8 @@ model Warehouse {
   woSource         WorkOrder[]        @relation("WoSource")
   woFg             WorkOrder[]        @relation("WoFg")
   reconItems       StockReconciliationItem[] @relation("SRWh")
+  purchaseReceipts PurchaseReceipt[]  @relation("PRWh")
+  deliveryNotes    DeliveryNote[]     @relation("DNWh")
 
   @@index([disabled])
 }
@@ -325,4 +329,115 @@ model StockEntryDetail {
 
   @@index([stockEntryId])
   @@index([itemId])
+}
+
+/* ============================== Parties ============================== */
+
+model Customer {
+  id            String   @id @default(uuid()) @db.Uuid
+  customerName  String   @unique
+  customerGroup String?
+  territory     String?
+  disabled      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  deliveryNotes DeliveryNote[]
+
+  @@index([disabled])
+}
+
+model Supplier {
+  id            String   @id @default(uuid()) @db.Uuid
+  supplierName  String   @unique
+  supplierGroup String?
+  disabled      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  purchaseReceipts PurchaseReceipt[]
+
+  @@index([disabled])
+}
+
+/* ============================== Buying ============================== */
+
+// ERPNext: Purchase Receipt — receives goods into a warehouse (stock in).
+model PurchaseReceipt {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique
+  supplierId  String    @db.Uuid
+  warehouseId String    @db.Uuid
+  status      DocStatus @default(DRAFT)
+  postingAt   DateTime  @default(now())
+  totalQty    Float     @default(0)
+  totalAmount Decimal   @default(0) @db.Decimal(18, 2)
+  remarks     String?
+  submittedAt DateTime?
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+
+  supplier  Supplier              @relation(fields: [supplierId], references: [id])
+  warehouse Warehouse             @relation("PRWh", fields: [warehouseId], references: [id])
+  items     PurchaseReceiptItem[]
+
+  @@index([status])
+}
+
+model PurchaseReceiptItem {
+  id                String  @id @default(uuid()) @db.Uuid
+  purchaseReceiptId String  @db.Uuid
+  itemId            String  @db.Uuid
+  qty               Float
+  uom               String  @default("Nos")
+  rate              Decimal @default(0) @db.Decimal(18, 6)
+  amount            Decimal @default(0) @db.Decimal(18, 2)
+
+  purchaseReceipt PurchaseReceipt @relation(fields: [purchaseReceiptId], references: [id], onDelete: Cascade)
+  item            Item            @relation("PRItem", fields: [itemId], references: [id])
+
+  @@index([purchaseReceiptId])
+}
+
+/* ============================== Selling ============================== */
+
+// ERPNext: Delivery Note — ships goods out of a warehouse (stock out).
+model DeliveryNote {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique
+  customerId  String    @db.Uuid
+  warehouseId String    @db.Uuid
+  status      DocStatus @default(DRAFT)
+  postingAt   DateTime  @default(now())
+  totalQty    Float     @default(0)
+  totalAmount Decimal   @default(0) @db.Decimal(18, 2) // selling value
+  totalCogs   Decimal   @default(0) @db.Decimal(18, 2) // cost of goods delivered
+  remarks     String?
+  submittedAt DateTime?
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+
+  customer  Customer           @relation(fields: [customerId], references: [id])
+  warehouse Warehouse          @relation("DNWh", fields: [warehouseId], references: [id])
+  items     DeliveryNoteItem[]
+
+  @@index([status])
+}
+
+model DeliveryNoteItem {
+  id             String  @id @default(uuid()) @db.Uuid
+  deliveryNoteId String  @db.Uuid
+  itemId         String  @db.Uuid
+  qty            Float
+  uom            String  @default("Nos")
+  rate           Decimal @default(0) @db.Decimal(18, 6) // selling price
+  amount         Decimal @default(0) @db.Decimal(18, 2) // selling value
+  valuationRate  Decimal @default(0) @db.Decimal(18, 6) // COGS captured on submit
+
+  deliveryNote DeliveryNote @relation(fields: [deliveryNoteId], references: [id], onDelete: Cascade)
+  item         Item         @relation("DNItem", fields: [itemId], references: [id])
+
+  @@index([deliveryNoteId])
 }
