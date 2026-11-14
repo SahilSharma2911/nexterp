@@ -23,6 +23,18 @@ export const columns: ColumnDef<Warehouse>[] = [
       ),
   },
   {
+    id: "location",
+    header: "Location",
+    cell: ({ row }) => {
+      const parts = [row.original.city, row.original.country].filter(Boolean);
+      return parts.length ? (
+        parts.join(", ")
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      );
+    },
+  },
+  {
     id: "status",
     header: "Status",
     cell: ({ row }) =>

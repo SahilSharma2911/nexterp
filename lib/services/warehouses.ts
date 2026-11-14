@@ -15,6 +15,15 @@ function toItem(r: Row): Warehouse {
     id: r.id,
     warehouseName: r.warehouseName,
     warehouseType: r.warehouseType,
+    addressLine1: r.addressLine1,
+    addressLine2: r.addressLine2,
+    city: r.city,
+    state: r.state,
+    country: r.country,
+    postalCode: r.postalCode,
+    phone: r.phone,
+    email: r.email,
+    contactPerson: r.contactPerson,
     disabled: r.disabled,
   };
 }
@@ -23,6 +32,15 @@ function toData(v: WarehouseFormValues) {
   return {
     warehouseName: v.warehouseName.trim(),
     warehouseType: v.warehouseType?.trim() || null,
+    addressLine1: v.addressLine1?.trim() || null,
+    addressLine2: v.addressLine2?.trim() || null,
+    city: v.city?.trim() || null,
+    state: v.state?.trim() || null,
+    country: v.country?.trim() || null,
+    postalCode: v.postalCode?.trim() || null,
+    phone: v.phone?.trim() || null,
+    email: v.email?.trim() || null,
+    contactPerson: v.contactPerson?.trim() || null,
     disabled: v.disabled,
   };
 }

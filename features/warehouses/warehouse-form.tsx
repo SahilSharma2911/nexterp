@@ -15,11 +15,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   emptyWarehouse,
   warehouseFormSchema,
+  WAREHOUSE_TYPES,
   type WarehouseFormValues,
 } from "./schema";
 import {
@@ -27,6 +28,48 @@ import {
   useUpdateWarehouse,
   useWarehouse,
 } from "./queries";
+
+type FieldName = keyof WarehouseFormValues;
+
+function TextField({
+  form,
+  name,
+  label,
+  placeholder,
+  className,
+  list,
+  type,
+}: {
+  form: ReturnType<typeof useForm<WarehouseFormValues>>;
+  name: Exclude<FieldName, "disabled">;
+  label: string;
+  placeholder?: string;
+  className?: string;
+  list?: string;
+  type?: string;
+}) {
+  return (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className={className}>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <Input
+              placeholder={placeholder}
+              list={list}
+              type={type}
+              {...field}
+              value={field.value ?? ""}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}
 
 export function WarehouseForm({ warehouseId }: { warehouseId?: string }) {
   const router = useRouter();
@@ -45,6 +88,15 @@ export function WarehouseForm({ warehouseId }: { warehouseId?: string }) {
       form.reset({
         warehouseName: existing.warehouseName,
         warehouseType: existing.warehouseType ?? "",
+        addressLine1: existing.addressLine1 ?? "",
+        addressLine2: existing.addressLine2 ?? "",
+        city: existing.city ?? "",
+        state: existing.state ?? "",
+        country: existing.country ?? "",
+        postalCode: existing.postalCode ?? "",
+        phone: existing.phone ?? "",
+        email: existing.email ?? "",
+        contactPerson: existing.contactPerson ?? "",
         disabled: existing.disabled,
       });
     }
@@ -66,40 +118,35 @@ export function WarehouseForm({ warehouseId }: { warehouseId?: string }) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <Card>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
+          <CardHeader>
+            <CardTitle className="text-sm">Details</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <TextField
+              form={form}
               name="warehouseName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Warehouse Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Stores" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Warehouse Name"
+              placeholder="Main Store"
             />
-            <FormField
-              control={form.control}
+            <TextField
+              form={form}
               name="warehouseType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Type</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Transit / Finished Goods…" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Type"
+              placeholder="Stores"
+              list="warehouse-types"
             />
+            <datalist id="warehouse-types">
+              {WAREHOUSE_TYPES.map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
             <FormField
               control={form.control}
               name="disabled"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center gap-2 space-y-0 rounded-lg border bg-muted/30 p-3 sm:col-span-2">
+                <FormItem className="flex flex-row items-center gap-2 space-y-0 self-end rounded-lg border bg-muted/30 p-3">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
@@ -109,6 +156,47 @@ export function WarehouseForm({ warehouseId }: { warehouseId?: string }) {
                   <FormLabel className="font-normal">Disabled</FormLabel>
                 </FormItem>
               )}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Address</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <TextField
+              form={form}
+              name="addressLine1"
+              label="Address Line 1"
+              className="sm:col-span-2 lg:col-span-3"
+            />
+            <TextField
+              form={form}
+              name="addressLine2"
+              label="Address Line 2"
+              className="sm:col-span-2 lg:col-span-3"
+            />
+            <TextField form={form} name="city" label="City" />
+            <TextField form={form} name="state" label="State / Province" />
+            <TextField form={form} name="postalCode" label="Postal Code" />
+            <TextField form={form} name="country" label="Country" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Contact</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <TextField form={form} name="contactPerson" label="Contact Person" />
+            <TextField form={form} name="phone" label="Phone" type="tel" />
+            <TextField
+              form={form}
+              name="email"
+              label="Email"
+              type="email"
+              placeholder="store@example.com"
             />
           </CardContent>
         </Card>
