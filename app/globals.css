@@ -125,6 +125,68 @@ body {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ---- Accent themes: swap the primary colour (light + dark) ---- */
+[data-accent="blue"] {
+  --primary: oklch(0.55 0.2 255);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.55 0.2 255);
+  --sidebar-primary: oklch(0.55 0.2 255);
+}
+.dark[data-accent="blue"] {
+  --primary: oklch(0.62 0.19 255);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.62 0.19 255);
+  --sidebar-primary: oklch(0.62 0.19 255);
+}
+[data-accent="violet"] {
+  --primary: oklch(0.54 0.24 293);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.54 0.24 293);
+  --sidebar-primary: oklch(0.54 0.24 293);
+}
+.dark[data-accent="violet"] {
+  --primary: oklch(0.62 0.23 293);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.62 0.23 293);
+  --sidebar-primary: oklch(0.62 0.23 293);
+}
+[data-accent="green"] {
+  --primary: oklch(0.57 0.15 156);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.57 0.15 156);
+  --sidebar-primary: oklch(0.57 0.15 156);
+}
+.dark[data-accent="green"] {
+  --primary: oklch(0.65 0.16 156);
+  --primary-foreground: oklch(0.145 0 0);
+  --ring: oklch(0.65 0.16 156);
+  --sidebar-primary: oklch(0.65 0.16 156);
+}
+[data-accent="rose"] {
+  --primary: oklch(0.58 0.22 15);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.58 0.22 15);
+  --sidebar-primary: oklch(0.58 0.22 15);
+}
+.dark[data-accent="rose"] {
+  --primary: oklch(0.65 0.21 15);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.65 0.21 15);
+  --sidebar-primary: oklch(0.65 0.21 15);
+}
+[data-accent="amber"] {
+  --primary: oklch(0.77 0.16 75);
+  --primary-foreground: oklch(0.21 0 0);
+  --ring: oklch(0.77 0.16 75);
+  --sidebar-primary: oklch(0.77 0.16 75);
+}
+.dark[data-accent="amber"] {
+  --primary: oklch(0.82 0.16 80);
+  --primary-foreground: oklch(0.21 0 0);
+  --ring: oklch(0.82 0.16 80);
+  --sidebar-primary: oklch(0.82 0.16 80);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -134,5 +196,10 @@ body {
   }
   html {
     @apply font-sans;
+  }
+  /* Tidy scrollbars that respect the theme */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
   }
 }
