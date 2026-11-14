@@ -18,6 +18,13 @@ const NAV: { heading: string; items: { href: string; label: string }[] }[] = [
       { href: "/stock/balance", label: "Stock Balance" },
     ],
   },
+  {
+    heading: "Manufacturing",
+    items: [
+      { href: "/manufacturing/bom", label: "BOM" },
+      { href: "/manufacturing/work-order", label: "Work Order" },
+    ],
+  },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

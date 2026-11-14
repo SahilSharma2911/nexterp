@@ -32,6 +32,11 @@ model Item {
   ledgerEntries   StockLedgerEntry[]
   bins            Bin[]
   stockEntryItems StockEntryDetail[]
+  boms            Bom[]              @relation("BomFinished")
+  bomComponents   BomItem[]          @relation("BomComponent")
+  bomExplosions   BomExplosionItem[] @relation("BomExploded")
+  workOrders      WorkOrder[]        @relation("WoProduction")
+  workOrderItems  WorkOrderItem[]    @relation("WoItem")
 
   @@index([itemGroup])
   @@index([disabled])
@@ -52,6 +57,8 @@ model Warehouse {
   stockEntriesTo   StockEntry[]       @relation("SETo")
   sedFrom          StockEntryDetail[] @relation("SEDFrom")
   sedTo            StockEntryDetail[] @relation("SEDTo")
+  woSource         WorkOrder[]        @relation("WoSource")
+  woFg             WorkOrder[]        @relation("WoFg")
 
   @@index([disabled])
 }
@@ -136,6 +143,7 @@ model StockEntry {
   totalOutgoingValue Decimal           @default(0) @db.Decimal(18, 2)
   valueDifference    Decimal           @default(0) @db.Decimal(18, 2)
   remarks            String?
+  workOrderId        String?           @db.Uuid
   submittedAt        DateTime?
   cancelledAt        DateTime?
   createdAt          DateTime          @default(now())
@@ -144,10 +152,117 @@ model StockEntry {
 
   fromWarehouse Warehouse?         @relation("SEFrom", fields: [fromWarehouseId], references: [id])
   toWarehouse   Warehouse?         @relation("SETo", fields: [toWarehouseId], references: [id])
+  workOrder     WorkOrder?         @relation(fields: [workOrderId], references: [id])
   items         StockEntryDetail[]
 
   @@index([status])
   @@index([purpose])
+}
+
+/* ============================== Manufacturing ============================== */
+
+enum WorkOrderStatus {
+  NOT_STARTED
+  IN_PROCESS
+  COMPLETED
+  CANCELLED
+}
+
+// ERPNext: Bom — a submittable recipe for a finished item.
+model Bom {
+  id             String    @id @default(uuid()) @db.Uuid
+  name           String    @unique
+  itemId         String    @db.Uuid
+  quantity       Float     @default(1)
+  uom            String    @default("Nos")
+  isActive       Boolean   @default(true)
+  isDefault      Boolean   @default(false)
+  status         DocStatus @default(DRAFT)
+  totalCost      Decimal   @default(0) @db.Decimal(18, 2)
+  remarks        String?
+  submittedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  item           Item               @relation("BomFinished", fields: [itemId], references: [id])
+  items          BomItem[]
+  explosionItems BomExplosionItem[]
+  workOrders     WorkOrder[]
+
+  @@index([itemId])
+  @@index([status])
+}
+
+model BomItem {
+  id     String  @id @default(uuid()) @db.Uuid
+  bomId  String  @db.Uuid
+  itemId String  @db.Uuid
+  qty    Float
+  uom    String  @default("Nos")
+  rate   Decimal @default(0) @db.Decimal(18, 6)
+  amount Decimal @default(0) @db.Decimal(18, 2)
+
+  bom  Bom  @relation(fields: [bomId], references: [id], onDelete: Cascade)
+  item Item @relation("BomComponent", fields: [itemId], references: [id])
+
+  @@index([bomId])
+  @@index([itemId])
+}
+
+// Fully-exploded raw materials (multi-level), computed on Bom submit.
+model BomExplosionItem {
+  id     String  @id @default(uuid()) @db.Uuid
+  bomId  String  @db.Uuid
+  itemId String  @db.Uuid
+  qty    Float
+  rate   Decimal @default(0) @db.Decimal(18, 6)
+  amount Decimal @default(0) @db.Decimal(18, 2)
+
+  bom  Bom  @relation(fields: [bomId], references: [id], onDelete: Cascade)
+  item Item @relation("BomExploded", fields: [itemId], references: [id])
+
+  @@index([bomId])
+}
+
+// ERPNext: Work Order — produce N of an item from a Bom.
+model WorkOrder {
+  id               String          @id @default(uuid()) @db.Uuid
+  name             String          @unique
+  productionItemId String          @db.Uuid
+  bomId            String          @db.Uuid
+  qty              Float
+  producedQty      Float           @default(0)
+  useMultiLevelBom Boolean         @default(true)
+  status           WorkOrderStatus @default(NOT_STARTED)
+  sourceWarehouseId String?        @db.Uuid
+  fgWarehouseId    String?         @db.Uuid
+  remarks          String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  productionItem  Item            @relation("WoProduction", fields: [productionItemId], references: [id])
+  bom             Bom             @relation(fields: [bomId], references: [id])
+  sourceWarehouse Warehouse?      @relation("WoSource", fields: [sourceWarehouseId], references: [id])
+  fgWarehouse     Warehouse?      @relation("WoFg", fields: [fgWarehouseId], references: [id])
+  items           WorkOrderItem[]
+  stockEntries    StockEntry[]
+
+  @@index([status])
+  @@index([bomId])
+}
+
+model WorkOrderItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  workOrderId String  @db.Uuid
+  itemId      String  @db.Uuid
+  requiredQty Float
+  consumedQty Float   @default(0)
+  rate        Decimal @default(0) @db.Decimal(18, 6)
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  item      Item      @relation("WoItem", fields: [itemId], references: [id])
+
+  @@index([workOrderId])
 }
 
 // ERPNext: Stock Entry Detail
