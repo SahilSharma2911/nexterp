@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Menu, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarNav } from "@/components/sidebar-nav";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AccentPicker } from "@/components/accent-picker";
 
@@ -61,6 +62,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span className="text-sm font-semibold tracking-tight lg:hidden">
             nexterp
           </span>
+
+          <Breadcrumbs className="hidden lg:flex" />
 
           <div className="ml-auto flex items-center gap-1">
             <AccentPicker />
