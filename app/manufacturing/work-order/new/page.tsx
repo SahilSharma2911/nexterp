@@ -1,10 +1,16 @@
-import { getSubmittedBomOptions } from "@/actions/bom";
-import { getWarehouseOptions } from "@/actions/warehouses";
-import WorkOrderFormClient from "../WorkOrderFormClient";
+import { PageHeader } from "@/components/page-header";
+import { WorkOrderForm } from "@/features/work-order/work-order-form";
 
-export const dynamic = "force-dynamic";
+export const metadata = { title: "New Work Order · nexterp" };
 
-export default async function NewWorkOrderPage(props: { searchParams: Promise<{ bom?: string }> }) {
-  const [{ bom }, boms, warehouses] = await Promise.all([props.searchParams, getSubmittedBomOptions(), getWarehouseOptions()]);
-  return <WorkOrderFormClient boms={boms} warehouses={warehouses} defaultBomId={bom} />;
+export default function NewWorkOrderPage() {
+  return (
+    <>
+      <PageHeader
+        title="New Work Order"
+        subtitle="Pick a BOM and quantity, then finish production to post stock"
+      />
+      <WorkOrderForm />
+    </>
+  );
 }
