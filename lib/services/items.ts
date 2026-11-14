@@ -87,6 +87,27 @@ export async function listItems(
   return { rows: rows.map(toListItem), total, page: p.page, limit: p.limit };
 }
 
+export async function itemOptions() {
+  const rows = await prisma.item.findMany({
+    where: { disabled: false, isStockItem: true },
+    orderBy: { itemCode: "asc" },
+    select: {
+      id: true,
+      itemCode: true,
+      itemName: true,
+      stockUom: true,
+      valuationRate: true,
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    itemCode: r.itemCode,
+    itemName: r.itemName,
+    stockUom: r.stockUom,
+    valuationRate: Number(r.valuationRate),
+  }));
+}
+
 export async function getItemById(id: string): Promise<Item | null> {
   const r = await prisma.item.findUnique({ where: { id } });
   return r ? toItem(r) : null;

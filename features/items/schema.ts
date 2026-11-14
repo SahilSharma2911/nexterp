@@ -57,6 +57,15 @@ export type ItemListItem = {
   disabled: boolean;
 };
 
+// Lightweight option for item pickers in documents.
+export type ItemOption = {
+  id: string;
+  itemCode: string;
+  itemName: string;
+  stockUom: string;
+  valuationRate: number;
+};
+
 // Shape of the TanStack Table `meta` for the items table.
 export type ItemsTableMeta = {
   sort: string;

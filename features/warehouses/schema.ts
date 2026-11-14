@@ -21,6 +21,11 @@ export type Warehouse = {
   disabled: boolean;
 };
 
+export type WarehouseOption = {
+  id: string;
+  warehouseName: string;
+};
+
 export type WarehousesTableMeta = {
   sort: string;
   onSort: (field: string) => void;

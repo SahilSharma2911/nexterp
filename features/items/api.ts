@@ -1,6 +1,11 @@
 import { api } from "@/lib/axios";
 import type { ListResponse } from "@/lib/api-list";
-import type { Item, ItemFormValues, ItemListItem } from "./schema";
+import type {
+  Item,
+  ItemFormValues,
+  ItemListItem,
+  ItemOption,
+} from "./schema";
 
 export type ItemsQuery = {
   page: number;
@@ -13,6 +18,11 @@ export async function fetchItems(params: ItemsQuery) {
   const { data } = await api.get<ListResponse<ItemListItem>>("/items", {
     params,
   });
+  return data;
+}
+
+export async function fetchItemOptions() {
+  const { data } = await api.get<ItemOption[]>("/items/options");
   return data;
 }
 

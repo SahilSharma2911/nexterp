@@ -53,6 +53,15 @@ export async function listWarehouses(
   return { rows: rows.map(toItem), total, page: p.page, limit: p.limit };
 }
 
+export async function warehouseOptions() {
+  const rows = await prisma.warehouse.findMany({
+    where: { disabled: false },
+    orderBy: { warehouseName: "asc" },
+    select: { id: true, warehouseName: true },
+  });
+  return rows;
+}
+
 export async function getWarehouseById(id: string): Promise<Warehouse | null> {
   const r = await prisma.warehouse.findUnique({ where: { id } });
   return r ? toItem(r) : null;

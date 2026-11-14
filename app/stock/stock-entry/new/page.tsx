@@ -1,10 +1,16 @@
-import { getItemOptions } from "@/actions/items";
-import { getWarehouseOptions } from "@/actions/warehouses";
-import StockEntryFormClient from "../StockEntryFormClient";
+import { PageHeader } from "@/components/page-header";
+import { StockEntryForm } from "@/features/stock-entry/stock-entry-form";
 
-export const dynamic = "force-dynamic";
+export const metadata = { title: "New Stock Entry · nexterp" };
 
-export default async function NewStockEntryPage() {
-  const [items, warehouses] = await Promise.all([getItemOptions(), getWarehouseOptions()]);
-  return <StockEntryFormClient items={items} warehouses={warehouses} />;
+export default function NewStockEntryPage() {
+  return (
+    <>
+      <PageHeader
+        title="New Stock Entry"
+        subtitle="Create a draft, then submit to post the stock ledger"
+      />
+      <StockEntryForm />
+    </>
+  );
 }

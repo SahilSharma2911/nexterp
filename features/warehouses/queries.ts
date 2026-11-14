@@ -26,6 +26,14 @@ export function useWarehouses(params: ListQuery) {
   });
 }
 
+export function useWarehouseOptions() {
+  return useQuery({
+    queryKey: [...warehouseKeys.all, "options"] as const,
+    queryFn: () => warehousesApi.fetchWarehouseOptions(),
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useWarehouse(id?: string) {
   return useQuery({
     queryKey: warehouseKeys.detail(id ?? ""),
