@@ -21,6 +21,11 @@ export type Supplier = {
   disabled: boolean;
 };
 
+export type SupplierOption = {
+  id: string;
+  supplierName: string;
+};
+
 export type SuppliersTableMeta = {
   sort: string;
   onSort: (field: string) => void;

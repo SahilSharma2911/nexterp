@@ -1,6 +1,11 @@
 import { api } from "@/lib/axios";
 import type { ListQuery, ListResponse } from "@/lib/api-list";
-import type { Customer, CustomerFormValues } from "./schema";
+import type { Customer, CustomerFormValues, CustomerOption } from "./schema";
+
+export async function fetchCustomerOptions() {
+  const { data } = await api.get<CustomerOption[]>("/customers/options");
+  return data;
+}
 
 export async function fetchCustomers(params: ListQuery) {
   const { data } = await api.get<ListResponse<Customer>>("/customers", {

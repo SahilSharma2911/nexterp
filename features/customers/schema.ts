@@ -24,6 +24,11 @@ export type Customer = {
   disabled: boolean;
 };
 
+export type CustomerOption = {
+  id: string;
+  customerName: string;
+};
+
 export type CustomersTableMeta = {
   sort: string;
   onSort: (field: string) => void;

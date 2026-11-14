@@ -1,9 +1,16 @@
-import { getItemOptions } from "@/actions/items";
-import { getSupplierOptions } from "@/actions/parties";
-import { getWarehouseOptions } from "@/actions/warehouses";
-import PoFormClient from "../PoFormClient";
-export const dynamic = "force-dynamic";
-export default async function NewPoPage() {
-  const [items, suppliers, warehouses] = await Promise.all([getItemOptions(), getSupplierOptions(), getWarehouseOptions()]);
-  return <PoFormClient items={items} suppliers={suppliers.map((s) => ({ id: s.id, name: s.supplierName }))} warehouses={warehouses.map((w) => ({ id: w.id, name: w.warehouseName }))} />;
+import { PageHeader } from "@/components/page-header";
+import { PurchaseOrderForm } from "@/features/purchase-order/purchase-order-form";
+
+export const metadata = { title: "New Purchase Order · nexterp" };
+
+export default function NewPurchaseOrderPage() {
+  return (
+    <>
+      <PageHeader
+        title="New Purchase Order"
+        subtitle="Create a draft, then submit to reserve ordered quantities"
+      />
+      <PurchaseOrderForm />
+    </>
+  );
 }

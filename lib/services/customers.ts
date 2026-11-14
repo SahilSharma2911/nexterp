@@ -58,6 +58,15 @@ export async function listCustomers(
   return { rows: rows.map(toItem), total, page: p.page, limit: p.limit };
 }
 
+export async function customerOptions() {
+  const rows = await prisma.customer.findMany({
+    where: { disabled: false },
+    orderBy: { customerName: "asc" },
+    select: { id: true, customerName: true },
+  });
+  return rows;
+}
+
 export async function getCustomerById(id: string): Promise<Customer | null> {
   const r = await prisma.customer.findUnique({ where: { id } });
   return r ? toItem(r) : null;

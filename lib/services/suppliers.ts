@@ -50,6 +50,15 @@ export async function listSuppliers(
   return { rows: rows.map(toItem), total, page: p.page, limit: p.limit };
 }
 
+export async function supplierOptions() {
+  const rows = await prisma.supplier.findMany({
+    where: { disabled: false },
+    orderBy: { supplierName: "asc" },
+    select: { id: true, supplierName: true },
+  });
+  return rows;
+}
+
 export async function getSupplierById(id: string): Promise<Supplier | null> {
   const r = await prisma.supplier.findUnique({ where: { id } });
   return r ? toItem(r) : null;

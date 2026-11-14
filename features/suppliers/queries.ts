@@ -26,6 +26,14 @@ export function useSuppliers(params: ListQuery) {
   });
 }
 
+export function useSupplierOptions() {
+  return useQuery({
+    queryKey: [...supplierKeys.all, "options"] as const,
+    queryFn: () => suppliersApi.fetchSupplierOptions(),
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useSupplier(id?: string) {
   return useQuery({
     queryKey: supplierKeys.detail(id ?? ""),

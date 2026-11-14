@@ -1,11 +1,19 @@
-import { getItemOptions } from "@/actions/items";
-import { getSupplierOptions } from "@/actions/parties";
-import { getWarehouseOptions } from "@/actions/warehouses";
-import { getPoPrefill } from "@/actions/purchase-order";
-import PrFormClient from "../PrFormClient";
-export const dynamic = "force-dynamic";
-export default async function NewPrPage(props: { searchParams: Promise<{ po?: string }> }) {
-  const [{ po }, items, suppliers, warehouses] = await Promise.all([props.searchParams, getItemOptions(), getSupplierOptions(), getWarehouseOptions()]);
-  const prefill = po ? await getPoPrefill(po) : null;
-  return <PrFormClient items={items} suppliers={suppliers.map((s) => ({ id: s.id, name: s.supplierName }))} warehouses={warehouses.map((w) => ({ id: w.id, name: w.warehouseName }))} prefill={prefill ?? undefined} />;
+import { PageHeader } from "@/components/page-header";
+import { PurchaseReceiptForm } from "@/features/purchase-receipt/purchase-receipt-form";
+
+export const metadata = { title: "New Purchase Receipt · nexterp" };
+
+export default async function NewPurchaseReceiptPage(props: {
+  searchParams: Promise<{ po?: string }>;
+}) {
+  const { po } = await props.searchParams;
+  return (
+    <>
+      <PageHeader
+        title="New Purchase Receipt"
+        subtitle="Receive goods, then submit to post the stock ledger"
+      />
+      <PurchaseReceiptForm poId={po} />
+    </>
+  );
 }

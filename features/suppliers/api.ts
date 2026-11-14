@@ -1,6 +1,11 @@
 import { api } from "@/lib/axios";
 import type { ListQuery, ListResponse } from "@/lib/api-list";
-import type { Supplier, SupplierFormValues } from "./schema";
+import type { Supplier, SupplierFormValues, SupplierOption } from "./schema";
+
+export async function fetchSupplierOptions() {
+  const { data } = await api.get<SupplierOption[]>("/suppliers/options");
+  return data;
+}
 
 export async function fetchSuppliers(params: ListQuery) {
   const { data } = await api.get<ListResponse<Supplier>>("/suppliers", {

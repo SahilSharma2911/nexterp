@@ -26,6 +26,14 @@ export function useCustomers(params: ListQuery) {
   });
 }
 
+export function useCustomerOptions() {
+  return useQuery({
+    queryKey: [...customerKeys.all, "options"] as const,
+    queryFn: () => customersApi.fetchCustomerOptions(),
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useCustomer(id?: string) {
   return useQuery({
     queryKey: customerKeys.detail(id ?? ""),
