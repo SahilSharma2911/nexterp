@@ -31,6 +31,16 @@ export const itemFormSchema = z.object({
   hasVariants: z.boolean(),
   specifications: z.array(itemSpecSchema),
   variantAttributes: z.array(itemVariantAttrSchema),
+}).superRefine((v, ctx) => {
+  // A template's code is the prefix for every variant SKU, so it can't be
+  // auto-generated — require it. Normal items may leave it blank.
+  if (v.hasVariants && !v.itemCode.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Give the template an Item Code — it's the prefix for each variant SKU.",
+      path: ["itemCode"],
+    });
+  }
 });
 
 export type ItemFormValues = z.infer<typeof itemFormSchema>;
