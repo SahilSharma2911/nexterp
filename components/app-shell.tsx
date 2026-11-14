@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, User, X } from "lucide-react";
+import { Menu, PanelLeft, User, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SidebarNav } from "@/components/sidebar-nav";
@@ -74,7 +74,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
       >
         {/* Header */}
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:px-8">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:px-6">
+          {/* Collapse toggle (desktop) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden size-9 lg:flex"
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <PanelLeft className="size-4" />
+          </Button>
+          {/* Open drawer (mobile) */}
           <Button
             variant="ghost"
             size="icon"

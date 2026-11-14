@@ -126,7 +126,7 @@ export function SidebarNav({
         )}
       </Link>
 
-      <nav className={cn("flex-1 overflow-y-auto py-4", collapsed ? "px-2" : "px-3")}>
+      <nav className={cn("min-h-0 flex-1 overflow-y-auto py-4", collapsed ? "px-2" : "px-3")}>
         {NAV.map((group, gi) => (
           <div key={group.heading} className="mb-5">
             {collapsed ? (
