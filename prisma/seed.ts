@@ -1,8 +1,9 @@
 /**
  * Demo seed for nexterp. Wipes and repopulates a full, consistent dataset that
  * exercises every module, so the dashboard and reports look alive.
- * Run:  DATABASE_URL="..." npx tsx prisma/seed.ts
+ * Run:  npm run db:seed   (reads DATABASE_URL from .env)
  */
+import "dotenv/config";
 import { prisma } from "../lib/prisma";
 import { postStockLedger } from "../lib/stock-ledger";
 import { postGL, getAccountId } from "../lib/gl";
