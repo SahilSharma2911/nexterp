@@ -42,6 +42,8 @@ model Item {
   dnItems         DeliveryNoteItem[]        @relation("DNItem")
   poItems         PurchaseOrderItem[]       @relation("POItem")
   soItems         SalesOrderItem[]          @relation("SOItem")
+  siItems         SalesInvoiceItem[]        @relation("SIItem")
+  piItems         PurchaseInvoiceItem[]     @relation("PIItem")
 
   @@index([itemGroup])
   @@index([disabled])
@@ -345,8 +347,10 @@ model Customer {
   disabled      Boolean  @default(false)
   createdAt     DateTime @default(now())
 
-  deliveryNotes DeliveryNote[]
-  salesOrders   SalesOrder[]
+  deliveryNotes  DeliveryNote[]
+  salesOrders    SalesOrder[]
+  salesInvoices  SalesInvoice[]
+  paymentEntries PaymentEntry[]
 
   @@index([disabled])
 }
@@ -358,8 +362,10 @@ model Supplier {
   disabled      Boolean  @default(false)
   createdAt     DateTime @default(now())
 
-  purchaseReceipts PurchaseReceipt[]
-  purchaseOrders   PurchaseOrder[]
+  purchaseReceipts  PurchaseReceipt[]
+  purchaseOrders    PurchaseOrder[]
+  purchaseInvoices  PurchaseInvoice[]
+  paymentEntries    PaymentEntry[]
 
   @@index([disabled])
 }
@@ -539,4 +545,158 @@ model SalesOrderItem {
   item       Item       @relation("SOItem", fields: [itemId], references: [id])
 
   @@index([salesOrderId])
+}
+
+/* ============================== Accounts ============================== */
+
+enum RootType {
+  ASSET
+  LIABILITY
+  INCOME
+  EXPENSE
+  EQUITY
+}
+
+enum PaymentType {
+  RECEIVE
+  PAY
+}
+
+// ERPNext: Account (Chart of Accounts).
+model Account {
+  id          String   @id @default(uuid()) @db.Uuid
+  accountName String   @unique
+  accountType String? // Receivable, Payable, Cash, Bank, Income Account, Expense Account...
+  rootType    RootType
+  isGroup     Boolean  @default(false)
+  disabled    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  glEntries      GLEntry[]
+  paymentEntries PaymentEntry[]
+
+  @@index([rootType])
+}
+
+// ERPNext: GL Entry — immutable, double-entry (debits = credits per voucher).
+model GLEntry {
+  id           String   @id @default(uuid()) @db.Uuid
+  accountId    String   @db.Uuid
+  postingAt    DateTime
+  voucherType  String
+  voucherNo    String
+  debit        Decimal  @default(0) @db.Decimal(18, 2)
+  credit       Decimal  @default(0) @db.Decimal(18, 2)
+  againstParty String?
+  remarks      String?
+  isCancelled  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@index([accountId])
+  @@index([voucherType, voucherNo])
+  @@index([isCancelled])
+}
+
+// ERPNext: Sales Invoice — bill a customer.
+model SalesInvoice {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique
+  customerId  String    @db.Uuid
+  status      DocStatus @default(DRAFT)
+  postingAt   DateTime  @default(now())
+  dueDate     DateTime?
+  total       Decimal   @default(0) @db.Decimal(18, 2)
+  outstanding Decimal   @default(0) @db.Decimal(18, 2)
+  remarks     String?
+  submittedAt DateTime?
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  customer       Customer            @relation(fields: [customerId], references: [id])
+  items          SalesInvoiceItem[]
+  paymentEntries PaymentEntry[]
+
+  @@index([status])
+}
+
+model SalesInvoiceItem {
+  id             String  @id @default(uuid()) @db.Uuid
+  salesInvoiceId String  @db.Uuid
+  itemId         String  @db.Uuid
+  qty            Float
+  rate           Decimal @default(0) @db.Decimal(18, 6)
+  amount         Decimal @default(0) @db.Decimal(18, 2)
+
+  salesInvoice SalesInvoice @relation(fields: [salesInvoiceId], references: [id], onDelete: Cascade)
+  item         Item         @relation("SIItem", fields: [itemId], references: [id])
+
+  @@index([salesInvoiceId])
+}
+
+// ERPNext: Purchase Invoice — bill from a supplier.
+model PurchaseInvoice {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique
+  supplierId  String    @db.Uuid
+  status      DocStatus @default(DRAFT)
+  postingAt   DateTime  @default(now())
+  dueDate     DateTime?
+  total       Decimal   @default(0) @db.Decimal(18, 2)
+  outstanding Decimal   @default(0) @db.Decimal(18, 2)
+  remarks     String?
+  submittedAt DateTime?
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  supplier       Supplier              @relation(fields: [supplierId], references: [id])
+  items          PurchaseInvoiceItem[]
+  paymentEntries PaymentEntry[]
+
+  @@index([status])
+}
+
+model PurchaseInvoiceItem {
+  id                String  @id @default(uuid()) @db.Uuid
+  purchaseInvoiceId String  @db.Uuid
+  itemId            String  @db.Uuid
+  qty               Float
+  rate              Decimal @default(0) @db.Decimal(18, 6)
+  amount            Decimal @default(0) @db.Decimal(18, 2)
+
+  purchaseInvoice PurchaseInvoice @relation(fields: [purchaseInvoiceId], references: [id], onDelete: Cascade)
+  item            Item            @relation("PIItem", fields: [itemId], references: [id])
+
+  @@index([purchaseInvoiceId])
+}
+
+// ERPNext: Payment Entry — receive from a customer or pay a supplier.
+model PaymentEntry {
+  id                String      @id @default(uuid()) @db.Uuid
+  name              String      @unique
+  paymentType       PaymentType
+  accountId         String      @db.Uuid // Cash/Bank
+  customerId        String?     @db.Uuid
+  supplierId        String?     @db.Uuid
+  salesInvoiceId    String?     @db.Uuid
+  purchaseInvoiceId String?     @db.Uuid
+  amount            Decimal     @default(0) @db.Decimal(18, 2)
+  status            DocStatus   @default(DRAFT)
+  postingAt         DateTime    @default(now())
+  remarks           String?
+  submittedAt       DateTime?
+  cancelledAt       DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  account         Account          @relation(fields: [accountId], references: [id])
+  customer        Customer?        @relation(fields: [customerId], references: [id])
+  supplier        Supplier?        @relation(fields: [supplierId], references: [id])
+  salesInvoice    SalesInvoice?    @relation(fields: [salesInvoiceId], references: [id])
+  purchaseInvoice PurchaseInvoice? @relation(fields: [purchaseInvoiceId], references: [id])
+
+  @@index([status])
 }

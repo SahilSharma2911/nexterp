@@ -42,6 +42,17 @@ const NAV: { heading: string; items: { href: string; label: string }[] }[] = [
       { href: "/selling/delivery-note", label: "Delivery Note" },
     ],
   },
+  {
+    heading: "Accounts",
+    items: [
+      { href: "/accounts/chart", label: "Chart of Accounts" },
+      { href: "/accounts/sales-invoice", label: "Sales Invoice" },
+      { href: "/accounts/purchase-invoice", label: "Purchase Invoice" },
+      { href: "/accounts/payment-entry", label: "Payment Entry" },
+      { href: "/accounts/general-ledger", label: "General Ledger" },
+      { href: "/accounts/trial-balance", label: "Trial Balance" },
+    ],
+  },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
