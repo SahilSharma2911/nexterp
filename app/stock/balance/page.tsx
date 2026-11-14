@@ -14,7 +14,7 @@ export default async function StockBalancePage() {
       </PageHeader>
       <Table>
         <thead>
-          <tr><Th>Item</Th><Th>Warehouse</Th><Th className="text-right">Qty</Th><Th className="text-right">Val. Rate</Th><Th className="text-right">Stock Value</Th></tr>
+          <tr><Th>Item</Th><Th>Warehouse</Th><Th className="text-right">Actual</Th><Th className="text-right">Reserved</Th><Th className="text-right">Ordered</Th><Th className="text-right">Projected</Th><Th className="text-right">Val. Rate</Th><Th className="text-right">Stock Value</Th></tr>
         </thead>
         <tbody>
           {rows.map((r) => (
@@ -22,11 +22,14 @@ export default async function StockBalancePage() {
               <Td><span className="font-mono text-xs">{r.itemCode}</span> <span className="text-gray-500">{r.itemName}</span></Td>
               <Td>{r.warehouse}</Td>
               <Td className="text-right font-medium">{fmtQty(r.actualQty)} {r.uom}</Td>
+              <Td className="text-right text-gray-500">{r.reservedQty ? fmtQty(r.reservedQty) : "—"}</Td>
+              <Td className="text-right text-gray-500">{r.orderedQty ? fmtQty(r.orderedQty) : "—"}</Td>
+              <Td className="text-right">{fmtQty(r.projectedQty)}</Td>
               <Td className="text-right">{fmtRate(r.valuationRate)}</Td>
               <Td className="text-right">{fmtMoney(r.stockValue)}</Td>
             </tr>
           ))}
-          {rows.length === 0 && <tr><Td className="py-6 text-center text-gray-400">No stock yet.</Td><Td /><Td /><Td /><Td /></tr>}
+          {rows.length === 0 && <tr><Td className="py-6 text-center text-gray-400">No stock yet.</Td><Td /><Td /><Td /><Td /><Td /><Td /><Td /></tr>}
         </tbody>
       </Table>
     </>

@@ -46,6 +46,9 @@ export async function getStockBalance() {
     uom: r.item.stockUom,
     warehouse: r.warehouse.warehouseName,
     actualQty: r.actualQty,
+    reservedQty: r.reservedQty,
+    orderedQty: r.orderedQty,
+    projectedQty: r.projectedQty,
     valuationRate: Number(r.valuationRate),
     stockValue: Number(r.stockValue),
   }));

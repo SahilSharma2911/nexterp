@@ -40,6 +40,8 @@ model Item {
   reconItems      StockReconciliationItem[] @relation("SRItem")
   prItems         PurchaseReceiptItem[]     @relation("PRItem")
   dnItems         DeliveryNoteItem[]        @relation("DNItem")
+  poItems         PurchaseOrderItem[]       @relation("POItem")
+  soItems         SalesOrderItem[]          @relation("SOItem")
 
   @@index([itemGroup])
   @@index([disabled])
@@ -65,6 +67,8 @@ model Warehouse {
   reconItems       StockReconciliationItem[] @relation("SRWh")
   purchaseReceipts PurchaseReceipt[]  @relation("PRWh")
   deliveryNotes    DeliveryNote[]     @relation("DNWh")
+  purchaseOrders   PurchaseOrder[]    @relation("POWh")
+  salesOrders      SalesOrder[]       @relation("SOWh")
 
   @@index([disabled])
 }
@@ -342,6 +346,7 @@ model Customer {
   createdAt     DateTime @default(now())
 
   deliveryNotes DeliveryNote[]
+  salesOrders   SalesOrder[]
 
   @@index([disabled])
 }
@@ -354,6 +359,7 @@ model Supplier {
   createdAt     DateTime @default(now())
 
   purchaseReceipts PurchaseReceipt[]
+  purchaseOrders   PurchaseOrder[]
 
   @@index([disabled])
 }
@@ -370,16 +376,18 @@ model PurchaseReceipt {
   postingAt   DateTime  @default(now())
   totalQty    Float     @default(0)
   totalAmount Decimal   @default(0) @db.Decimal(18, 2)
-  remarks     String?
-  submittedAt DateTime?
-  cancelledAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  createdBy   String?
+  remarks         String?
+  purchaseOrderId String?   @db.Uuid
+  submittedAt     DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdBy       String?
 
-  supplier  Supplier              @relation(fields: [supplierId], references: [id])
-  warehouse Warehouse             @relation("PRWh", fields: [warehouseId], references: [id])
-  items     PurchaseReceiptItem[]
+  supplier      Supplier              @relation(fields: [supplierId], references: [id])
+  warehouse     Warehouse             @relation("PRWh", fields: [warehouseId], references: [id])
+  purchaseOrder PurchaseOrder?        @relation(fields: [purchaseOrderId], references: [id])
+  items         PurchaseReceiptItem[]
 
   @@index([status])
 }
@@ -412,16 +420,18 @@ model DeliveryNote {
   totalQty    Float     @default(0)
   totalAmount Decimal   @default(0) @db.Decimal(18, 2) // selling value
   totalCogs   Decimal   @default(0) @db.Decimal(18, 2) // cost of goods delivered
-  remarks     String?
-  submittedAt DateTime?
-  cancelledAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  createdBy   String?
+  remarks      String?
+  salesOrderId String?   @db.Uuid
+  submittedAt  DateTime?
+  cancelledAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdBy    String?
 
-  customer  Customer           @relation(fields: [customerId], references: [id])
-  warehouse Warehouse          @relation("DNWh", fields: [warehouseId], references: [id])
-  items     DeliveryNoteItem[]
+  customer   Customer           @relation(fields: [customerId], references: [id])
+  warehouse  Warehouse          @relation("DNWh", fields: [warehouseId], references: [id])
+  salesOrder SalesOrder?        @relation(fields: [salesOrderId], references: [id])
+  items      DeliveryNoteItem[]
 
   @@index([status])
 }
@@ -440,4 +450,93 @@ model DeliveryNoteItem {
   item         Item         @relation("DNItem", fields: [itemId], references: [id])
 
   @@index([deliveryNoteId])
+}
+
+/* ============================== Orders (planning) ============================== */
+
+enum OrderStatus {
+  DRAFT
+  TO_FULFILL
+  COMPLETED
+  CANCELLED
+}
+
+// ERPNext: Purchase Order — order goods from a supplier (increments Bin.orderedQty).
+model PurchaseOrder {
+  id          String      @id @default(uuid()) @db.Uuid
+  name        String      @unique
+  supplierId  String      @db.Uuid
+  warehouseId String      @db.Uuid
+  status      OrderStatus @default(DRAFT)
+  postingAt   DateTime    @default(now())
+  requiredBy  DateTime?
+  totalQty    Float       @default(0)
+  totalAmount Decimal     @default(0) @db.Decimal(18, 2)
+  remarks     String?
+  submittedAt DateTime?
+  cancelledAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  supplier  Supplier            @relation(fields: [supplierId], references: [id])
+  warehouse Warehouse           @relation("POWh", fields: [warehouseId], references: [id])
+  items     PurchaseOrderItem[]
+  receipts  PurchaseReceipt[]
+
+  @@index([status])
+}
+
+model PurchaseOrderItem {
+  id              String  @id @default(uuid()) @db.Uuid
+  purchaseOrderId String  @db.Uuid
+  itemId          String  @db.Uuid
+  qty             Float
+  rate            Decimal @default(0) @db.Decimal(18, 6)
+  amount          Decimal @default(0) @db.Decimal(18, 2)
+  receivedQty     Float   @default(0)
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  item          Item          @relation("POItem", fields: [itemId], references: [id])
+
+  @@index([purchaseOrderId])
+}
+
+// ERPNext: Sales Order — order from a customer (increments Bin.reservedQty).
+model SalesOrder {
+  id           String      @id @default(uuid()) @db.Uuid
+  name         String      @unique
+  customerId   String      @db.Uuid
+  warehouseId  String      @db.Uuid
+  status       OrderStatus @default(DRAFT)
+  postingAt    DateTime    @default(now())
+  deliveryDate DateTime?
+  totalQty     Float       @default(0)
+  totalAmount  Decimal     @default(0) @db.Decimal(18, 2)
+  remarks      String?
+  submittedAt  DateTime?
+  cancelledAt  DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  customer   Customer         @relation(fields: [customerId], references: [id])
+  warehouse  Warehouse        @relation("SOWh", fields: [warehouseId], references: [id])
+  items      SalesOrderItem[]
+  deliveries DeliveryNote[]
+
+  @@index([status])
+}
+
+model SalesOrderItem {
+  id           String  @id @default(uuid()) @db.Uuid
+  salesOrderId String  @db.Uuid
+  itemId       String  @db.Uuid
+  qty          Float
+  rate         Decimal @default(0) @db.Decimal(18, 6)
+  amount       Decimal @default(0) @db.Decimal(18, 2)
+  deliveredQty Float   @default(0)
+
+  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  item       Item       @relation("SOItem", fields: [itemId], references: [id])
+
+  @@index([salesOrderId])
 }

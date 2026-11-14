@@ -10,14 +10,16 @@ type ItemOpt = { id: string; itemCode: string; itemName: string; valuationRate: 
 type Opt = { id: string; name: string };
 type Row = { itemId: string; qty: string; rate: string };
 
-export default function DnFormClient({ items, customers, warehouses }: { items: ItemOpt[]; customers: Opt[]; warehouses: Opt[] }) {
+type Prefill = { id: string; name: string; customerId: string; warehouseId: string; items: { itemId: string; remaining: number; rate: number }[] };
+
+export default function DnFormClient({ items, customers, warehouses, prefill }: { items: ItemOpt[]; customers: Opt[]; warehouses: Opt[]; prefill?: Prefill }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [customerId, setCustomerId] = useState("");
-  const [warehouseId, setWarehouseId] = useState("");
+  const [customerId, setCustomerId] = useState(prefill?.customerId ?? "");
+  const [warehouseId, setWarehouseId] = useState(prefill?.warehouseId ?? "");
   const [remarks, setRemarks] = useState("");
-  const [rows, setRows] = useState<Row[]>([{ itemId: "", qty: "1", rate: "" }]);
+  const [rows, setRows] = useState<Row[]>(prefill?.items.length ? prefill.items.map((p) => ({ itemId: p.itemId, qty: String(p.remaining), rate: String(p.rate || "") })) : [{ itemId: "", qty: "1", rate: "" }]);
 
   const setRow = (i: number, patch: Partial<Row>) => setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const total = rows.reduce((s, r) => s + (Number(r.qty) || 0) * (Number(r.rate) || 0), 0);
@@ -26,7 +28,7 @@ export default function DnFormClient({ items, customers, warehouses }: { items: 
     setError(null);
     start(async () => {
       try {
-        const res = (await createDeliveryNote({ customerId, warehouseId, remarks, items: rows.filter((r) => r.itemId).map((r) => ({ itemId: r.itemId, qty: Number(r.qty), rate: Number(r.rate) || 0 })) })) as { id: string };
+        const res = (await createDeliveryNote({ customerId, warehouseId, remarks, salesOrderId: prefill?.id ?? null, items: rows.filter((r) => r.itemId).map((r) => ({ itemId: r.itemId, qty: Number(r.qty), rate: Number(r.rate) || 0 })) })) as { id: string };
         router.push(`/selling/delivery-note/${res.id}`); router.refresh();
       } catch (e) { setError(e instanceof Error ? e.message : "Something went wrong"); }
     });

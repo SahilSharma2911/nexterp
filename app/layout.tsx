@@ -30,6 +30,7 @@ const NAV: { heading: string; items: { href: string; label: string }[] }[] = [
     heading: "Buying",
     items: [
       { href: "/buying/suppliers", label: "Supplier" },
+      { href: "/buying/purchase-order", label: "Purchase Order" },
       { href: "/buying/purchase-receipt", label: "Purchase Receipt" },
     ],
   },
@@ -37,6 +38,7 @@ const NAV: { heading: string; items: { href: string; label: string }[] }[] = [
     heading: "Selling",
     items: [
       { href: "/selling/customers", label: "Customer" },
+      { href: "/selling/sales-order", label: "Sales Order" },
       { href: "/selling/delivery-note", label: "Delivery Note" },
     ],
   },

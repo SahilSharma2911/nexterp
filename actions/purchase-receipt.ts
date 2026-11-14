@@ -3,12 +3,13 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { postStockLedger } from "@/lib/stock-ledger";
+import { adjustBinReservation } from "@/lib/bin";
 
 const VT = "Purchase Receipt";
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 export type PrItemInput = { itemId: string; qty: number; rate: number };
-export type PrInput = { supplierId: string; warehouseId: string; remarks?: string; items: PrItemInput[] };
+export type PrInput = { supplierId: string; warehouseId: string; remarks?: string; purchaseOrderId?: string | null; items: PrItemInput[] };
 
 export async function createPurchaseReceipt(input: PrInput) {
   if (!input.supplierId) throw new Error("Select a supplier");
@@ -28,7 +29,7 @@ export async function createPurchaseReceipt(input: PrInput) {
     return { itemId: it.itemId, qty, rate, amount };
   });
   const row = await prisma.purchaseReceipt.create({
-    data: { name, supplierId: input.supplierId, warehouseId: input.warehouseId, remarks: input.remarks?.trim() || null, totalQty, totalAmount: round2(totalAmount), items: { create: rows } },
+    data: { name, supplierId: input.supplierId, warehouseId: input.warehouseId, purchaseOrderId: input.purchaseOrderId || null, remarks: input.remarks?.trim() || null, totalQty, totalAmount: round2(totalAmount), items: { create: rows } },
   });
   revalidatePath("/buying/purchase-receipt");
   return { ok: true, id: row.id, name };
@@ -42,8 +43,26 @@ export async function submitPurchaseReceipt(input: { id: string }) {
     for (const it of pr.items) {
       await postStockLedger(tx, { itemId: it.itemId, warehouseId: pr.warehouseId, actualQty: it.qty, incomingRate: Number(it.rate), voucherType: VT, voucherNo: pr.name, voucherDetailId: it.id, postingAt: pr.postingAt });
     }
+    // Fulfil the linked Purchase Order: received qty up, ordered qty down.
+    if (pr.purchaseOrderId) {
+      const po = await tx.purchaseOrder.findUnique({ where: { id: pr.purchaseOrderId }, include: { items: true } });
+      if (po) {
+        const recv = new Map<string, number>();
+        for (const it of pr.items) recv.set(it.itemId, (recv.get(it.itemId) ?? 0) + it.qty);
+        for (const [itemId, q] of Array.from(recv.entries())) {
+          const poItem = po.items.find((p) => p.itemId === itemId);
+          if (!poItem) continue;
+          await tx.purchaseOrderItem.update({ where: { id: poItem.id }, data: { receivedQty: { increment: q } } });
+          await adjustBinReservation(tx, { itemId, warehouseId: po.warehouseId, orderedDelta: -q });
+        }
+        const fresh = await tx.purchaseOrderItem.findMany({ where: { purchaseOrderId: po.id } });
+        const done = fresh.every((i) => i.receivedQty >= i.qty - 1e-6);
+        await tx.purchaseOrder.update({ where: { id: po.id }, data: { status: done ? "COMPLETED" : "TO_FULFILL" } });
+      }
+    }
     await tx.purchaseReceipt.update({ where: { id: pr.id }, data: { status: "SUBMITTED", submittedAt: new Date() } });
   });
+  revalidatePath("/buying/purchase-order");
   revalidatePath("/buying/purchase-receipt");
   revalidatePath(`/buying/purchase-receipt/${input.id}`);
   revalidatePath("/stock/ledger");
@@ -52,7 +71,7 @@ export async function submitPurchaseReceipt(input: { id: string }) {
 }
 
 export async function cancelPurchaseReceipt(input: { id: string }) {
-  const pr = await prisma.purchaseReceipt.findUnique({ where: { id: input.id } });
+  const pr = await prisma.purchaseReceipt.findUnique({ where: { id: input.id }, include: { items: true } });
   if (!pr) throw new Error("Purchase Receipt not found");
   if (pr.status !== "SUBMITTED") throw new Error("Only submitted receipts can be cancelled");
   await prisma.$transaction(async (tx) => {
@@ -61,8 +80,24 @@ export async function cancelPurchaseReceipt(input: { id: string }) {
       await postStockLedger(tx, { itemId: s.itemId, warehouseId: s.warehouseId, actualQty: -s.actualQty, incomingRate: Number(s.valuationRate), voucherType: VT, voucherNo: pr.name, voucherDetailId: s.voucherDetailId, postingAt: new Date() });
     }
     await tx.stockLedgerEntry.updateMany({ where: { voucherType: VT, voucherNo: pr.name, isCancelled: false }, data: { isCancelled: true } });
+    // Reverse the linked PO fulfilment.
+    if (pr.purchaseOrderId) {
+      const po = await tx.purchaseOrder.findUnique({ where: { id: pr.purchaseOrderId }, include: { items: true } });
+      if (po && po.status !== "CANCELLED") {
+        const recv = new Map<string, number>();
+        for (const it of pr.items) recv.set(it.itemId, (recv.get(it.itemId) ?? 0) + it.qty);
+        for (const [itemId, q] of Array.from(recv.entries())) {
+          const poItem = po.items.find((p) => p.itemId === itemId);
+          if (!poItem) continue;
+          await tx.purchaseOrderItem.update({ where: { id: poItem.id }, data: { receivedQty: { decrement: q } } });
+          await adjustBinReservation(tx, { itemId, warehouseId: po.warehouseId, orderedDelta: q });
+        }
+        await tx.purchaseOrder.update({ where: { id: po.id }, data: { status: "TO_FULFILL" } });
+      }
+    }
     await tx.purchaseReceipt.update({ where: { id: pr.id }, data: { status: "CANCELLED", cancelledAt: new Date() } });
   });
+  revalidatePath("/buying/purchase-order");
   revalidatePath("/buying/purchase-receipt");
   revalidatePath(`/buying/purchase-receipt/${input.id}`);
   revalidatePath("/stock/ledger");

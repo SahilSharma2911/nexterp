@@ -3,12 +3,13 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { postStockLedger } from "@/lib/stock-ledger";
+import { adjustBinReservation } from "@/lib/bin";
 
 const VT = "Delivery Note";
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 export type DnItemInput = { itemId: string; qty: number; rate: number };
-export type DnInput = { customerId: string; warehouseId: string; remarks?: string; items: DnItemInput[] };
+export type DnInput = { customerId: string; warehouseId: string; remarks?: string; salesOrderId?: string | null; items: DnItemInput[] };
 
 export async function createDeliveryNote(input: DnInput) {
   if (!input.customerId) throw new Error("Select a customer");
@@ -28,7 +29,7 @@ export async function createDeliveryNote(input: DnInput) {
     return { itemId: it.itemId, qty, rate, amount };
   });
   const row = await prisma.deliveryNote.create({
-    data: { name, customerId: input.customerId, warehouseId: input.warehouseId, remarks: input.remarks?.trim() || null, totalQty, totalAmount: round2(totalAmount), items: { create: rows } },
+    data: { name, customerId: input.customerId, warehouseId: input.warehouseId, salesOrderId: input.salesOrderId || null, remarks: input.remarks?.trim() || null, totalQty, totalAmount: round2(totalAmount), items: { create: rows } },
   });
   revalidatePath("/selling/delivery-note");
   return { ok: true, id: row.id, name };
@@ -45,8 +46,26 @@ export async function submitDeliveryNote(input: { id: string }) {
       cogs += Math.abs(res.stockValueDifference);
       await tx.deliveryNoteItem.update({ where: { id: it.id }, data: { valuationRate: res.valuationRate } });
     }
+    // Fulfil the linked Sales Order: delivered qty up, reserved qty down.
+    if (dn.salesOrderId) {
+      const so = await tx.salesOrder.findUnique({ where: { id: dn.salesOrderId }, include: { items: true } });
+      if (so) {
+        const del = new Map<string, number>();
+        for (const it of dn.items) del.set(it.itemId, (del.get(it.itemId) ?? 0) + it.qty);
+        for (const [itemId, q] of Array.from(del.entries())) {
+          const soItem = so.items.find((p) => p.itemId === itemId);
+          if (!soItem) continue;
+          await tx.salesOrderItem.update({ where: { id: soItem.id }, data: { deliveredQty: { increment: q } } });
+          await adjustBinReservation(tx, { itemId, warehouseId: so.warehouseId, reservedDelta: -q });
+        }
+        const fresh = await tx.salesOrderItem.findMany({ where: { salesOrderId: so.id } });
+        const done = fresh.every((i) => i.deliveredQty >= i.qty - 1e-6);
+        await tx.salesOrder.update({ where: { id: so.id }, data: { status: done ? "COMPLETED" : "TO_FULFILL" } });
+      }
+    }
     await tx.deliveryNote.update({ where: { id: dn.id }, data: { status: "SUBMITTED", submittedAt: new Date(), totalCogs: round2(cogs) } });
   });
+  revalidatePath("/selling/sales-order");
   revalidatePath("/selling/delivery-note");
   revalidatePath(`/selling/delivery-note/${input.id}`);
   revalidatePath("/stock/ledger");
@@ -55,7 +74,7 @@ export async function submitDeliveryNote(input: { id: string }) {
 }
 
 export async function cancelDeliveryNote(input: { id: string }) {
-  const dn = await prisma.deliveryNote.findUnique({ where: { id: input.id } });
+  const dn = await prisma.deliveryNote.findUnique({ where: { id: input.id }, include: { items: true } });
   if (!dn) throw new Error("Delivery Note not found");
   if (dn.status !== "SUBMITTED") throw new Error("Only submitted notes can be cancelled");
   await prisma.$transaction(async (tx) => {
@@ -65,8 +84,23 @@ export async function cancelDeliveryNote(input: { id: string }) {
       await postStockLedger(tx, { itemId: s.itemId, warehouseId: s.warehouseId, actualQty: -s.actualQty, incomingRate: Number(s.valuationRate), voucherType: VT, voucherNo: dn.name, voucherDetailId: s.voucherDetailId, postingAt: new Date() });
     }
     await tx.stockLedgerEntry.updateMany({ where: { voucherType: VT, voucherNo: dn.name, isCancelled: false }, data: { isCancelled: true } });
+    if (dn.salesOrderId) {
+      const so = await tx.salesOrder.findUnique({ where: { id: dn.salesOrderId }, include: { items: true } });
+      if (so && so.status !== "CANCELLED") {
+        const del = new Map<string, number>();
+        for (const it of dn.items) del.set(it.itemId, (del.get(it.itemId) ?? 0) + it.qty);
+        for (const [itemId, q] of Array.from(del.entries())) {
+          const soItem = so.items.find((p) => p.itemId === itemId);
+          if (!soItem) continue;
+          await tx.salesOrderItem.update({ where: { id: soItem.id }, data: { deliveredQty: { decrement: q } } });
+          await adjustBinReservation(tx, { itemId, warehouseId: so.warehouseId, reservedDelta: q });
+        }
+        await tx.salesOrder.update({ where: { id: so.id }, data: { status: "TO_FULFILL" } });
+      }
+    }
     await tx.deliveryNote.update({ where: { id: dn.id }, data: { status: "CANCELLED", cancelledAt: new Date() } });
   });
+  revalidatePath("/selling/sales-order");
   revalidatePath("/selling/delivery-note");
   revalidatePath(`/selling/delivery-note/${input.id}`);
   revalidatePath("/stock/ledger");

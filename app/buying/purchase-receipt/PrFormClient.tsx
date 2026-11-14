@@ -10,14 +10,16 @@ type ItemOpt = { id: string; itemCode: string; itemName: string; valuationRate: 
 type Opt = { id: string; name: string };
 type Row = { itemId: string; qty: string; rate: string };
 
-export default function PrFormClient({ items, suppliers, warehouses }: { items: ItemOpt[]; suppliers: Opt[]; warehouses: Opt[] }) {
+type Prefill = { id: string; name: string; supplierId: string; warehouseId: string; items: { itemId: string; remaining: number; rate: number }[] };
+
+export default function PrFormClient({ items, suppliers, warehouses, prefill }: { items: ItemOpt[]; suppliers: Opt[]; warehouses: Opt[]; prefill?: Prefill }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [supplierId, setSupplierId] = useState("");
-  const [warehouseId, setWarehouseId] = useState("");
+  const [supplierId, setSupplierId] = useState(prefill?.supplierId ?? "");
+  const [warehouseId, setWarehouseId] = useState(prefill?.warehouseId ?? "");
   const [remarks, setRemarks] = useState("");
-  const [rows, setRows] = useState<Row[]>([{ itemId: "", qty: "1", rate: "" }]);
+  const [rows, setRows] = useState<Row[]>(prefill?.items.length ? prefill.items.map((p) => ({ itemId: p.itemId, qty: String(p.remaining), rate: String(p.rate || "") })) : [{ itemId: "", qty: "1", rate: "" }]);
 
   const setRow = (i: number, patch: Partial<Row>) => setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const onPick = (i: number, id: string) => { const it = items.find((x) => x.id === id); setRow(i, { itemId: id, rate: rows[i].rate || (it ? String(it.valuationRate || "") : "") }); };
@@ -27,7 +29,7 @@ export default function PrFormClient({ items, suppliers, warehouses }: { items: 
     setError(null);
     start(async () => {
       try {
-        const res = (await createPurchaseReceipt({ supplierId, warehouseId, remarks, items: rows.filter((r) => r.itemId).map((r) => ({ itemId: r.itemId, qty: Number(r.qty), rate: Number(r.rate) || 0 })) })) as { id: string };
+        const res = (await createPurchaseReceipt({ supplierId, warehouseId, remarks, purchaseOrderId: prefill?.id ?? null, items: rows.filter((r) => r.itemId).map((r) => ({ itemId: r.itemId, qty: Number(r.qty), rate: Number(r.rate) || 0 })) })) as { id: string };
         router.push(`/buying/purchase-receipt/${res.id}`); router.refresh();
       } catch (e) { setError(e instanceof Error ? e.message : "Something went wrong"); }
     });
