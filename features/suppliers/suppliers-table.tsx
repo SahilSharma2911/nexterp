@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { useListParams } from "@/hooks/use-list-params";
 import { DataTable } from "@/components/data-table/data-table";
@@ -8,9 +9,8 @@ import { DataTablePagination } from "@/components/data-table/data-table-paginati
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { columns } from "./columns";
-import { SupplierFormDialog } from "./supplier-form";
 import { useSuppliers } from "./queries";
-import type { Supplier, SuppliersTableMeta } from "./schema";
+import type { SuppliersTableMeta } from "./schema";
 
 export function SuppliersTable() {
   const [params, setParams] = useListParams();
@@ -31,9 +31,6 @@ export function SuppliersTable() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-
   const meta: SuppliersTableMeta = {
     sort: params.sort,
     onSort: (field) => {
@@ -43,10 +40,6 @@ export function SuppliersTable() {
         next = curDir === "asc" ? `${field}:desc` : curDir === "desc" ? "" : `${field}:asc`;
       }
       setParams({ sort: next || null, page: 1 });
-    },
-    onEdit: (supplier: Supplier) => {
-      setEditId(supplier.id);
-      setDialogOpen(true);
     },
   };
 
@@ -62,14 +55,11 @@ export function SuppliersTable() {
             className="pl-8"
           />
         </div>
-        <Button
-          onClick={() => {
-            setEditId(null);
-            setDialogOpen(true);
-          }}
-        >
-          <Plus className="size-4" />
-          New Supplier
+        <Button asChild>
+          <Link href="/buying/suppliers/new">
+            <Plus className="size-4" />
+            New Supplier
+          </Link>
         </Button>
       </div>
 
@@ -87,12 +77,6 @@ export function SuppliersTable() {
         total={data?.total ?? 0}
         onPageChange={(p) => setParams({ page: p })}
         onLimitChange={(l) => setParams({ limit: l, page: 1 })}
-      />
-
-      <SupplierFormDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        supplierId={editId}
       />
     </div>
   );

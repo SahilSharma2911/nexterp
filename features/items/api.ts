@@ -44,3 +44,10 @@ export async function updateItem(id: string, values: ItemFormValues) {
 export async function deleteItem(id: string) {
   await api.delete(`/items/${id}`);
 }
+
+export async function generateVariants(id: string) {
+  const { data } = await api.post<{ created: number; skipped: number }>(
+    `/items/${id}/generate-variants`,
+  );
+  return data;
+}

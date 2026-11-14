@@ -1,16 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -22,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   emptyWarehouse,
@@ -34,19 +28,10 @@ import {
   useWarehouse,
 } from "./queries";
 
-export function WarehouseFormDialog({
-  open,
-  onOpenChange,
-  warehouseId,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  warehouseId: string | null;
-}) {
+export function WarehouseForm({ warehouseId }: { warehouseId?: string }) {
+  const router = useRouter();
   const isEdit = !!warehouseId;
-  const { data: existing, isLoading } = useWarehouse(
-    open && warehouseId ? warehouseId : undefined,
-  );
+  const { data: existing, isLoading } = useWarehouse(warehouseId);
   const create = useCreateWarehouse();
   const update = useUpdateWarehouse();
 
@@ -56,117 +41,87 @@ export function WarehouseFormDialog({
   });
 
   useEffect(() => {
-    if (!open) return;
     if (isEdit && existing) {
       form.reset({
         warehouseName: existing.warehouseName,
         warehouseType: existing.warehouseType ?? "",
         disabled: existing.disabled,
       });
-    } else if (!isEdit) {
-      form.reset(emptyWarehouse);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, isEdit, existing]);
+  }, [isEdit, existing]);
 
   const pending = create.isPending || update.isPending;
 
   function onSubmit(values: WarehouseFormValues) {
+    const done = () => router.push("/stock/warehouses");
     if (isEdit && warehouseId) {
-      update.mutate(
-        { id: warehouseId, values },
-        { onSuccess: () => onOpenChange(false) },
-      );
+      update.mutate({ id: warehouseId, values }, { onSuccess: done });
     } else {
-      create.mutate(values, { onSuccess: () => onOpenChange(false) });
+      create.mutate(values, { onSuccess: done });
     }
   }
 
+  if (isEdit && isLoading) return <Skeleton className="h-48 w-full" />;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {isEdit ? "Edit Warehouse" : "New Warehouse"}
-          </DialogTitle>
-          <DialogDescription>
-            {isEdit
-              ? "Update this warehouse."
-              : "Add a stock location."}
-          </DialogDescription>
-        </DialogHeader>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Card>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="warehouseName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Warehouse Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Stores" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="warehouseType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Transit / Finished Goods…" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="disabled"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center gap-2 space-y-0 rounded-lg border bg-muted/30 p-3 sm:col-span-2">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="font-normal">Disabled</FormLabel>
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
 
-        {isEdit && isLoading ? (
-          <div className="space-y-3 py-2">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-9 w-full" />
-            ))}
-          </div>
-        ) : (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="warehouseName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Warehouse Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Stores" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="warehouseType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Type</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Transit / Finished Goods…" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="disabled"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2 space-y-0 rounded-lg border bg-muted/30 p-3">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">Disabled</FormLabel>
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={pending}>
-                  {pending
-                    ? "Saving…"
-                    : isEdit
-                      ? "Save changes"
-                      : "Create warehouse"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        )}
-      </DialogContent>
-    </Dialog>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => router.back()}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={pending}>
+            {pending ? "Saving…" : isEdit ? "Save changes" : "Create warehouse"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

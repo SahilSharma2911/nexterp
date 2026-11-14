@@ -20,12 +20,24 @@ model Item {
   description  String?
   itemGroup    String?
   stockUom     String   @default("Nos")
+  brand        String?
   isStockItem  Boolean  @default(true)
   hasSerialNo  Boolean  @default(false)
   hasBatchNo   Boolean  @default(false)
   // Default/standard valuation rate used when no prior stock exists.
   valuationRate Decimal @default(0) @db.Decimal(18, 6)
   disabled     Boolean  @default(false)
+
+  // Variants (ERPNext: Item Variants). A template item defines variant
+  // attributes; concrete variants point back via variantOfId.
+  hasVariants  Boolean  @default(false)
+  variantOfId  String?  @db.Uuid
+  variantOf    Item?    @relation("ItemVariants", fields: [variantOfId], references: [id])
+  variants     Item[]   @relation("ItemVariants")
+
+  specifications    ItemSpecification[]
+  variantAttributes ItemVariantAttribute[]
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -47,6 +59,34 @@ model Item {
 
   @@index([itemGroup])
   @@index([disabled])
+  @@index([variantOfId])
+}
+
+// Generic key/value spec for an item (e.g. Material: Steel, Weight: 2 kg).
+model ItemSpecification {
+  id     String @id @default(uuid()) @db.Uuid
+  itemId String @db.Uuid
+  label  String
+  value  String
+  sortOrder Int  @default(0)
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+}
+
+// A variant attribute defined on a template item (e.g. Size -> S,M,L).
+// `values` is a comma-separated list of allowed values.
+model ItemVariantAttribute {
+  id        String @id @default(uuid()) @db.Uuid
+  itemId    String @db.Uuid
+  attribute String
+  values    String
+  sortOrder Int    @default(0)
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
 }
 
 // ERPNext: Warehouse

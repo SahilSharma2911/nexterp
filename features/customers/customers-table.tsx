@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { useListParams } from "@/hooks/use-list-params";
 import { DataTable } from "@/components/data-table/data-table";
@@ -8,9 +9,8 @@ import { DataTablePagination } from "@/components/data-table/data-table-paginati
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { columns } from "./columns";
-import { CustomerFormDialog } from "./customer-form";
 import { useCustomers } from "./queries";
-import type { Customer, CustomersTableMeta } from "./schema";
+import type { CustomersTableMeta } from "./schema";
 
 export function CustomersTable() {
   const [params, setParams] = useListParams();
@@ -31,9 +31,6 @@ export function CustomersTable() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-
   const meta: CustomersTableMeta = {
     sort: params.sort,
     onSort: (field) => {
@@ -43,10 +40,6 @@ export function CustomersTable() {
         next = curDir === "asc" ? `${field}:desc` : curDir === "desc" ? "" : `${field}:asc`;
       }
       setParams({ sort: next || null, page: 1 });
-    },
-    onEdit: (customer: Customer) => {
-      setEditId(customer.id);
-      setDialogOpen(true);
     },
   };
 
@@ -62,14 +55,11 @@ export function CustomersTable() {
             className="pl-8"
           />
         </div>
-        <Button
-          onClick={() => {
-            setEditId(null);
-            setDialogOpen(true);
-          }}
-        >
-          <Plus className="size-4" />
-          New Customer
+        <Button asChild>
+          <Link href="/selling/customers/new">
+            <Plus className="size-4" />
+            New Customer
+          </Link>
         </Button>
       </div>
 
@@ -87,12 +77,6 @@ export function CustomersTable() {
         total={data?.total ?? 0}
         onPageChange={(p) => setParams({ page: p })}
         onLimitChange={(l) => setParams({ limit: l, page: 1 })}
-      />
-
-      <CustomerFormDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        customerId={editId}
       />
     </div>
   );

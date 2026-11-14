@@ -32,5 +32,4 @@ export type CustomerOption = {
 export type CustomersTableMeta = {
   sort: string;
   onSort: (field: string) => void;
-  onEdit: (customer: Customer) => void;
 };

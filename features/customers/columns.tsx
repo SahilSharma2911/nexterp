@@ -42,8 +42,6 @@ export const columns: ColumnDef<Customer>[] = [
   },
   {
     id: "actions",
-    cell: ({ row, table }) => (
-      <CellAction customer={row.original} table={table} />
-    ),
+    cell: ({ row }) => <CellAction customer={row.original} />,
   },
 ];

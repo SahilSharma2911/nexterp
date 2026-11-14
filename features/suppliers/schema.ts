@@ -29,5 +29,4 @@ export type SupplierOption = {
 export type SuppliersTableMeta = {
   sort: string;
   onSort: (field: string) => void;
-  onEdit: (supplier: Supplier) => void;
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Table } from "@tanstack/react-table";
+import { useRouter } from "next/navigation";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,16 +23,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useDeleteCustomer } from "./queries";
-import type { Customer, CustomersTableMeta } from "./schema";
+import type { Customer } from "./schema";
 
-export function CellAction({
-  customer,
-  table,
-}: {
-  customer: Customer;
-  table: Table<Customer>;
-}) {
-  const meta = table.options.meta as CustomersTableMeta;
+export function CellAction({ customer }: { customer: Customer }) {
+  const router = useRouter();
   const del = useDeleteCustomer();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -47,7 +41,9 @@ export function CellAction({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => meta.onEdit(customer)}>
+          <DropdownMenuItem
+            onClick={() => router.push(`/selling/customers/${customer.id}/edit`)}
+          >
             <Pencil className="size-4" />
             Edit
           </DropdownMenuItem>

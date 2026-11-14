@@ -78,3 +78,23 @@ export function useDeleteItem() {
     onError: (e: Error) => toast.error(e.message),
   });
 }
+
+export function useGenerateVariants() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => itemsApi.generateVariants(id),
+    onSuccess: (res, id) => {
+      qc.invalidateQueries({ queryKey: itemKeys.all });
+      qc.invalidateQueries({ queryKey: itemKeys.detail(id) });
+      if (res.created > 0) {
+        toast.success(
+          `Generated ${res.created} variant${res.created === 1 ? "" : "s"}` +
+            (res.skipped ? ` · ${res.skipped} already existed` : ""),
+        );
+      } else {
+        toast.info("No new variants — all combinations already exist");
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}

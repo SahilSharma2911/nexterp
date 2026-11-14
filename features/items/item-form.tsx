@@ -1,16 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
+import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Plus, Trash2 } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -24,23 +18,41 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { emptyItem, itemFormSchema, type ItemFormValues } from "./schema";
+import { COMMON_UOMS } from "./uom";
 import { useCreateItem, useItem, useUpdateItem } from "./queries";
 
-export function ItemFormDialog({
-  open,
-  onOpenChange,
-  itemId,
+function CheckboxField({
+  form,
+  name,
+  label,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  itemId: string | null;
+  form: ReturnType<typeof useForm<ItemFormValues>>;
+  name: "isStockItem" | "hasSerialNo" | "hasBatchNo" | "disabled" | "hasVariants";
+  label: string;
 }) {
-  const isEdit = !!itemId;
-  const { data: existing, isLoading } = useItem(
-    open && itemId ? itemId : undefined,
+  return (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className="flex flex-row items-center gap-2 space-y-0">
+          <FormControl>
+            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+          </FormControl>
+          <FormLabel className="font-normal">{label}</FormLabel>
+        </FormItem>
+      )}
+    />
   );
+}
+
+export function ItemForm({ itemId }: { itemId?: string }) {
+  const router = useRouter();
+  const isEdit = !!itemId;
+  const { data: existing, isLoading } = useItem(itemId);
   const create = useCreateItem();
   const update = useUpdateItem();
 
@@ -48,217 +60,325 @@ export function ItemFormDialog({
     resolver: zodResolver(itemFormSchema),
     defaultValues: emptyItem,
   });
+  const specs = useFieldArray({ control: form.control, name: "specifications" });
+  const attrs = useFieldArray({
+    control: form.control,
+    name: "variantAttributes",
+  });
 
   useEffect(() => {
-    if (!open) return;
     if (isEdit && existing) {
       form.reset({
         itemCode: existing.itemCode,
         itemName: existing.itemName,
         description: existing.description ?? "",
         itemGroup: existing.itemGroup ?? "",
+        brand: existing.brand ?? "",
         stockUom: existing.stockUom,
         isStockItem: existing.isStockItem,
         hasSerialNo: existing.hasSerialNo,
         hasBatchNo: existing.hasBatchNo,
         valuationRate: existing.valuationRate,
         disabled: existing.disabled,
+        hasVariants: existing.hasVariants,
+        specifications: existing.specifications,
+        variantAttributes: existing.variantAttributes,
       });
-    } else if (!isEdit) {
-      form.reset(emptyItem);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, isEdit, existing]);
+  }, [isEdit, existing]);
 
+  const hasVariants = form.watch("hasVariants");
   const pending = create.isPending || update.isPending;
 
   function onSubmit(values: ItemFormValues) {
     if (isEdit && itemId) {
       update.mutate(
         { id: itemId, values },
-        { onSuccess: () => onOpenChange(false) },
+        { onSuccess: (r) => router.push(`/stock/items/${r.id}`) },
       );
     } else {
-      create.mutate(values, { onSuccess: () => onOpenChange(false) });
+      create.mutate(values, {
+        onSuccess: (r) => router.push(`/stock/items/${r.id}`),
+      });
     }
   }
 
+  if (isEdit && isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Item" : "New Item"}</DialogTitle>
-          <DialogDescription>
-            {isEdit
-              ? "Update this item master record."
-              : "Add a new item to the catalogue."}
-          </DialogDescription>
-        </DialogHeader>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Basic details</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <FormField
+              control={form.control}
+              name="itemCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Item Code</FormLabel>
+                  <FormControl>
+                    <Input placeholder="WIDGET-01" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="itemName"
+              render={({ field }) => (
+                <FormItem className="sm:col-span-1 lg:col-span-2">
+                  <FormLabel>Item Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Stainless Steel Widget" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="stockUom"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Unit of Measure</FormLabel>
+                  <FormControl>
+                    <Input
+                      list="uom-list"
+                      placeholder="Nos"
+                      {...field}
+                    />
+                  </FormControl>
+                  <datalist id="uom-list">
+                    {COMMON_UOMS.map((u) => (
+                      <option key={u} value={u} />
+                    ))}
+                  </datalist>
+                  <FormDescription>How this item is counted or sold.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="itemGroup"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Item Group</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Raw Material" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="brand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Brand</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Optional" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="valuationRate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Valuation Rate</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={field.value}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === "" ? 0 : Number(e.target.value),
+                        )
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem className="sm:col-span-2 lg:col-span-3">
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea rows={2} placeholder="Optional notes…" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex flex-wrap gap-6 rounded-lg border bg-muted/30 p-3 sm:col-span-2 lg:col-span-3">
+              <CheckboxField form={form} name="isStockItem" label="Maintain stock" />
+              <CheckboxField form={form} name="hasSerialNo" label="Has serial no." />
+              <CheckboxField form={form} name="hasBatchNo" label="Has batch no." />
+              <CheckboxField form={form} name="hasVariants" label="Has variants (template)" />
+              <CheckboxField form={form} name="disabled" label="Disabled" />
+            </div>
+          </CardContent>
+        </Card>
 
-        {isEdit && isLoading ? (
-          <div className="space-y-3 py-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-9 w-full" />
-            ))}
-          </div>
-        ) : (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="itemCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Item Code</FormLabel>
-                      <FormControl>
-                        <Input placeholder="WHEEL" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="stockUom"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>UOM</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nos" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm">Specifications</CardTitle>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => specs.append({ label: "", value: "" })}
+            >
+              <Plus className="size-4" />
+              Add specification
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {specs.fields.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No specifications. Add attributes like Material, Weight, Colour,
+                Dimensions…
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {specs.fields.map((row, i) => (
+                  <div key={row.id} className="flex items-start gap-2">
+                    <FormField
+                      control={form.control}
+                      name={`specifications.${i}.label`}
+                      render={({ field }) => (
+                        <FormItem className="w-1/3">
+                          <FormControl>
+                            <Input placeholder="Label (e.g. Material)" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`specifications.${i}.value`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormControl>
+                            <Input placeholder="Value (e.g. Stainless Steel)" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-9"
+                      onClick={() => specs.remove(i)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
+            )}
+          </CardContent>
+        </Card>
 
-              <FormField
-                control={form.control}
-                name="itemName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Item Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Rubber Wheel" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="itemGroup"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Group</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Raw Material" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="valuationRate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valuation Rate</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={field.value}
-                          onChange={(e) =>
-                            field.onChange(
-                              e.target.value === ""
-                                ? 0
-                                : Number(e.target.value),
-                            )
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        rows={2}
-                        placeholder="Optional notes…"
-                        {...field}
+        {hasVariants && (
+          <Card>
+            <CardHeader className="flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm">Variant attributes</CardTitle>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => attrs.append({ attribute: "", values: "" })}
+              >
+                <Plus className="size-4" />
+                Add attribute
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-3 text-sm text-muted-foreground">
+                Define attributes and their comma-separated values (e.g. Size →
+                S, M, L). After saving, use “Generate Variants” to create the
+                child items for every combination.
+              </p>
+              {attrs.fields.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No attributes yet.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {attrs.fields.map((row, i) => (
+                    <div key={row.id} className="flex items-start gap-2">
+                      <FormField
+                        control={form.control}
+                        name={`variantAttributes.${i}.attribute`}
+                        render={({ field }) => (
+                          <FormItem className="w-1/3">
+                            <FormControl>
+                              <Input placeholder="Attribute (e.g. Size)" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex flex-wrap gap-6 rounded-lg border bg-muted/30 p-3">
-                <FormField
-                  control={form.control}
-                  name="isStockItem"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal">Stock Item</FormLabel>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="disabled"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal">Disabled</FormLabel>
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={pending}>
-                  {pending
-                    ? "Saving…"
-                    : isEdit
-                      ? "Save changes"
-                      : "Create item"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+                      <FormField
+                        control={form.control}
+                        name={`variantAttributes.${i}.values`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormControl>
+                              <Input placeholder="Values, comma-separated (S, M, L)" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-9"
+                        onClick={() => attrs.remove(i)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
-      </DialogContent>
-    </Dialog>
+
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => router.back()}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={pending}>
+            {pending ? "Saving…" : isEdit ? "Save changes" : "Create item"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

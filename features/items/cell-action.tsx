@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Table } from "@tanstack/react-table";
+import { useRouter } from "next/navigation";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,16 +23,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useDeleteItem } from "./queries";
-import type { ItemListItem, ItemsTableMeta } from "./schema";
+import type { ItemListItem } from "./schema";
 
-export function CellAction({
-  item,
-  table,
-}: {
-  item: ItemListItem;
-  table: Table<ItemListItem>;
-}) {
-  const meta = table.options.meta as ItemsTableMeta;
+export function CellAction({ item }: { item: ItemListItem }) {
+  const router = useRouter();
   const del = useDeleteItem();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -47,7 +41,9 @@ export function CellAction({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => meta.onEdit(item)}>
+          <DropdownMenuItem
+            onClick={() => router.push(`/stock/items/${item.id}/edit`)}
+          >
             <Pencil className="size-4" />
             Edit
           </DropdownMenuItem>

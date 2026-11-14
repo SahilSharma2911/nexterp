@@ -34,8 +34,6 @@ export const columns: ColumnDef<Supplier>[] = [
   },
   {
     id: "actions",
-    cell: ({ row, table }) => (
-      <CellAction supplier={row.original} table={table} />
-    ),
+    cell: ({ row }) => <CellAction supplier={row.original} />,
   },
 ];

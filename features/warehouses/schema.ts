@@ -29,5 +29,4 @@ export type WarehouseOption = {
 export type WarehousesTableMeta = {
   sort: string;
   onSort: (field: string) => void;
-  onEdit: (warehouse: Warehouse) => void;
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Table } from "@tanstack/react-table";
+import { useRouter } from "next/navigation";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,16 +23,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useDeleteWarehouse } from "./queries";
-import type { Warehouse, WarehousesTableMeta } from "./schema";
+import type { Warehouse } from "./schema";
 
-export function CellAction({
-  warehouse,
-  table,
-}: {
-  warehouse: Warehouse;
-  table: Table<Warehouse>;
-}) {
-  const meta = table.options.meta as WarehousesTableMeta;
+export function CellAction({ warehouse }: { warehouse: Warehouse }) {
+  const router = useRouter();
   const del = useDeleteWarehouse();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -47,7 +41,9 @@ export function CellAction({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => meta.onEdit(warehouse)}>
+          <DropdownMenuItem
+            onClick={() => router.push(`/stock/warehouses/${warehouse.id}/edit`)}
+          >
             <Pencil className="size-4" />
             Edit
           </DropdownMenuItem>

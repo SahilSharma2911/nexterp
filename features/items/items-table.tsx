@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { useListParams } from "@/hooks/use-list-params";
 import { DataTable } from "@/components/data-table/data-table";
@@ -8,9 +9,8 @@ import { DataTablePagination } from "@/components/data-table/data-table-paginati
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { columns } from "./columns";
-import { ItemFormDialog } from "./item-form";
 import { useItems } from "./queries";
-import type { ItemListItem, ItemsTableMeta } from "./schema";
+import type { ItemsTableMeta } from "./schema";
 
 export function ItemsTable() {
   const [params, setParams] = useListParams();
@@ -32,9 +32,6 @@ export function ItemsTable() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-
   const meta: ItemsTableMeta = {
     sort: params.sort,
     onSort: (field) => {
@@ -44,10 +41,6 @@ export function ItemsTable() {
         next = curDir === "asc" ? `${field}:desc` : curDir === "desc" ? "" : `${field}:asc`;
       }
       setParams({ sort: next || null, page: 1 });
-    },
-    onEdit: (item: ItemListItem) => {
-      setEditId(item.id);
-      setDialogOpen(true);
     },
   };
 
@@ -59,18 +52,15 @@ export function ItemsTable() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by code, name or group…"
+            placeholder="Search by code, name, group or brand…"
             className="pl-8"
           />
         </div>
-        <Button
-          onClick={() => {
-            setEditId(null);
-            setDialogOpen(true);
-          }}
-        >
-          <Plus className="size-4" />
-          New Item
+        <Button asChild>
+          <Link href="/stock/items/new">
+            <Plus className="size-4" />
+            New Item
+          </Link>
         </Button>
       </div>
 
@@ -88,12 +78,6 @@ export function ItemsTable() {
         total={data?.total ?? 0}
         onPageChange={(p) => setParams({ page: p })}
         onLimitChange={(l) => setParams({ limit: l, page: 1 })}
-      />
-
-      <ItemFormDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        itemId={editId}
       />
     </div>
   );

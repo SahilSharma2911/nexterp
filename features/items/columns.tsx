@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { sortableHeader } from "@/components/data-table/sortable-header";
@@ -12,14 +13,32 @@ export const columns: ColumnDef<ItemListItem>[] = [
     accessorKey: "itemCode",
     header: sortableHeader<ItemListItem>("itemCode", "Item Code"),
     cell: ({ row }) => (
-      <span className="font-mono text-xs font-medium">
+      <Link
+        href={`/stock/items/${row.original.id}`}
+        className="font-mono text-xs font-medium text-primary hover:underline"
+      >
         {row.original.itemCode}
-      </span>
+      </Link>
     ),
   },
   {
     accessorKey: "itemName",
     header: sortableHeader<ItemListItem>("itemName", "Name"),
+    cell: ({ row }) => (
+      <span className="flex items-center gap-2">
+        {row.original.itemName}
+        {row.original.hasVariants && (
+          <Badge variant="outline" className="text-[10px]">
+            Template
+          </Badge>
+        )}
+        {row.original.isVariant && (
+          <Badge variant="outline" className="text-[10px]">
+            Variant
+          </Badge>
+        )}
+      </span>
+    ),
   },
   {
     accessorKey: "itemGroup",
@@ -28,6 +47,12 @@ export const columns: ColumnDef<ItemListItem>[] = [
       row.original.itemGroup ?? (
         <span className="text-muted-foreground">—</span>
       ),
+  },
+  {
+    accessorKey: "brand",
+    header: sortableHeader<ItemListItem>("brand", "Brand"),
+    cell: ({ row }) =>
+      row.original.brand ?? <span className="text-muted-foreground">—</span>,
   },
   {
     accessorKey: "stockUom",
@@ -44,17 +69,7 @@ export const columns: ColumnDef<ItemListItem>[] = [
     ),
   },
   {
-    id: "status",
-    header: "Status",
-    cell: ({ row }) =>
-      row.original.disabled ? (
-        <Badge variant="secondary">Disabled</Badge>
-      ) : (
-        <Badge>Active</Badge>
-      ),
-  },
-  {
     id: "actions",
-    cell: ({ row, table }) => <CellAction item={row.original} table={table} />,
+    cell: ({ row }) => <CellAction item={row.original} />,
   },
 ];
