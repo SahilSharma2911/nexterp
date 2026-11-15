@@ -3,6 +3,8 @@ import { ReconciliationsTable } from "@/features/stock-reconciliation/reconcilia
 
 export const metadata = { title: "Stock Reconciliation · nexterp" };
 
+export const dynamic = "force-dynamic";
+
 export default function StockReconciliationPage() {
   return (
     <>
