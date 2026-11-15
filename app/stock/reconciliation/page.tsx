@@ -1,31 +1,30 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { getStockReconciliations } from "@/actions/stock-reconciliation";
-import { PageHeader, LinkButton, Table, Th, Td, StatusPill } from "@/components/legacy-ui";
-import { fmtDateTime } from "@/lib/format";
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { ReconciliationTable } from "./columns";
 
 export const dynamic = "force-dynamic";
 
-export default async function ReconListPage() {
+export default async function StockReconciliationPage() {
   const rows = await getStockReconciliations();
+
   return (
     <>
-      <PageHeader title="Stock Reconciliation" subtitle="Set physical-count / opening stock">
-        <LinkButton href="/stock/reconciliation/new" variant="primary">+ New Reconciliation</LinkButton>
-      </PageHeader>
-      <Table>
-        <thead><tr><Th>Name</Th><Th>Posting</Th><Th className="text-right">Rows</Th><Th>Status</Th></tr></thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.id} className="hover:bg-gray-50">
-              <Td><Link href={`/stock/reconciliation/${r.id}`} className="font-mono text-xs font-medium text-gray-900 hover:underline">{r.name}</Link></Td>
-              <Td className="text-sm text-gray-500">{fmtDateTime(r.postingAt)}</Td>
-              <Td className="text-right">{r.itemCount}</Td>
-              <Td><StatusPill status={r.status} /></Td>
-            </tr>
-          ))}
-          {rows.length === 0 && <tr><Td className="py-6 text-center text-gray-400">No reconciliations yet.</Td><Td /><Td /><Td /></tr>}
-        </tbody>
-      </Table>
+      <PageHeader
+        title="Stock Reconciliation"
+        subtitle="Set absolute on-hand quantities & valuation"
+        actions={
+          <Button asChild>
+            <Link href="/stock/reconciliation/new">
+              <Plus className="size-4" />
+              New Reconciliation
+            </Link>
+          </Button>
+        }
+      />
+      <ReconciliationTable data={rows} />
     </>
   );
 }

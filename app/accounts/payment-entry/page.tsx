@@ -1,24 +1,30 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { getPaymentEntries } from "@/actions/payment-entry";
-import { PageHeader, LinkButton, Table, Th, Td, StatusPill } from "@/components/legacy-ui";
-import { fmtMoney } from "@/lib/format";
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { PaymentEntriesTable } from "./columns";
+
 export const dynamic = "force-dynamic";
-export default async function PayListPage() {
+
+export default async function PaymentEntryListPage() {
   const rows = await getPaymentEntries();
+
   return (
     <>
-      <PageHeader title="Payment Entry" subtitle="Receipts & payments"><LinkButton href="/accounts/payment-entry/new" variant="primary">+ New Payment</LinkButton></PageHeader>
-      <Table>
-        <thead><tr><Th>Name</Th><Th>Type</Th><Th>Party</Th><Th>Account</Th><Th className="text-right">Amount</Th><Th>Status</Th></tr></thead>
-        <tbody>
-          {rows.map((r) => (<tr key={r.id} className="hover:bg-gray-50">
-            <Td><Link href={`/accounts/payment-entry/${r.id}`} className="font-mono text-xs font-medium text-gray-900 hover:underline">{r.name}</Link></Td>
-            <Td>{r.paymentType === "RECEIVE" ? "Receive" : "Pay"}</Td><Td>{r.party}</Td><Td>{r.account}</Td>
-            <Td className="text-right">{fmtMoney(r.amount)}</Td><Td><StatusPill status={r.status} /></Td>
-          </tr>))}
-          {rows.length === 0 && <tr><Td className="py-6 text-center text-gray-400">No payments yet.</Td><Td /><Td /><Td /><Td /><Td /></tr>}
-        </tbody>
-      </Table>
+      <PageHeader
+        title="Payment Entries"
+        subtitle="Receipts from customers and payments to suppliers"
+        actions={
+          <Button asChild>
+            <Link href="/accounts/payment-entry/new">
+              <Plus className="size-4" />
+              New Payment Entry
+            </Link>
+          </Button>
+        }
+      />
+      <PaymentEntriesTable data={rows} />
     </>
   );
 }
