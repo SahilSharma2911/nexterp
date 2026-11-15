@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { sortableHeader } from "@/components/data-table/sortable-header";
@@ -11,7 +12,12 @@ export const columns: ColumnDef<Warehouse>[] = [
     accessorKey: "warehouseName",
     header: sortableHeader<Warehouse>("warehouseName", "Warehouse"),
     cell: ({ row }) => (
-      <span className="font-medium">{row.original.warehouseName}</span>
+      <Link
+        href={`/stock/warehouses/${row.original.id}`}
+        className="font-medium text-primary hover:underline"
+      >
+        {row.original.warehouseName}
+      </Link>
     ),
   },
   {
