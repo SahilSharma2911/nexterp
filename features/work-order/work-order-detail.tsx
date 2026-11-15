@@ -96,13 +96,50 @@ export function WorkOrderDetail({ workOrderId }: { workOrderId: string }) {
       <Card>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Meta label="BOM" value={w.bomName} />
+            <Meta
+              label="Production Item"
+              value={
+                <Link href={`/stock/items/${w.productionItemId}`} className="text-primary hover:underline">
+                  {w.itemCode} — {w.itemName}
+                </Link>
+              }
+            />
+            <Meta
+              label="BOM"
+              value={
+                <Link href={`/manufacturing/bom/${w.bomId}`} className="font-mono text-xs text-primary hover:underline">
+                  {w.bomName}
+                </Link>
+              }
+            />
             <Meta
               label="Produced"
               value={`${fmtQty(w.producedQty)} / ${fmtQty(w.qty)} ${w.uom}`}
             />
-            <Meta label="Source" value={w.sourceWarehouse ?? "—"} />
-            <Meta label="Finished Goods" value={w.fgWarehouse ?? "—"} />
+            <Meta
+              label="Source"
+              value={
+                w.sourceWarehouseId ? (
+                  <Link href={`/stock/warehouses/${w.sourceWarehouseId}`} className="text-primary hover:underline">
+                    {w.sourceWarehouse}
+                  </Link>
+                ) : (
+                  "—"
+                )
+              }
+            />
+            <Meta
+              label="Finished Goods"
+              value={
+                w.fgWarehouseId ? (
+                  <Link href={`/stock/warehouses/${w.fgWarehouseId}`} className="text-primary hover:underline">
+                    {w.fgWarehouse}
+                  </Link>
+                ) : (
+                  "—"
+                )
+              }
+            />
             {w.remarks && (
               <div className="sm:col-span-2 lg:col-span-4">
                 <Meta label="Remarks" value={w.remarks} />
@@ -136,9 +173,12 @@ export function WorkOrderDetail({ workOrderId }: { workOrderId: string }) {
               {w.items.map((it) => (
                 <tr key={it.id} className="border-b last:border-0">
                   <td className="p-3">
-                    <span className="font-mono text-xs font-medium">
+                    <Link
+                      href={`/stock/items/${it.itemId}`}
+                      className="font-mono text-xs font-medium text-primary hover:underline"
+                    >
                       {it.itemCode}
-                    </span>
+                    </Link>
                     <span className="ml-2 text-muted-foreground">
                       {it.itemName}
                     </span>

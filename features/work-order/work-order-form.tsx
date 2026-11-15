@@ -32,7 +32,7 @@ import {
 } from "./schema";
 import { useCreateWorkOrder } from "./queries";
 
-export function WorkOrderForm() {
+export function WorkOrderForm({ defaultBomId }: { defaultBomId?: string }) {
   const router = useRouter();
   const { data: bomOptions = [] } = useBomOptions();
   const { data: warehouseOptions = [] } = useWarehouseOptions();
@@ -40,7 +40,7 @@ export function WorkOrderForm() {
 
   const form = useForm<WorkOrderFormValues>({
     resolver: zodResolver(workOrderFormSchema),
-    defaultValues: emptyWorkOrder,
+    defaultValues: { ...emptyWorkOrder, bomId: defaultBomId ?? "" },
   });
 
   function onSubmit(values: WorkOrderFormValues) {

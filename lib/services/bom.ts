@@ -164,6 +164,7 @@ export async function getBom(id: string): Promise<BomDetail | null> {
     })),
     explosionItems: b.explosionItems.map((i) => ({
       id: i.id,
+      itemId: i.itemId,
       itemCode: i.item.itemCode,
       itemName: i.item.itemName,
       qty: i.qty,

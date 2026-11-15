@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2 } from "lucide-react";
+import { Factory, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -91,6 +91,14 @@ export function BomDetail({ bomId }: { bomId: string }) {
                 </Button>
               </>
             )}
+            {isSubmitted && b.isActive && (
+              <Button asChild>
+                <Link href={`/manufacturing/work-order/new?bom=${b.id}`}>
+                  <Factory className="size-4" />
+                  Create Work Order
+                </Link>
+              </Button>
+            )}
             {isSubmitted && (
               <Button variant="destructive" onClick={() => setConfirm("cancel")}>
                 Cancel BOM
@@ -102,7 +110,14 @@ export function BomDetail({ bomId }: { bomId: string }) {
 
       <Card>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Meta label="Finished Item" value={`${b.itemCode} — ${b.itemName}`} />
+          <Meta
+            label="Finished Item"
+            value={
+              <Link href={`/stock/items/${b.itemId}`} className="text-primary hover:underline">
+                {b.itemCode} — {b.itemName}
+              </Link>
+            }
+          />
           <Meta label="Quantity" value={`${fmtQty(b.quantity)} ${b.uom}`} />
           <Meta label="Total Cost" value={fmtMoney(b.totalCost)} />
           <Meta label="Active" value={b.isActive ? "Yes" : "No"} />
@@ -132,9 +147,12 @@ export function BomDetail({ bomId }: { bomId: string }) {
               {b.items.map((it) => (
                 <tr key={it.id} className="border-b last:border-0">
                   <td className="p-3">
-                    <span className="font-mono text-xs font-medium">
+                    <Link
+                      href={`/stock/items/${it.itemId}`}
+                      className="font-mono text-xs font-medium text-primary hover:underline"
+                    >
                       {it.itemCode}
-                    </span>
+                    </Link>
                     <span className="ml-2 text-muted-foreground">
                       {it.itemName}
                     </span>

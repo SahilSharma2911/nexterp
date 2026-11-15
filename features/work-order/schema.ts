@@ -57,6 +57,7 @@ export type WorkOrderListItem = {
 
 export type WorkOrderItemRow = {
   id: string;
+  itemId: string;
   itemCode: string;
   itemName: string;
   requiredQty: number;
@@ -67,15 +68,19 @@ export type WorkOrderItemRow = {
 export type WorkOrderDetail = {
   id: string;
   name: string;
+  productionItemId: string;
   itemCode: string;
   itemName: string;
   uom: string;
+  bomId: string;
   bomName: string;
   qty: number;
   producedQty: number;
   status: WorkOrderStatus;
   useMultiLevelBom: boolean;
+  sourceWarehouseId: string | null;
   sourceWarehouse: string | null;
+  fgWarehouseId: string | null;
   fgWarehouse: string | null;
   remarks: string | null;
   items: WorkOrderItemRow[];

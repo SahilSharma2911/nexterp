@@ -64,6 +64,7 @@ export type BomComponent = {
 
 export type BomExplosion = {
   id: string;
+  itemId: string;
   itemCode: string;
   itemName: string;
   qty: number;
