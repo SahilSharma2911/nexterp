@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, PanelLeft, User, X } from "lucide-react";
+import { BookOpen, Menu, PanelLeft, User, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SidebarNav } from "@/components/sidebar-nav";
@@ -102,6 +103,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Breadcrumbs className="hidden lg:flex" />
 
           <div className="ml-auto flex items-center gap-1">
+            <Button asChild variant="ghost" size="sm" className="hidden gap-1.5 sm:flex">
+              <Link href="/docs">
+                <BookOpen className="size-4" />
+                Docs
+              </Link>
+            </Button>
             <AccentPicker />
             <ThemeToggle />
             <div className="ml-1 flex size-8 items-center justify-center rounded-full border bg-muted text-muted-foreground">

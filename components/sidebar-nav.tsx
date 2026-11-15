@@ -11,7 +11,6 @@ import {
   ClipboardCheck,
   Factory,
   FileText,
-  GraduationCap,
   Layers,
   LayoutDashboard,
   Package,
@@ -42,10 +41,7 @@ type NavGroup = { heading: string; items: NavItem[] };
 const NAV: NavGroup[] = [
   {
     heading: "Overview",
-    items: [
-      { href: "/", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/guide", label: "Guide", icon: GraduationCap },
-    ],
+    items: [{ href: "/", label: "Dashboard", icon: LayoutDashboard }],
   },
   {
     heading: "Stock",
