@@ -1,11 +1,16 @@
-import { getItemOptions } from "@/actions/items";
-import { getWarehouseOptions } from "@/actions/warehouses";
-import { getStockBalance } from "@/actions/reports";
-import ReconFormClient from "../ReconFormClient";
+import { PageHeader } from "@/components/page-header";
+import { ReconciliationForm } from "@/features/stock-reconciliation/reconciliation-form";
 
-export const dynamic = "force-dynamic";
+export const metadata = { title: "New Reconciliation · nexterp" };
 
-export default async function NewReconPage() {
-  const [items, warehouses, bins] = await Promise.all([getItemOptions(), getWarehouseOptions(), getStockBalance()]);
-  return <ReconFormClient items={items} warehouses={warehouses} bins={bins.map((b) => ({ itemCode: b.itemCode, warehouse: b.warehouse, actualQty: b.actualQty, valuationRate: b.valuationRate }))} />;
+export default function NewReconciliationPage() {
+  return (
+    <>
+      <PageHeader
+        title="New Stock Reconciliation"
+        subtitle="Enter counted quantities, then submit to adjust stock"
+      />
+      <ReconciliationForm />
+    </>
+  );
 }

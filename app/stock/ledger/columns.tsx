@@ -1,6 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ClientDataTable } from "@/components/data-table/client-data-table";
 import { SortHeader } from "@/components/data-table/sort-header";
@@ -9,8 +10,10 @@ import { fmtQty, fmtRate, fmtMoney, fmtDateTime } from "@/lib/format";
 export type StockLedgerRow = {
   id: string;
   postingAt: string;
+  itemId: string;
   itemCode: string;
   itemName: string;
+  warehouseId: string;
   warehouse: string;
   voucherType: string;
   voucherNo: string;
@@ -41,7 +44,12 @@ export const columns: ColumnDef<StockLedgerRow>[] = [
     header: ({ column }) => <SortHeader column={column} label="Item" />,
     cell: ({ row }) => (
       <span className={cn(row.original.isCancelled && "line-through opacity-60")}>
-        <span className="font-mono text-xs font-medium">{row.original.itemCode}</span>
+        <Link
+          href={`/stock/items/${row.original.itemId}`}
+          className="font-mono text-xs font-medium text-primary hover:underline"
+        >
+          {row.original.itemCode}
+        </Link>
         <span className="ml-2 text-muted-foreground">{row.original.itemName}</span>
       </span>
     ),
@@ -49,6 +57,14 @@ export const columns: ColumnDef<StockLedgerRow>[] = [
   {
     accessorKey: "warehouse",
     header: ({ column }) => <SortHeader column={column} label="Warehouse" />,
+    cell: ({ row }) => (
+      <Link
+        href={`/stock/warehouses/${row.original.warehouseId}`}
+        className="text-primary hover:underline"
+      >
+        {row.original.warehouse}
+      </Link>
+    ),
   },
   {
     accessorKey: "voucherNo",

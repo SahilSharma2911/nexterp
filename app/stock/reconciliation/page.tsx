@@ -1,30 +1,16 @@
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import { getStockReconciliations } from "@/actions/stock-reconciliation";
 import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
-import { ReconciliationTable } from "./columns";
+import { ReconciliationsTable } from "@/features/stock-reconciliation/reconciliations-table";
 
-export const dynamic = "force-dynamic";
+export const metadata = { title: "Stock Reconciliation · nexterp" };
 
-export default async function StockReconciliationPage() {
-  const rows = await getStockReconciliations();
-
+export default function StockReconciliationPage() {
   return (
     <>
       <PageHeader
         title="Stock Reconciliation"
         subtitle="Set absolute on-hand quantities & valuation"
-        actions={
-          <Button asChild>
-            <Link href="/stock/reconciliation/new">
-              <Plus className="size-4" />
-              New Reconciliation
-            </Link>
-          </Button>
-        }
       />
-      <ReconciliationTable data={rows} />
+      <ReconciliationsTable />
     </>
   );
 }

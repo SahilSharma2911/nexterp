@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ClientDataTable } from "@/components/data-table/client-data-table";
 import { SortHeader } from "@/components/data-table/sort-header";
@@ -7,9 +8,11 @@ import { fmtQty, fmtRate, fmtMoney } from "@/lib/format";
 
 export type StockBalanceRow = {
   id: string;
+  itemId: string;
   itemCode: string;
   itemName: string;
   uom: string;
+  warehouseId: string;
   warehouse: string;
   actualQty: number;
   reservedQty: number;
@@ -25,7 +28,12 @@ export const columns: ColumnDef<StockBalanceRow>[] = [
     header: ({ column }) => <SortHeader column={column} label="Item" />,
     cell: ({ row }) => (
       <span>
-        <span className="font-mono text-xs font-medium">{row.original.itemCode}</span>
+        <Link
+          href={`/stock/items/${row.original.itemId}`}
+          className="font-mono text-xs font-medium text-primary hover:underline"
+        >
+          {row.original.itemCode}
+        </Link>
         <span className="ml-2 text-muted-foreground">{row.original.itemName}</span>
       </span>
     ),
@@ -33,6 +41,14 @@ export const columns: ColumnDef<StockBalanceRow>[] = [
   {
     accessorKey: "warehouse",
     header: ({ column }) => <SortHeader column={column} label="Warehouse" />,
+    cell: ({ row }) => (
+      <Link
+        href={`/stock/warehouses/${row.original.warehouseId}`}
+        className="text-primary hover:underline"
+      >
+        {row.original.warehouse}
+      </Link>
+    ),
   },
   {
     accessorKey: "actualQty",

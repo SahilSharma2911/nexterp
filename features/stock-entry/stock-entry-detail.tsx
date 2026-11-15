@@ -106,8 +106,30 @@ export function StockEntryDetail({ entryId }: { entryId: string }) {
 
       <Card>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Meta label="Source" value={e.fromWarehouse ?? "—"} />
-          <Meta label="Target" value={e.toWarehouse ?? "—"} />
+          <Meta
+            label="Source"
+            value={
+              e.fromWarehouseId ? (
+                <Link href={`/stock/warehouses/${e.fromWarehouseId}`} className="text-primary hover:underline">
+                  {e.fromWarehouse}
+                </Link>
+              ) : (
+                "—"
+              )
+            }
+          />
+          <Meta
+            label="Target"
+            value={
+              e.toWarehouseId ? (
+                <Link href={`/stock/warehouses/${e.toWarehouseId}`} className="text-primary hover:underline">
+                  {e.toWarehouse}
+                </Link>
+              ) : (
+                "—"
+              )
+            }
+          />
           <Meta label="Posted" value={fmtDateTime(e.postingAt)} />
           <Meta label="Net Value" value={fmtMoney(e.valueDifference)} />
           {e.remarks && (
@@ -140,9 +162,12 @@ export function StockEntryDetail({ entryId }: { entryId: string }) {
               {e.items.map((it) => (
                 <tr key={it.id} className="border-b last:border-0">
                   <td className="p-3">
-                    <span className="font-mono text-xs font-medium">
+                    <Link
+                      href={`/stock/items/${it.itemId}`}
+                      className="font-mono text-xs font-medium text-primary hover:underline"
+                    >
                       {it.itemCode}
-                    </span>
+                    </Link>
                     <span className="ml-2 text-muted-foreground">
                       {it.itemName}
                     </span>

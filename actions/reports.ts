@@ -18,8 +18,10 @@ export async function getStockLedger(filter?: { itemId?: string; warehouseId?: s
   return rows.map((r) => ({
     id: r.id,
     postingAt: r.postingAt.toISOString(),
+    itemId: r.itemId,
     itemCode: r.item.itemCode,
     itemName: r.item.itemName,
+    warehouseId: r.warehouseId,
     warehouse: r.warehouse.warehouseName,
     voucherType: r.voucherType,
     voucherNo: r.voucherNo,
@@ -41,9 +43,11 @@ export async function getStockBalance() {
   });
   return rows.map((r) => ({
     id: r.id,
+    itemId: r.itemId,
     itemCode: r.item.itemCode,
     itemName: r.item.itemName,
     uom: r.item.stockUom,
+    warehouseId: r.warehouseId,
     warehouse: r.warehouse.warehouseName,
     actualQty: r.actualQty,
     reservedQty: r.reservedQty,
