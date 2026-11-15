@@ -28,6 +28,15 @@ import {
   useSubmitReconciliation,
 } from "./queries";
 
+function Meta({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-sm font-medium">{value || "—"}</p>
+    </div>
+  );
+}
+
 export function ReconciliationDetail({ reconId }: { reconId: string }) {
   const router = useRouter();
   const { data: r, isLoading } = useReconciliation(reconId);
@@ -53,13 +62,10 @@ export function ReconciliationDetail({ reconId }: { reconId: string }) {
     <div className="space-y-6">
       <PageHeader
         title={r.name}
-        subtitle={r.remarks ?? "Stock Reconciliation"}
+        subtitle="Stock Reconciliation"
         actions={
           <div className="flex items-center gap-2">
             <DocStatusBadge status={r.status} />
-            <span className="hidden text-sm text-muted-foreground sm:inline">
-              {fmtDateTime(r.postingAt)}
-            </span>
             {isDraft && (
               <>
                 <Button asChild variant="outline">
@@ -92,6 +98,16 @@ export function ReconciliationDetail({ reconId }: { reconId: string }) {
           </div>
         }
       />
+
+      <Card>
+        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Meta label="Posted" value={fmtDateTime(r.postingAt)} />
+          <Meta label="Rows" value={r.items.length} />
+          <div className="sm:col-span-2 lg:col-span-2">
+            <Meta label="Remarks" value={r.remarks ?? "—"} />
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
