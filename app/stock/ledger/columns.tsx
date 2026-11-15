@@ -17,6 +17,7 @@ export type StockLedgerRow = {
   warehouse: string;
   voucherType: string;
   voucherNo: string;
+  voucherHref: string | null;
   actualQty: number;
   qtyAfterTransaction: number;
   valuationRate: number;
@@ -69,11 +70,19 @@ export const columns: ColumnDef<StockLedgerRow>[] = [
   {
     accessorKey: "voucherNo",
     header: "Voucher",
-    cell: ({ row }) => (
-      <span className="font-mono text-xs text-muted-foreground">
-        {row.original.voucherNo}
-      </span>
-    ),
+    cell: ({ row }) =>
+      row.original.voucherHref ? (
+        <Link
+          href={row.original.voucherHref}
+          className="font-mono text-xs text-primary hover:underline"
+        >
+          {row.original.voucherNo}
+        </Link>
+      ) : (
+        <span className="font-mono text-xs text-muted-foreground">
+          {row.original.voucherNo}
+        </span>
+      ),
   },
   {
     accessorKey: "actualQty",
