@@ -80,6 +80,10 @@ export function areaForPath(path: string): Area | null {
     ["/api/customers", "selling"],
     ["/api/sales-orders", "selling"],
     ["/api/delivery-notes", "selling"],
+    ["/api/accounts", "accounts"],
+    ["/api/sales-invoices", "accounts"],
+    ["/api/purchase-invoices", "accounts"],
+    ["/api/payment-entries", "accounts"],
   ];
   for (const [prefix, area] of apiMap) if (path.startsWith(prefix)) return area;
   return null;

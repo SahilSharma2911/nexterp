@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getSalesInvoice, submitSalesInvoice, cancelSalesInvoice } from "@/actions/sales-invoice";
+import { canWriteServer } from "@/lib/auth";
 import { PageHeader, LinkButton, Table, Th, Td, StatusPill } from "@/components/legacy-ui";
 import { fmtQty, fmtRate, fmtMoney, fmtDateTime } from "@/lib/format";
 import DocActions from "@/components/DocActions";
@@ -8,12 +9,13 @@ export default async function SiDetailPage(props: { params: Promise<{ id: string
   const { id } = await props.params;
   const r = await getSalesInvoice(id);
   if (!r) notFound();
+  const writable = await canWriteServer("accounts");
   return (
     <>
       <PageHeader title={r.name} subtitle={`Customer: ${r.customer}`}>
         <LinkButton href="/accounts/sales-invoice">Back</LinkButton>
-        {r.status === "SUBMITTED" && r.outstanding > 0 && <LinkButton href={`/accounts/payment-entry/new?si=${r.id}`} variant="primary">Receive Payment</LinkButton>}
-        <DocActions id={r.id} status={r.status} onSubmit={submitSalesInvoice} onCancel={cancelSalesInvoice} />
+        {writable && r.status === "SUBMITTED" && r.outstanding > 0 && <LinkButton href={`/accounts/payment-entry/new?si=${r.id}`} variant="primary">Receive Payment</LinkButton>}
+        {writable && <DocActions id={r.id} status={r.status} onSubmit={submitSalesInvoice} onCancel={cancelSalesInvoice} />}
       </PageHeader>
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-3"><StatusPill status={r.status} /><span className="text-sm text-gray-500">{fmtDateTime(r.postingAt)}</span><span className="text-sm">Outstanding: <span className={r.outstanding > 0 ? "font-semibold text-red-600" : "font-semibold text-green-700"}>{fmtMoney(r.outstanding)}</span></span></div>

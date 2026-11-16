@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getPaymentEntry, submitPaymentEntry, cancelPaymentEntry } from "@/actions/payment-entry";
+import { canWriteServer } from "@/lib/auth";
 import { PageHeader, LinkButton, StatusPill } from "@/components/legacy-ui";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
 import DocActions from "@/components/DocActions";
@@ -8,11 +9,12 @@ export default async function PayDetailPage(props: { params: Promise<{ id: strin
   const { id } = await props.params;
   const r = await getPaymentEntry(id);
   if (!r) notFound();
+  const writable = await canWriteServer("accounts");
   return (
     <>
       <PageHeader title={r.name} subtitle={r.paymentType === "RECEIVE" ? "Receipt" : "Payment"}>
         <LinkButton href="/accounts/payment-entry">Back</LinkButton>
-        <DocActions id={r.id} status={r.status} onSubmit={submitPaymentEntry} onCancel={cancelPaymentEntry} />
+        {writable && <DocActions id={r.id} status={r.status} onSubmit={submitPaymentEntry} onCancel={cancelPaymentEntry} />}
       </PageHeader>
       <div className="max-w-xl space-y-3 rounded-lg border border-gray-200 bg-white p-5">
         <div className="flex items-center gap-3"><StatusPill status={r.status} /><span className="text-sm text-gray-500">{fmtDateTime(r.postingAt)}</span></div>
