@@ -4,6 +4,7 @@
  * Run:  npm run db:seed   (reads DATABASE_URL from .env)
  */
 import "dotenv/config";
+import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma";
 import { postStockLedger } from "../lib/stock-ledger";
 import { postGL, getAccountId } from "../lib/gl";
@@ -49,6 +50,20 @@ async function wipe() {
 
 async function main() {
   await wipe();
+
+  // Default admin login (keeps existing users intact on re-seed).
+  const adminEmail = process.env.ADMIN_EMAIL || "admin@nexterp.app";
+  const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {},
+    create: {
+      email: adminEmail,
+      name: "Admin",
+      role: "ADMIN",
+      passwordHash: await bcrypt.hash(adminPassword, 10),
+    },
+  });
 
   // ---- Chart of Accounts ----
   const chart = [

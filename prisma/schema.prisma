@@ -10,6 +10,29 @@ datasource db {
   provider = "postgresql"
 }
 
+/* ============================== Auth ============================== */
+
+// A login account. One simple role per user drives access.
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(VIEWER)
+  disabled     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN // everything, plus user management
+  STOCK // stock + manufacturing
+  BUYING // purchasing
+  SELLING // sales
+  ACCOUNTS // invoices, payments, ledgers
+  VIEWER // read-only everywhere
+}
+
 /* ============================== Masters ============================== */
 
 // ERPNext: Item

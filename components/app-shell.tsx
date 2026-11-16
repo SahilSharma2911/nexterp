@@ -3,15 +3,23 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Menu, PanelLeft, User, X } from "lucide-react";
+import { BookOpen, Menu, PanelLeft, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { SessionUser } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AccentPicker } from "@/components/accent-picker";
+import { UserMenu } from "@/components/user-menu";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  user,
+}: {
+  children: React.ReactNode;
+  user: SessionUser;
+}) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
@@ -43,7 +51,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           collapsed ? "w-16" : "w-64",
         )}
       >
-        <SidebarNav collapsed={collapsed} onToggleCollapse={toggleCollapsed} />
+        <SidebarNav
+          role={user.role}
+          collapsed={collapsed}
+          onToggleCollapse={toggleCollapsed}
+        />
       </aside>
 
       {/* Mobile drawer (always full width, never collapsed) */}
@@ -63,7 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               <X className="size-4" />
             </Button>
-            <SidebarNav onNavigate={() => setMobileOpen(false)} />
+            <SidebarNav role={user.role} onNavigate={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
@@ -111,9 +123,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Button>
             <AccentPicker />
             <ThemeToggle />
-            <div className="ml-1 flex size-8 items-center justify-center rounded-full border bg-muted text-muted-foreground">
-              <User className="size-4" />
-            </div>
+            <UserMenu name={user.name} role={user.role} />
           </div>
         </header>
 

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Providers } from "@/components/providers";
-import { AppShell } from "@/components/app-shell";
 
 export const metadata: Metadata = {
   title: "nexterp",
@@ -27,9 +26,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: accentScript }} />
       </head>
       <body className="min-h-full bg-background text-foreground">
-        <Providers>
-          <AppShell>{children}</AppShell>
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

@@ -29,11 +29,21 @@ import {
   Warehouse,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { canSeeNav, type Area, type Role } from "@/lib/permissions";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+const HEADING_AREA: Record<string, Area | null> = {
+  Overview: null,
+  Stock: "stock",
+  Manufacturing: "manufacturing",
+  Buying: "buying",
+  Selling: "selling",
+  Accounts: "accounts",
+};
 
 type NavItem = { href: string; label: string; icon: React.ElementType };
 type NavGroup = { heading: string; items: NavItem[] };
@@ -96,15 +106,21 @@ function isActive(pathname: string, href: string) {
 }
 
 export function SidebarNav({
+  role,
   collapsed = false,
   onToggleCollapse,
   onNavigate,
 }: {
+  role: Role;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const groups = NAV.filter((g) => {
+    const area = HEADING_AREA[g.heading];
+    return area === null || canSeeNav(role, area);
+  });
 
   return (
     <div className="flex h-full flex-col">
@@ -127,7 +143,7 @@ export function SidebarNav({
       </Link>
 
       <nav className={cn("min-h-0 flex-1 overflow-y-auto py-4", collapsed ? "px-2" : "px-3")}>
-        {NAV.map((group, gi) => (
+        {groups.map((group, gi) => (
           <div key={group.heading} className="mb-5">
             {collapsed ? (
               gi > 0 && (
