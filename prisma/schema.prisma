@@ -778,3 +778,36 @@ model PaymentEntry {
 
   @@index([status])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DMS vertical (module: dms). EV-native vehicle unit. References the core
+// Warehouse by id only (no back-relation) so the core stays unaware of this
+// module — the boundary that lets verticals be added/removed independently.
+// ─────────────────────────────────────────────────────────────────────────────
+model Vehicle {
+  id            String        @id @default(uuid()) @db.Uuid
+  vin           String        @unique // chassis / VIN
+  model         String
+  variant       String?
+  color         String?
+  motorSerial   String?
+  batterySerial String?
+  batterySoH    Float? // battery State of Health, %
+  status        VehicleStatus @default(IN_STOCK)
+  mfgDate       DateTime?
+  purchaseRate  Decimal       @default(0) @db.Decimal(18, 2)
+  sellingRate   Decimal       @default(0) @db.Decimal(18, 2)
+  warehouseId   String?       @db.Uuid // loose ref to core Warehouse
+  remarks       String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([status])
+}
+
+enum VehicleStatus {
+  IN_STOCK
+  ALLOCATED
+  DELIVERED
+  IN_SERVICE
+}

@@ -1,7 +1,13 @@
 // Simple role-per-user access model. Pure (edge-safe) — no imports.
 
 export type Role = "ADMIN" | "STOCK" | "BUYING" | "SELLING" | "ACCOUNTS" | "VIEWER";
-export type Area = "stock" | "manufacturing" | "buying" | "selling" | "accounts";
+export type Area =
+  | "stock"
+  | "manufacturing"
+  | "buying"
+  | "selling"
+  | "accounts"
+  | "dms";
 
 export const ROLE_VALUES = [
   "ADMIN",
@@ -66,8 +72,10 @@ export function areaForPath(path: string): Area | null {
   if (path.startsWith("/buying")) return "buying";
   if (path.startsWith("/selling")) return "selling";
   if (path.startsWith("/accounts")) return "accounts";
+  if (path.startsWith("/dms")) return "dms";
 
   const apiMap: [string, Area][] = [
+    ["/api/vehicles", "dms"],
     ["/api/items", "stock"],
     ["/api/warehouses", "stock"],
     ["/api/stock-entries", "stock"],

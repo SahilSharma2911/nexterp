@@ -28,9 +28,10 @@ import {
   Wallet,
   Warehouse,
 } from "lucide-react";
-import { UserCog } from "lucide-react";
+import { Car, UserCog } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canSeeNav, isAdmin, type Area, type Role } from "@/lib/permissions";
+import { isModuleEnabled, type ModuleId } from "@/lib/modules";
 import {
   Tooltip,
   TooltipContent,
@@ -44,6 +45,19 @@ const HEADING_AREA: Record<string, Area | null> = {
   Buying: "buying",
   Selling: "selling",
   Accounts: "accounts",
+  Dealership: "dms",
+};
+
+// Which vertical module each nav group belongs to (null = always-on core).
+const HEADING_MODULE: Record<string, ModuleId | null> = {
+  Overview: null,
+  Stock: "erp",
+  Manufacturing: "erp",
+  Buying: "erp",
+  Selling: "erp",
+  Accounts: "erp",
+  Dealership: "dms",
+  Settings: null,
 };
 
 type NavItem = { href: string; label: string; icon: React.ElementType };
@@ -100,6 +114,10 @@ const NAV: NavGroup[] = [
     ],
   },
   {
+    heading: "Dealership",
+    items: [{ href: "/dms/vehicles", label: "Vehicles", icon: Car }],
+  },
+  {
     heading: "Settings",
     items: [{ href: "/settings/users", label: "Users", icon: UserCog }],
   },
@@ -123,6 +141,8 @@ export function SidebarNav({
 }) {
   const pathname = usePathname();
   const groups = NAV.filter((g) => {
+    const mod = HEADING_MODULE[g.heading];
+    if (mod && !isModuleEnabled(mod)) return false;
     if (g.heading === "Settings") return isAdmin(role);
     const area = HEADING_AREA[g.heading];
     return area === null || canSeeNav(role, area);
