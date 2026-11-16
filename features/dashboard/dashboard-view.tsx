@@ -276,6 +276,7 @@ export function DashboardView() {
 
           <DashboardCharts
             trend={d.monthlyTrend}
+            cashTrend={d.cashTrend}
             stockByWarehouse={d.stockByWarehouse}
           />
 
@@ -523,9 +524,9 @@ function DashboardSkeleton() {
         ))}
       </div>
       <div className="grid gap-6 pt-2 lg:grid-cols-2">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <Skeleton key={`c${i}`} className="h-[324px] w-full" />
-        ))}
+        <Skeleton className="h-[324px] w-full" />
+        <Skeleton className="h-[324px] w-full" />
+        <Skeleton className="h-[324px] w-full lg:col-span-2" />
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         {Array.from({ length: 4 }).map((_, i) => (

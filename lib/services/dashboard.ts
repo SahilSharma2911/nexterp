@@ -108,21 +108,22 @@ export async function getDashboard(): Promise<DashboardData> {
     }),
   ]);
 
-  // Cash + bank balance from the GL (debit - credit on cash/bank accounts).
+  // Cash + bank balance from the GL (debit - credit on cash/bank accounts),
+  // plus the full ledger so we can build a running end-of-month trend.
   let cashBalance = 0;
+  let cashLedger: { postingAt: Date; debit: number; credit: number }[] = [];
   if (cashAccounts.length) {
-    const g = await prisma.gLEntry.groupBy({
-      by: ["accountId"],
-      where: {
-        isCancelled: false,
-        accountId: { in: cashAccounts.map((a) => a.id) },
-      },
-      _sum: { debit: true, credit: true },
+    const ids = cashAccounts.map((a) => a.id);
+    const entries = await prisma.gLEntry.findMany({
+      where: { isCancelled: false, accountId: { in: ids } },
+      select: { postingAt: true, debit: true, credit: true },
     });
-    cashBalance = g.reduce(
-      (s, x) => s + (Number(x._sum.debit ?? 0) - Number(x._sum.credit ?? 0)),
-      0,
-    );
+    cashLedger = entries.map((e) => ({
+      postingAt: e.postingAt,
+      debit: Number(e.debit),
+      credit: Number(e.credit),
+    }));
+    cashBalance = cashLedger.reduce((s, e) => s + (e.debit - e.credit), 0);
   }
 
   // Stock value by warehouse.
@@ -202,6 +203,24 @@ export async function getDashboard(): Promise<DashboardData> {
     purchases: round2(b.purchases),
   }));
 
+  // Running cash + bank balance at each month-end across the same window.
+  let cashOpening = 0;
+  const cashMonthNet = new Map<string, number>();
+  for (const e of cashLedger) {
+    const net = e.debit - e.credit;
+    const k = monthKey(e.postingAt);
+    if (trendBuckets.has(k)) {
+      cashMonthNet.set(k, (cashMonthNet.get(k) ?? 0) + net);
+    } else if (e.postingAt < trendStart) {
+      cashOpening += net; // everything before the window forms the opening
+    }
+  }
+  let cashRunning = cashOpening;
+  const cashTrend = Array.from(trendBuckets.entries()).map(([key, b]) => {
+    cashRunning += cashMonthNet.get(key) ?? 0;
+    return { month: b.month, balance: round2(cashRunning) };
+  });
+
   return {
     kpis: {
       stockValue: Number(binAgg._sum.stockValue ?? 0),
@@ -222,6 +241,7 @@ export async function getDashboard(): Promise<DashboardData> {
       lowStockCount: lowStockItems.length,
     },
     monthlyTrend,
+    cashTrend,
     stockByWarehouse,
     topItems,
     openSalesOrders: openSalesOrders.map((o) => ({

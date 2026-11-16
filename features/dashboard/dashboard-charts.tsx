@@ -6,6 +6,8 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Line,
+  LineChart,
   XAxis,
   YAxis,
 } from "recharts";
@@ -19,7 +21,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { fmtMoney } from "@/lib/format";
-import type { MonthlyPoint, WarehouseValue } from "./schema";
+import type { CashPoint, MonthlyPoint, WarehouseValue } from "./schema";
 
 // Compact money for axis ticks (₹12k, ₹1.2L).
 function compactMoney(v: number) {
@@ -34,15 +36,21 @@ const trendConfig = {
   purchases: { label: "Purchases", color: "var(--chart-3)" },
 } satisfies ChartConfig;
 
+const cashConfig = {
+  balance: { label: "Cash + Bank", color: "var(--primary)" },
+} satisfies ChartConfig;
+
 const warehouseConfig = {
   value: { label: "Stock Value", color: "var(--primary)" },
 } satisfies ChartConfig;
 
 export function DashboardCharts({
   trend,
+  cashTrend,
   stockByWarehouse,
 }: {
   trend: MonthlyPoint[];
+  cashTrend: CashPoint[];
   stockByWarehouse: WarehouseValue[];
 }) {
   return (
@@ -134,6 +142,52 @@ export function DashboardCharts({
       </Card>
 
       <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Cash + Bank balance · last 6 months</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={cashConfig} className="h-[260px] w-full">
+            <LineChart data={cashTrend} margin={{ left: 4, right: 8, top: 8 }}>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis
+                dataKey="month"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                fontSize={12}
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                width={48}
+                fontSize={12}
+                tickFormatter={(v) => compactMoney(Number(v))}
+              />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    formatter={(value) => (
+                      <span className="font-medium tabular-nums">
+                        {fmtMoney(Number(value))}
+                      </span>
+                    )}
+                  />
+                }
+              />
+              <Line
+                dataKey="balance"
+                type="monotone"
+                stroke="var(--color-balance)"
+                strokeWidth={2}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle className="text-sm">Stock value by warehouse</CardTitle>
         </CardHeader>

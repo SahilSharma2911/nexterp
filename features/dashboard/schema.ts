@@ -26,6 +26,11 @@ export type MonthlyPoint = {
   purchases: number;
 };
 
+export type CashPoint = {
+  month: string;
+  balance: number;
+};
+
 export type TopItem = {
   itemId: string;
   itemCode: string;
@@ -71,6 +76,7 @@ export type DashboardData = {
   kpis: DashboardKpis;
   counts: DashboardCounts;
   monthlyTrend: MonthlyPoint[];
+  cashTrend: CashPoint[];
   stockByWarehouse: WarehouseValue[];
   topItems: TopItem[];
   openSalesOrders: OpenSalesOrder[];
