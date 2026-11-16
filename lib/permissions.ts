@@ -3,6 +3,15 @@
 export type Role = "ADMIN" | "STOCK" | "BUYING" | "SELLING" | "ACCOUNTS" | "VIEWER";
 export type Area = "stock" | "manufacturing" | "buying" | "selling" | "accounts";
 
+export const ROLE_VALUES = [
+  "ADMIN",
+  "STOCK",
+  "BUYING",
+  "SELLING",
+  "ACCOUNTS",
+  "VIEWER",
+] as const;
+
 export const ROLES: { value: Role; label: string; hint: string }[] = [
   { value: "ADMIN", label: "Admin", hint: "Full access + user management" },
   { value: "STOCK", label: "Stock", hint: "Stock & manufacturing" },
@@ -43,6 +52,12 @@ export function canSeeNav(role: Role, area: Area): boolean {
 }
 
 export const isAdmin = (role: Role) => role === "ADMIN";
+
+// Admin-only sections (user management). Fully gated — non-admins can neither
+// read nor write here.
+export function isAdminOnlyPath(path: string): boolean {
+  return path.startsWith("/settings") || path.startsWith("/api/users");
+}
 
 // Map a request path to its area (for write-gating). null = no area gate.
 export function areaForPath(path: string): Area | null {

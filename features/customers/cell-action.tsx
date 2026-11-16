@@ -22,13 +22,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useCanWrite } from "@/components/session-context";
 import { useDeleteCustomer } from "./queries";
 import type { Customer } from "./schema";
 
 export function CellAction({ customer }: { customer: Customer }) {
   const router = useRouter();
   const del = useDeleteCustomer();
+  const canWrite = useCanWrite("selling");
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  if (!canWrite) return null;
 
   return (
     <div className="text-right">

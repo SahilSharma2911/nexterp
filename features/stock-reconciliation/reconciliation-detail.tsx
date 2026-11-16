@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/page-header";
 import { DocStatusBadge } from "@/components/doc-status-badge";
+import { useCanWrite } from "@/components/session-context";
 import { fmtQty, fmtRate, fmtDateTime } from "@/lib/format";
 import {
   useReconciliation,
@@ -39,6 +40,7 @@ function Meta({ label, value }: { label: string; value: React.ReactNode }) {
 
 export function ReconciliationDetail({ reconId }: { reconId: string }) {
   const router = useRouter();
+  const canWrite = useCanWrite("stock");
   const { data: r, isLoading } = useReconciliation(reconId);
   const submit = useSubmitReconciliation();
   const cancel = useCancelReconciliation();
@@ -66,7 +68,7 @@ export function ReconciliationDetail({ reconId }: { reconId: string }) {
         actions={
           <div className="flex items-center gap-2">
             <DocStatusBadge status={r.status} />
-            {isDraft && (
+            {canWrite && isDraft && (
               <>
                 <Button asChild variant="outline">
                   <Link href={`/stock/reconciliation/${r.id}/edit`}>
@@ -90,7 +92,7 @@ export function ReconciliationDetail({ reconId }: { reconId: string }) {
                 </Button>
               </>
             )}
-            {isSubmitted && (
+            {canWrite && isSubmitted && (
               <Button variant="destructive" onClick={() => setConfirm("cancel")}>
                 Cancel Entry
               </Button>

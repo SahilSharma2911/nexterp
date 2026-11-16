@@ -12,6 +12,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AccentPicker } from "@/components/accent-picker";
 import { UserMenu } from "@/components/user-menu";
+import { SessionProvider } from "@/components/session-context";
 
 export function AppShell({
   children,
@@ -128,7 +129,7 @@ export function AppShell({
         </header>
 
         <main className="mx-auto max-w-7xl px-3 py-4 lg:px-6 lg:py-5">
-          {children}
+          <SessionProvider user={user}>{children}</SessionProvider>
         </main>
       </div>
     </div>

@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/page-header";
+import { useCanWrite } from "@/components/session-context";
 import { fmtMoney } from "@/lib/format";
 import { useDeleteItem, useGenerateVariants, useItem } from "./queries";
 
@@ -33,6 +34,7 @@ function Meta({ label, value }: { label: string; value: React.ReactNode }) {
 
 export function ItemDetail({ itemId }: { itemId: string }) {
   const router = useRouter();
+  const canWrite = useCanWrite("stock");
   const { data: it, isLoading } = useItem(itemId);
   const del = useDeleteItem();
   const gen = useGenerateVariants();
@@ -57,30 +59,34 @@ export function ItemDetail({ itemId }: { itemId: string }) {
             {it.hasVariants && <Badge variant="outline">Template</Badge>}
             {it.variantOfId && <Badge variant="outline">Variant</Badge>}
             {it.disabled && <Badge variant="secondary">Disabled</Badge>}
-            {it.hasVariants && (
-              <Button
-                variant="outline"
-                disabled={gen.isPending}
-                onClick={() => gen.mutate(it.id)}
-              >
-                <Sparkles className="size-4" />
-                {gen.isPending ? "Generating…" : "Generate Variants"}
-              </Button>
+            {canWrite && (
+              <>
+                {it.hasVariants && (
+                  <Button
+                    variant="outline"
+                    disabled={gen.isPending}
+                    onClick={() => gen.mutate(it.id)}
+                  >
+                    <Sparkles className="size-4" />
+                    {gen.isPending ? "Generating…" : "Generate Variants"}
+                  </Button>
+                )}
+                <Button asChild variant="outline">
+                  <Link href={`/stock/items/${it.id}/edit`}>
+                    <Pencil className="size-4" />
+                    Edit
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="text-destructive"
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  <Trash2 className="size-4" />
+                  Delete
+                </Button>
+              </>
             )}
-            <Button asChild variant="outline">
-              <Link href={`/stock/items/${it.id}/edit`}>
-                <Pencil className="size-4" />
-                Edit
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="text-destructive"
-              onClick={() => setConfirmDelete(true)}
-            >
-              <Trash2 className="size-4" />
-              Delete
-            </Button>
           </div>
         }
       />

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/page-header";
 import { DocStatusBadge } from "@/components/doc-status-badge";
+import { useCanWrite } from "@/components/session-context";
 import { fmtMoney, fmtQty, fmtRate, fmtDateTime } from "@/lib/format";
 import { PURPOSE_LABELS } from "./schema";
 import {
@@ -40,6 +41,7 @@ function Meta({ label, value }: { label: string; value: React.ReactNode }) {
 
 export function StockEntryDetail({ entryId }: { entryId: string }) {
   const router = useRouter();
+  const canWrite = useCanWrite("stock");
   const { data: e, isLoading } = useStockEntry(entryId);
   const submit = useSubmitStockEntry();
   const cancel = useCancelStockEntry();
@@ -68,7 +70,7 @@ export function StockEntryDetail({ entryId }: { entryId: string }) {
         actions={
           <div className="flex items-center gap-2">
             <DocStatusBadge status={e.status} />
-            {isDraft && (
+            {canWrite && isDraft && (
               <>
                 <Button asChild variant="outline">
                   <Link href={`/stock/stock-entry/${e.id}/edit`}>
@@ -92,7 +94,7 @@ export function StockEntryDetail({ entryId }: { entryId: string }) {
                 </Button>
               </>
             )}
-            {isSubmitted && (
+            {canWrite && isSubmitted && (
               <Button
                 variant="destructive"
                 onClick={() => setConfirm("cancel")}

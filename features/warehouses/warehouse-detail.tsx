@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/page-header";
+import { useCanWrite } from "@/components/session-context";
 import { useDeleteWarehouse, useWarehouse } from "./queries";
 
 function Meta({ label, value }: { label: string; value: React.ReactNode }) {
@@ -32,6 +33,7 @@ function Meta({ label, value }: { label: string; value: React.ReactNode }) {
 
 export function WarehouseDetail({ warehouseId }: { warehouseId: string }) {
   const router = useRouter();
+  const canWrite = useCanWrite("stock");
   const { data: w, isLoading } = useWarehouse(warehouseId);
   const del = useDeleteWarehouse();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -60,20 +62,24 @@ export function WarehouseDetail({ warehouseId }: { warehouseId: string }) {
             ) : (
               <Badge>Active</Badge>
             )}
-            <Button asChild variant="outline">
-              <Link href={`/stock/warehouses/${w.id}/edit`}>
-                <Pencil className="size-4" />
-                Edit
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="text-destructive"
-              onClick={() => setConfirmOpen(true)}
-            >
-              <Trash2 className="size-4" />
-              Delete
-            </Button>
+            {canWrite && (
+              <>
+                <Button asChild variant="outline">
+                  <Link href={`/stock/warehouses/${w.id}/edit`}>
+                    <Pencil className="size-4" />
+                    Edit
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="text-destructive"
+                  onClick={() => setConfirmOpen(true)}
+                >
+                  <Trash2 className="size-4" />
+                  Delete
+                </Button>
+              </>
+            )}
           </div>
         }
       />

@@ -9,6 +9,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useCanWrite } from "@/components/session-context";
 import {
   Select,
   SelectContent,
@@ -34,6 +35,7 @@ export function ReconciliationsTable() {
     parseAsString.withDefault("").withOptions({ history: "push", clearOnDefault: true }),
   );
   const [search, setSearch] = useState(params.q);
+  const canWrite = useCanWrite("stock");
 
   const { data, isFetching } = useReconciliations({
     page: params.page,
@@ -95,12 +97,14 @@ export function ReconciliationsTable() {
             </SelectContent>
           </Select>
         </div>
-        <Button asChild>
-          <Link href="/stock/reconciliation/new">
-            <Plus className="size-4" />
-            New Reconciliation
-          </Link>
-        </Button>
+        {canWrite && (
+          <Button asChild>
+            <Link href="/stock/reconciliation/new">
+              <Plus className="size-4" />
+              New Reconciliation
+            </Link>
+          </Button>
+        )}
       </div>
 
       <DataTable

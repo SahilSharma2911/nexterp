@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useCanWrite } from "@/components/session-context";
 import { columns } from "./columns";
 import { useDeliveryNotes } from "./queries";
 import type { DeliveryNotesTableMeta } from "./schema";
@@ -28,6 +29,7 @@ const STATUSES = [
 ];
 
 export function DeliveryNotesTable() {
+  const canWrite = useCanWrite("selling");
   const [params, setParams] = useListParams();
   const [status, setStatus] = useQueryState(
     "status",
@@ -95,12 +97,14 @@ export function DeliveryNotesTable() {
             </SelectContent>
           </Select>
         </div>
-        <Button asChild>
-          <Link href="/selling/delivery-note/new">
-            <Plus className="size-4" />
-            New Delivery Note
-          </Link>
-        </Button>
+        {canWrite && (
+          <Button asChild>
+            <Link href="/selling/delivery-note/new">
+              <Plus className="size-4" />
+              New Delivery Note
+            </Link>
+          </Button>
+        )}
       </div>
 
       <DataTable

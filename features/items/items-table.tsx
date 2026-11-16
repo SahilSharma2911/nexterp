@@ -8,6 +8,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useCanWrite } from "@/components/session-context";
 import { columns } from "./columns";
 import { useItems } from "./queries";
 import type { ItemsTableMeta } from "./schema";
@@ -15,6 +16,7 @@ import type { ItemsTableMeta } from "./schema";
 export function ItemsTable() {
   const [params, setParams] = useListParams();
   const [search, setSearch] = useState(params.q);
+  const canWrite = useCanWrite("stock");
 
   const { data, isFetching } = useItems({
     page: params.page,
@@ -56,12 +58,14 @@ export function ItemsTable() {
             className="pl-8"
           />
         </div>
-        <Button asChild>
-          <Link href="/stock/items/new">
-            <Plus className="size-4" />
-            New Item
-          </Link>
-        </Button>
+        {canWrite && (
+          <Button asChild>
+            <Link href="/stock/items/new">
+              <Plus className="size-4" />
+              New Item
+            </Link>
+          </Button>
+        )}
       </div>
 
       <DataTable

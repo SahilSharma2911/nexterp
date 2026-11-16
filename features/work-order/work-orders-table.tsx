@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { parseAsString, useQueryState } from "nuqs";
 import { useListParams } from "@/hooks/use-list-params";
+import { useCanWrite } from "@/components/session-context";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ const STATUSES = [
 ];
 
 export function WorkOrdersTable() {
+  const canWrite = useCanWrite("manufacturing");
   const [params, setParams] = useListParams();
   const [status, setStatus] = useQueryState(
     "status",
@@ -96,12 +98,14 @@ export function WorkOrdersTable() {
             </SelectContent>
           </Select>
         </div>
-        <Button asChild>
-          <Link href="/manufacturing/work-order/new">
-            <Plus className="size-4" />
-            New Work Order
-          </Link>
-        </Button>
+        {canWrite && (
+          <Button asChild>
+            <Link href="/manufacturing/work-order/new">
+              <Plus className="size-4" />
+              New Work Order
+            </Link>
+          </Button>
+        )}
       </div>
 
       <DataTable

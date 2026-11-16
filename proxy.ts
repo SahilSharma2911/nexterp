@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySession } from "@/lib/session";
-import { areaForPath, canWrite } from "@/lib/permissions";
+import { areaForPath, canWrite, isAdminOnlyPath } from "@/lib/permissions";
 
 const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -30,6 +30,20 @@ export async function proxy(req: NextRequest) {
 
   // --- logged in ---
   if (isLogin) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  // Admin-only sections (user management): fully gated, read and write.
+  if (isAdminOnlyPath(pathname) && session.role !== "ADMIN") {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { message: "Admins only." },
+        { status: 403 },
+      );
+    }
     const url = req.nextUrl.clone();
     url.pathname = "/";
     url.search = "";

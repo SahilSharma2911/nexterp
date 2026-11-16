@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
+import { useCanWrite } from "@/components/session-context";
 import { useListParams } from "@/hooks/use-list-params";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
@@ -15,6 +16,7 @@ import type { WarehousesTableMeta } from "./schema";
 export function WarehousesTable() {
   const [params, setParams] = useListParams();
   const [search, setSearch] = useState(params.q);
+  const canWrite = useCanWrite("stock");
 
   const { data, isFetching } = useWarehouses({
     page: params.page,
@@ -55,12 +57,14 @@ export function WarehousesTable() {
             className="pl-8"
           />
         </div>
-        <Button asChild>
-          <Link href="/stock/warehouses/new">
-            <Plus className="size-4" />
-            New Warehouse
-          </Link>
-        </Button>
+        {canWrite && (
+          <Button asChild>
+            <Link href="/stock/warehouses/new">
+              <Plus className="size-4" />
+              New Warehouse
+            </Link>
+          </Button>
+        )}
       </div>
 
       <DataTable

@@ -28,8 +28,9 @@ import {
   Wallet,
   Warehouse,
 } from "lucide-react";
+import { UserCog } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { canSeeNav, type Area, type Role } from "@/lib/permissions";
+import { canSeeNav, isAdmin, type Area, type Role } from "@/lib/permissions";
 import {
   Tooltip,
   TooltipContent,
@@ -98,6 +99,10 @@ const NAV: NavGroup[] = [
       { href: "/accounts/trial-balance", label: "Trial Balance", icon: Calculator },
     ],
   },
+  {
+    heading: "Settings",
+    items: [{ href: "/settings/users", label: "Users", icon: UserCog }],
+  },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -118,6 +123,7 @@ export function SidebarNav({
 }) {
   const pathname = usePathname();
   const groups = NAV.filter((g) => {
+    if (g.heading === "Settings") return isAdmin(role);
     const area = HEADING_AREA[g.heading];
     return area === null || canSeeNav(role, area);
   });

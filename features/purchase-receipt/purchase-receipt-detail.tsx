@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/page-header";
 import { DocStatusBadge } from "@/components/doc-status-badge";
+import { useCanWrite } from "@/components/session-context";
 import { fmtMoney, fmtQty, fmtRate, fmtDateTime } from "@/lib/format";
 import {
   usePurchaseReceipt,
@@ -42,6 +43,7 @@ export function PurchaseReceiptDetail({ receiptId }: { receiptId: string }) {
   const submit = useSubmitPurchaseReceipt();
   const cancel = useCancelPurchaseReceipt();
   const del = useDeletePurchaseReceipt();
+  const canWrite = useCanWrite("buying");
   const [confirm, setConfirm] = useState<null | "cancel" | "delete">(null);
 
   if (isLoading || !pr) {
@@ -65,7 +67,7 @@ export function PurchaseReceiptDetail({ receiptId }: { receiptId: string }) {
         actions={
           <div className="flex items-center gap-2">
             <DocStatusBadge status={pr.status} />
-            {isDraft && (
+            {canWrite && isDraft && (
               <>
                 <Button asChild variant="outline">
                   <Link href={`/buying/purchase-receipt/${pr.id}/edit`}>
@@ -89,7 +91,7 @@ export function PurchaseReceiptDetail({ receiptId }: { receiptId: string }) {
                 </Button>
               </>
             )}
-            {isSubmitted && (
+            {canWrite && isSubmitted && (
               <Button variant="destructive" onClick={() => setConfirm("cancel")}>
                 Cancel Receipt
               </Button>

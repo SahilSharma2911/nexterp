@@ -9,6 +9,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useCanWrite } from "@/components/session-context";
 import {
   Select,
   SelectContent,
@@ -34,6 +35,7 @@ export function StockEntriesTable() {
     parseAsString.withDefault("").withOptions({ history: "push", clearOnDefault: true }),
   );
   const [search, setSearch] = useState(params.q);
+  const canWrite = useCanWrite("stock");
 
   const { data, isFetching } = useStockEntries({
     page: params.page,
@@ -95,12 +97,14 @@ export function StockEntriesTable() {
             </SelectContent>
           </Select>
         </div>
-        <Button asChild>
-          <Link href="/stock/stock-entry/new">
-            <Plus className="size-4" />
-            New Stock Entry
-          </Link>
-        </Button>
+        {canWrite && (
+          <Button asChild>
+            <Link href="/stock/stock-entry/new">
+              <Plus className="size-4" />
+              New Stock Entry
+            </Link>
+          </Button>
+        )}
       </div>
 
       <DataTable

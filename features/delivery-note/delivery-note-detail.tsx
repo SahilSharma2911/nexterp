@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/page-header";
 import { DocStatusBadge } from "@/components/doc-status-badge";
+import { useCanWrite } from "@/components/session-context";
 import { fmtMoney, fmtQty, fmtRate, fmtDateTime } from "@/lib/format";
 import {
   useDeliveryNote,
@@ -38,6 +39,7 @@ function Meta({ label, value }: { label: string; value: React.ReactNode }) {
 
 export function DeliveryNoteDetail({ noteId }: { noteId: string }) {
   const router = useRouter();
+  const canWrite = useCanWrite("selling");
   const { data: dn, isLoading } = useDeliveryNote(noteId);
   const submit = useSubmitDeliveryNote();
   const cancel = useCancelDeliveryNote();
@@ -65,7 +67,7 @@ export function DeliveryNoteDetail({ noteId }: { noteId: string }) {
         actions={
           <div className="flex items-center gap-2">
             <DocStatusBadge status={dn.status} />
-            {isDraft && (
+            {canWrite && isDraft && (
               <>
                 <Button asChild variant="outline">
                   <Link href={`/selling/delivery-note/${dn.id}/edit`}>
@@ -89,7 +91,7 @@ export function DeliveryNoteDetail({ noteId }: { noteId: string }) {
                 </Button>
               </>
             )}
-            {isSubmitted && (
+            {canWrite && isSubmitted && (
               <Button variant="destructive" onClick={() => setConfirm("cancel")}>
                 Cancel Note
               </Button>

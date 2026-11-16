@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useCanWrite } from "@/components/session-context";
 import { PageHeader } from "@/components/page-header";
 import { DocStatusBadge } from "@/components/doc-status-badge";
 import { fmtMoney, fmtQty, fmtRate } from "@/lib/format";
@@ -38,6 +39,7 @@ function Meta({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export function BomDetail({ bomId }: { bomId: string }) {
+  const canWrite = useCanWrite("manufacturing");
   const router = useRouter();
   const { data: b, isLoading } = useBom(bomId);
   const submit = useSubmitBom();
@@ -67,7 +69,7 @@ export function BomDetail({ bomId }: { bomId: string }) {
           <div className="flex items-center gap-2">
             {b.isDefault && <Badge variant="outline">Default</Badge>}
             <DocStatusBadge status={b.status} />
-            {isDraft && (
+            {canWrite && isDraft && (
               <>
                 <Button asChild variant="outline">
                   <Link href={`/manufacturing/bom/${b.id}/edit`}>
@@ -91,7 +93,7 @@ export function BomDetail({ bomId }: { bomId: string }) {
                 </Button>
               </>
             )}
-            {isSubmitted && b.isActive && (
+            {isSubmitted && b.isActive && canWrite && (
               <Button asChild>
                 <Link href={`/manufacturing/work-order/new?bom=${b.id}`}>
                   <Factory className="size-4" />
@@ -99,7 +101,7 @@ export function BomDetail({ bomId }: { bomId: string }) {
                 </Link>
               </Button>
             )}
-            {isSubmitted && (
+            {canWrite && isSubmitted && (
               <Button variant="destructive" onClick={() => setConfirm("cancel")}>
                 Cancel BOM
               </Button>

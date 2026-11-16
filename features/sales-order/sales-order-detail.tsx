@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/page-header";
 import { OrderStatusBadge } from "@/components/order-status-badge";
+import { useCanWrite } from "@/components/session-context";
 import { fmtMoney, fmtQty, fmtRate } from "@/lib/format";
 import {
   useSalesOrder,
@@ -38,6 +39,7 @@ function Meta({ label, value }: { label: string; value: React.ReactNode }) {
 
 export function SalesOrderDetail({ orderId }: { orderId: string }) {
   const router = useRouter();
+  const canWrite = useCanWrite("selling");
   const { data: so, isLoading } = useSalesOrder(orderId);
   const submit = useSubmitSalesOrder();
   const cancel = useCancelSalesOrder();
@@ -65,7 +67,7 @@ export function SalesOrderDetail({ orderId }: { orderId: string }) {
         actions={
           <div className="flex items-center gap-2">
             <OrderStatusBadge status={so.status} />
-            {isDraft && (
+            {canWrite && isDraft && (
               <>
                 <Button asChild variant="outline">
                   <Link href={`/selling/sales-order/${so.id}/edit`}>
@@ -89,7 +91,7 @@ export function SalesOrderDetail({ orderId }: { orderId: string }) {
                 </Button>
               </>
             )}
-            {isOpen && (
+            {canWrite && isOpen && (
               <>
                 <Button asChild>
                   <Link href={`/selling/delivery-note/new?so=${so.id}`}>

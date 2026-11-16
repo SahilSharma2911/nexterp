@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useCanWrite } from "@/components/session-context";
 import { useDeleteItem } from "./queries";
 import type { ItemListItem } from "./schema";
 
@@ -29,6 +30,9 @@ export function CellAction({ item }: { item: ItemListItem }) {
   const router = useRouter();
   const del = useDeleteItem();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const canWrite = useCanWrite("stock");
+
+  if (!canWrite) return null;
 
   return (
     <div className="text-right">

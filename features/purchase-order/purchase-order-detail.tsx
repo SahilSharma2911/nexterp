@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/page-header";
 import { OrderStatusBadge } from "@/components/order-status-badge";
+import { useCanWrite } from "@/components/session-context";
 import { fmtMoney, fmtQty, fmtRate } from "@/lib/format";
 import {
   usePurchaseOrder,
@@ -42,6 +43,7 @@ export function PurchaseOrderDetail({ orderId }: { orderId: string }) {
   const submit = useSubmitPurchaseOrder();
   const cancel = useCancelPurchaseOrder();
   const del = useDeletePurchaseOrder();
+  const canWrite = useCanWrite("buying");
   const [confirm, setConfirm] = useState<null | "cancel" | "delete">(null);
 
   if (isLoading || !po) {
@@ -65,7 +67,7 @@ export function PurchaseOrderDetail({ orderId }: { orderId: string }) {
         actions={
           <div className="flex items-center gap-2">
             <OrderStatusBadge status={po.status} />
-            {isDraft && (
+            {canWrite && isDraft && (
               <>
                 <Button asChild variant="outline">
                   <Link href={`/buying/purchase-order/${po.id}/edit`}>
@@ -89,7 +91,7 @@ export function PurchaseOrderDetail({ orderId }: { orderId: string }) {
                 </Button>
               </>
             )}
-            {isOpen && (
+            {canWrite && isOpen && (
               <>
                 <Button asChild>
                   <Link href={`/buying/purchase-receipt/new?po=${po.id}`}>

@@ -6,6 +6,7 @@ import { Plus, Search } from "lucide-react";
 import { useListParams } from "@/hooks/use-list-params";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
+import { useCanWrite } from "@/components/session-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { columns } from "./columns";
@@ -14,6 +15,7 @@ import type { SuppliersTableMeta } from "./schema";
 
 export function SuppliersTable() {
   const [params, setParams] = useListParams();
+  const canWrite = useCanWrite("buying");
   const [search, setSearch] = useState(params.q);
 
   const { data, isFetching } = useSuppliers({
@@ -55,12 +57,14 @@ export function SuppliersTable() {
             className="pl-8"
           />
         </div>
-        <Button asChild>
-          <Link href="/buying/suppliers/new">
-            <Plus className="size-4" />
-            New Supplier
-          </Link>
-        </Button>
+        {canWrite && (
+          <Button asChild>
+            <Link href="/buying/suppliers/new">
+              <Plus className="size-4" />
+              New Supplier
+            </Link>
+          </Button>
+        )}
       </div>
 
       <DataTable

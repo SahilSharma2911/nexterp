@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useCanWrite } from "@/components/session-context";
 import { PageHeader } from "@/components/page-header";
 import { fmtQty, fmtRate } from "@/lib/format";
 import { WorkOrderStatusBadge } from "./status-badge";
@@ -44,6 +45,7 @@ function Meta({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export function WorkOrderDetail({ workOrderId }: { workOrderId: string }) {
+  const canWrite = useCanWrite("manufacturing");
   const { data: w, isLoading } = useWorkOrder(workOrderId);
   const finish = useFinishWorkOrder();
   const cancel = useCancelWorkOrder();
@@ -79,12 +81,12 @@ export function WorkOrderDetail({ workOrderId }: { workOrderId: string }) {
         actions={
           <div className="flex items-center gap-2">
             <WorkOrderStatusBadge status={w.status} />
-            {canCancel && (
+            {canWrite && canCancel && (
               <Button variant="destructive" onClick={() => setCancelOpen(true)}>
                 Cancel
               </Button>
             )}
-            {canProduce && (
+            {canWrite && canProduce && (
               <Button onClick={() => setFinishOpen(true)}>
                 Finish production
               </Button>

@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useCanWrite } from "@/components/session-context";
 import { columns } from "./columns";
 import { useSalesOrders } from "./queries";
 import type { SalesOrdersTableMeta } from "./schema";
@@ -29,6 +30,7 @@ const STATUSES = [
 ];
 
 export function SalesOrdersTable() {
+  const canWrite = useCanWrite("selling");
   const [params, setParams] = useListParams();
   const [status, setStatus] = useQueryState(
     "status",
@@ -96,12 +98,14 @@ export function SalesOrdersTable() {
             </SelectContent>
           </Select>
         </div>
-        <Button asChild>
-          <Link href="/selling/sales-order/new">
-            <Plus className="size-4" />
-            New Sales Order
-          </Link>
-        </Button>
+        {canWrite && (
+          <Button asChild>
+            <Link href="/selling/sales-order/new">
+              <Plus className="size-4" />
+              New Sales Order
+            </Link>
+          </Button>
+        )}
       </div>
 
       <DataTable

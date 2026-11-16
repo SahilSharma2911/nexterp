@@ -7,6 +7,7 @@ import { parseAsString, useQueryState } from "nuqs";
 import { useListParams } from "@/hooks/use-list-params";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
+import { useCanWrite } from "@/components/session-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,6 +30,7 @@ const STATUSES = [
 
 export function PurchaseReceiptsTable() {
   const [params, setParams] = useListParams();
+  const canWrite = useCanWrite("buying");
   const [status, setStatus] = useQueryState(
     "status",
     parseAsString.withDefault("").withOptions({ history: "push", clearOnDefault: true }),
@@ -95,12 +97,14 @@ export function PurchaseReceiptsTable() {
             </SelectContent>
           </Select>
         </div>
-        <Button asChild>
-          <Link href="/buying/purchase-receipt/new">
-            <Plus className="size-4" />
-            New Purchase Receipt
-          </Link>
-        </Button>
+        {canWrite && (
+          <Button asChild>
+            <Link href="/buying/purchase-receipt/new">
+              <Plus className="size-4" />
+              New Purchase Receipt
+            </Link>
+          </Button>
+        )}
       </div>
 
       <DataTable

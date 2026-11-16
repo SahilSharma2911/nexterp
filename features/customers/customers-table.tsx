@@ -8,11 +8,13 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useCanWrite } from "@/components/session-context";
 import { columns } from "./columns";
 import { useCustomers } from "./queries";
 import type { CustomersTableMeta } from "./schema";
 
 export function CustomersTable() {
+  const canWrite = useCanWrite("selling");
   const [params, setParams] = useListParams();
   const [search, setSearch] = useState(params.q);
 
@@ -55,12 +57,14 @@ export function CustomersTable() {
             className="pl-8"
           />
         </div>
-        <Button asChild>
-          <Link href="/selling/customers/new">
-            <Plus className="size-4" />
-            New Customer
-          </Link>
-        </Button>
+        {canWrite && (
+          <Button asChild>
+            <Link href="/selling/customers/new">
+              <Plus className="size-4" />
+              New Customer
+            </Link>
+          </Button>
+        )}
       </div>
 
       <DataTable

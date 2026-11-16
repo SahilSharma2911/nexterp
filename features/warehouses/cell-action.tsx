@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useCanWrite } from "@/components/session-context";
 import { useDeleteWarehouse } from "./queries";
 import type { Warehouse } from "./schema";
 
@@ -29,6 +30,9 @@ export function CellAction({ warehouse }: { warehouse: Warehouse }) {
   const router = useRouter();
   const del = useDeleteWarehouse();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const canWrite = useCanWrite("stock");
+
+  if (!canWrite) return null;
 
   return (
     <div className="text-right">
