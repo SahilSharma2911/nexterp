@@ -34,6 +34,10 @@ export function VehiclesTable() {
       .withDefault("")
       .withOptions({ history: "push", clearOnDefault: true }),
   );
+  const [dealer] = useQueryState(
+    "dealer",
+    parseAsString.withDefault("").withOptions({ clearOnDefault: true }),
+  );
   const [search, setSearch] = useState(params.q);
   const canWrite = useCanWrite("dms");
 
@@ -43,6 +47,7 @@ export function VehiclesTable() {
     q: params.q,
     sort: params.sort,
     status,
+    dealer: dealer || undefined,
   });
 
   useEffect(() => {

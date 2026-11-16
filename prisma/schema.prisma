@@ -798,11 +798,15 @@ model Vehicle {
   purchaseRate  Decimal       @default(0) @db.Decimal(18, 2)
   sellingRate   Decimal       @default(0) @db.Decimal(18, 2)
   warehouseId   String?       @db.Uuid // loose ref to core Warehouse
+  dealerId      String?       @db.Uuid // intra-module link to Dealer
   remarks       String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
+  dealer Dealer? @relation(fields: [dealerId], references: [id])
+
   @@index([status])
+  @@index([dealerId])
 }
 
 enum VehicleStatus {
@@ -810,4 +814,28 @@ enum VehicleStatus {
   ALLOCATED
   DELIVERED
   IN_SERVICE
+}
+
+// DMS vertical — dealership in the OEM network. A specialization of the generic
+// "party" concept, kept inside the module (the core has no Dealer notion).
+model Dealer {
+  id            String   @id @default(uuid()) @db.Uuid
+  code          String   @unique // network dealer code
+  name          String
+  legalName     String?
+  contactPerson String?
+  phone         String?
+  email         String?
+  gstin         String? // tax registration
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  state         String?
+  country       String?
+  postalCode    String?
+  disabled      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  vehicles Vehicle[]
 }

@@ -2,7 +2,7 @@ import { api } from "@/lib/axios";
 import type { ListQuery, ListResponse } from "@/lib/api-list";
 import type { Vehicle, VehicleFormValues } from "./schema";
 
-export type VehiclesQuery = ListQuery & { status: string };
+export type VehiclesQuery = ListQuery & { status: string; dealer?: string };
 
 export async function fetchVehicles(params: VehiclesQuery) {
   const { data } = await api.get<ListResponse<Vehicle>>("/vehicles", { params });

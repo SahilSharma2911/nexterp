@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const data = await listVehicles(parseListParams(sp), {
     status: sp.get("status") ?? undefined,
+    dealerId: sp.get("dealer") ?? undefined,
   });
   return NextResponse.json(data);
 }

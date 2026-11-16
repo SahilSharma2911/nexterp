@@ -131,6 +131,21 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
             }
           />
           <Meta
+            label="Dealer"
+            value={
+              v.dealerId && v.dealer ? (
+                <Link
+                  href={`/dms/dealers/${v.dealerId}`}
+                  className="text-primary hover:underline"
+                >
+                  {v.dealer}
+                </Link>
+              ) : (
+                dash
+              )
+            }
+          />
+          <Meta
             label="Mfg Date"
             value={v.mfgDate ? fmtDateTime(v.mfgDate) : dash}
           />

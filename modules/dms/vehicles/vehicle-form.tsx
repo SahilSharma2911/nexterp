@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWarehouseOptions } from "@/features/warehouses/queries";
+import { useDealerOptions } from "@/modules/dms/dealers/queries";
 import {
   VEHICLE_STATUSES,
   VEHICLE_STATUS_LABELS,
@@ -47,6 +48,7 @@ export function VehicleForm({ vehicleId }: { vehicleId?: string }) {
   const isEdit = !!vehicleId;
   const { data: existing, isLoading } = useVehicle(vehicleId);
   const { data: warehouseOptions = [] } = useWarehouseOptions();
+  const { data: dealerOptions = [] } = useDealerOptions();
   const create = useCreateVehicle();
   const update = useUpdateVehicle();
 
@@ -70,6 +72,7 @@ export function VehicleForm({ vehicleId }: { vehicleId?: string }) {
         purchaseRate: existing.purchaseRate,
         sellingRate: existing.sellingRate,
         warehouseId: existing.warehouseId ?? "",
+        dealerId: existing.dealerId ?? "",
         remarks: existing.remarks ?? "",
       });
     }
@@ -258,6 +261,36 @@ export function VehicleForm({ vehicleId }: { vehicleId?: string }) {
                       {warehouseOptions.map((w) => (
                         <SelectItem key={w.id} value={w.id}>
                           {w.warehouseName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="dealerId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dealer</FormLabel>
+                  <Select
+                    value={field.value || UNASSIGNED}
+                    onValueChange={(v) =>
+                      field.onChange(v === UNASSIGNED ? "" : v)
+                    }
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={UNASSIGNED}>— Unassigned —</SelectItem>
+                      {dealerOptions.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

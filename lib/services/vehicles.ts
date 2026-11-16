@@ -8,7 +8,11 @@ import type {
 
 const SORTABLE = ["vin", "model", "status", "batterySoH", "createdAt"] as const;
 
-type Row = Prisma.VehicleGetPayload<object>;
+type Row = Prisma.VehicleGetPayload<{
+  include: { dealer: { select: { name: true } } };
+}>;
+
+const WITH_DEALER = { dealer: { select: { name: true } } } as const;
 
 // Resolve core Warehouse names for a set of ids. The DMS module references the
 // core by id only; it never imports core Warehouse models into its own types.
@@ -40,6 +44,8 @@ function toItem(r: Row, wh: Map<string, string>): Vehicle {
     sellingRate: Number(r.sellingRate),
     warehouseId: r.warehouseId,
     warehouse: r.warehouseId ? (wh.get(r.warehouseId) ?? null) : null,
+    dealerId: r.dealerId,
+    dealer: r.dealer?.name ?? null,
     remarks: r.remarks,
   };
 }
@@ -58,17 +64,21 @@ function toData(v: VehicleFormValues) {
     purchaseRate: v.purchaseRate,
     sellingRate: v.sellingRate,
     warehouseId: v.warehouseId || null,
+    dealerId: v.dealerId || null,
     remarks: v.remarks?.trim() || null,
   };
 }
 
 export async function listVehicles(
   p: ListParams,
-  filters: { status?: string },
+  filters: { status?: string; dealerId?: string },
 ): Promise<ListResponse<Vehicle>> {
   const where: Prisma.VehicleWhereInput = {};
   if (filters.status && filters.status !== "all") {
     where.status = filters.status as VehicleStatus;
+  }
+  if (filters.dealerId) {
+    where.dealerId = filters.dealerId;
   }
   if (p.search) {
     where.OR = [
@@ -86,6 +96,7 @@ export async function listVehicles(
       orderBy,
       skip: (p.page - 1) * p.limit,
       take: p.limit,
+      include: WITH_DEALER,
     }),
     prisma.vehicle.count({ where }),
   ]);
@@ -100,7 +111,10 @@ export async function listVehicles(
 }
 
 export async function getVehicleById(id: string): Promise<Vehicle | null> {
-  const r = await prisma.vehicle.findUnique({ where: { id } });
+  const r = await prisma.vehicle.findUnique({
+    where: { id },
+    include: WITH_DEALER,
+  });
   if (!r) return null;
   const wh = await warehouseNames([r.warehouseId]);
   return toItem(r, wh);
@@ -112,7 +126,10 @@ export async function createVehicle(
   const vin = values.vin.trim();
   const dupe = await prisma.vehicle.findUnique({ where: { vin } });
   if (dupe) throw new Error(`A vehicle with VIN "${vin}" already exists`);
-  const r = await prisma.vehicle.create({ data: toData(values) });
+  const r = await prisma.vehicle.create({
+    data: toData(values),
+    include: WITH_DEALER,
+  });
   const wh = await warehouseNames([r.warehouseId]);
   return toItem(r, wh);
 }
@@ -128,7 +145,11 @@ export async function updateVehicle(
     const dupe = await prisma.vehicle.findUnique({ where: { vin } });
     if (dupe) throw new Error(`A vehicle with VIN "${vin}" already exists`);
   }
-  const r = await prisma.vehicle.update({ where: { id }, data: toData(values) });
+  const r = await prisma.vehicle.update({
+    where: { id },
+    data: toData(values),
+    include: WITH_DEALER,
+  });
   const wh = await warehouseNames([r.warehouseId]);
   return toItem(r, wh);
 }
