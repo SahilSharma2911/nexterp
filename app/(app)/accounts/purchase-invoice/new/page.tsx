@@ -1,8 +1,13 @@
-import { getItemOptions } from "@/actions/items";
-import { getSupplierOptions } from "@/actions/parties";
-import PiFormClient from "../PiFormClient";
-export const dynamic = "force-dynamic";
-export default async function NewPiPage() {
-  const [items, suppliers] = await Promise.all([getItemOptions(), getSupplierOptions()]);
-  return <PiFormClient items={items} suppliers={suppliers.map((s) => ({ id: s.id, name: s.supplierName }))} />;
+import { PageHeader } from "@/components/page-header";
+import { PurchaseInvoiceForm } from "@/features/purchase-invoice/purchase-invoice-form";
+
+export const metadata = { title: "New Purchase Invoice · nexterp" };
+
+export default function NewPurchaseInvoicePage() {
+  return (
+    <>
+      <PageHeader title="New Purchase Invoice" subtitle="Bill a supplier" />
+      <PurchaseInvoiceForm />
+    </>
+  );
 }

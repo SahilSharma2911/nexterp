@@ -1,8 +1,13 @@
-import { getItemOptions } from "@/actions/items";
-import { getCustomerOptions } from "@/actions/parties";
-import SiFormClient from "../SiFormClient";
-export const dynamic = "force-dynamic";
-export default async function NewSiPage() {
-  const [items, customers] = await Promise.all([getItemOptions(), getCustomerOptions()]);
-  return <SiFormClient items={items} customers={customers.map((c) => ({ id: c.id, name: c.customerName }))} />;
+import { PageHeader } from "@/components/page-header";
+import { SalesInvoiceForm } from "@/features/sales-invoice/sales-invoice-form";
+
+export const metadata = { title: "New Sales Invoice · nexterp" };
+
+export default function NewSalesInvoicePage() {
+  return (
+    <>
+      <PageHeader title="New Sales Invoice" subtitle="Bill a customer" />
+      <SalesInvoiceForm />
+    </>
+  );
 }

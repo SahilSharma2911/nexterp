@@ -1,34 +1,18 @@
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import { getSalesInvoices } from "@/actions/sales-invoice";
-import { canWriteServer } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
-import { SalesInvoicesTable } from "./columns";
+import { SalesInvoicesTable } from "@/features/sales-invoice/sales-invoices-table";
+
+export const metadata = { title: "Sales Invoices · nexterp" };
 
 export const dynamic = "force-dynamic";
 
-export default async function SalesInvoiceListPage() {
-  const rows = await getSalesInvoices();
-  const writable = await canWriteServer("accounts");
-
+export default function SalesInvoiceListPage() {
   return (
     <>
       <PageHeader
         title="Sales Invoices"
         subtitle="Bill customers and post receivables"
-        actions={
-          writable ? (
-            <Button asChild>
-              <Link href="/accounts/sales-invoice/new">
-                <Plus className="size-4" />
-                New Sales Invoice
-              </Link>
-            </Button>
-          ) : undefined
-        }
       />
-      <SalesInvoicesTable data={rows} />
+      <SalesInvoicesTable />
     </>
   );
 }
