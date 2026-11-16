@@ -20,6 +20,12 @@ export type DashboardCounts = {
 
 export type WarehouseValue = { warehouse: string; value: number };
 
+export type MonthlyPoint = {
+  month: string;
+  sales: number;
+  purchases: number;
+};
+
 export type TopItem = {
   itemId: string;
   itemCode: string;
@@ -64,6 +70,7 @@ export type LowStockItem = {
 export type DashboardData = {
   kpis: DashboardKpis;
   counts: DashboardCounts;
+  monthlyTrend: MonthlyPoint[];
   stockByWarehouse: WarehouseValue[];
   topItems: TopItem[];
   openSalesOrders: OpenSalesOrder[];

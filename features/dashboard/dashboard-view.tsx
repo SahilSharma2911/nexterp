@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { fmtQty, fmtMoney } from "@/lib/format";
+import { DashboardCharts } from "./dashboard-charts";
 import { useDashboard } from "./queries";
 
 type Tone = "default" | "positive" | "negative";
@@ -273,6 +274,11 @@ export function DashboardView() {
             />
           </div>
 
+          <DashboardCharts
+            trend={d.monthlyTrend}
+            stockByWarehouse={d.stockByWarehouse}
+          />
+
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
             <Panel title="Stock value by warehouse">
               <thead>
@@ -517,6 +523,11 @@ function DashboardSkeleton() {
         ))}
       </div>
       <div className="grid gap-6 pt-2 lg:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <Skeleton key={`c${i}`} className="h-[324px] w-full" />
+        ))}
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
         {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-56 w-full" />
         ))}

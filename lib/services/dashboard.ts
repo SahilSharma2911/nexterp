@@ -6,6 +6,8 @@ const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 export async function getDashboard(): Promise<DashboardData> {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  // First day of the month, 5 months back → a 6-month trailing window.
+  const trendStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
   const [
     binAgg,
@@ -25,6 +27,8 @@ export async function getDashboard(): Promise<DashboardData> {
     openSalesOrders,
     bins,
     items,
+    salesTrend,
+    purchaseTrend,
   ] = await Promise.all([
     prisma.bin.aggregate({ _sum: { stockValue: true } }),
     prisma.item.count({ where: { disabled: false } }),
@@ -94,6 +98,14 @@ export async function getDashboard(): Promise<DashboardData> {
       where: { disabled: false, reorderLevel: { gt: 0 } },
       select: { id: true, itemCode: true, itemName: true, reorderLevel: true },
     }),
+    prisma.salesInvoice.findMany({
+      where: { status: "SUBMITTED", postingAt: { gte: trendStart } },
+      select: { postingAt: true, total: true },
+    }),
+    prisma.purchaseInvoice.findMany({
+      where: { status: "SUBMITTED", postingAt: { gte: trendStart } },
+      select: { postingAt: true, total: true },
+    }),
   ]);
 
   // Cash + bank balance from the GL (debit - credit on cash/bank accounts).
@@ -162,6 +174,34 @@ export async function getDashboard(): Promise<DashboardData> {
     .sort((a, b) => a.qty - b.qty)
     .slice(0, 6);
 
+  // 6-month trailing sales vs purchases, bucketed by calendar month.
+  const monthKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}`;
+  const trendBuckets = new Map<
+    string,
+    { month: string; sales: number; purchases: number }
+  >();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    trendBuckets.set(monthKey(d), {
+      month: d.toLocaleString("en-US", { month: "short" }),
+      sales: 0,
+      purchases: 0,
+    });
+  }
+  for (const s of salesTrend) {
+    const b = trendBuckets.get(monthKey(s.postingAt));
+    if (b) b.sales += Number(s.total);
+  }
+  for (const p of purchaseTrend) {
+    const b = trendBuckets.get(monthKey(p.postingAt));
+    if (b) b.purchases += Number(p.total);
+  }
+  const monthlyTrend = Array.from(trendBuckets.values()).map((b) => ({
+    month: b.month,
+    sales: round2(b.sales),
+    purchases: round2(b.purchases),
+  }));
+
   return {
     kpis: {
       stockValue: Number(binAgg._sum.stockValue ?? 0),
@@ -181,6 +221,7 @@ export async function getDashboard(): Promise<DashboardData> {
       openWO,
       lowStockCount: lowStockItems.length,
     },
+    monthlyTrend,
     stockByWarehouse,
     topItems,
     openSalesOrders: openSalesOrders.map((o) => ({
