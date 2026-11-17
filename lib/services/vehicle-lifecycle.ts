@@ -1,5 +1,6 @@
 import type { Prisma, VehicleStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { postGL, getAccountId } from "@/lib/gl";
 import type {
   AllocateValues,
   DeliverValues,
@@ -146,26 +147,70 @@ export async function recordPdi(
   return { result: passed ? "PASS" : "FAIL" };
 }
 
+// Revenue account for a vehicle sale: prefer "Vehicle Sales", fall back to "Sales".
+async function vehicleSalesAccountId(
+  tx: Prisma.TransactionClient,
+): Promise<string> {
+  const a =
+    (await tx.account.findFirst({ where: { accountName: "Vehicle Sales" } })) ??
+    (await tx.account.findFirst({ where: { accountName: "Sales" } }));
+  if (!a)
+    throw new Error(
+      'No "Vehicle Sales" or "Sales" account — seed the chart of accounts first',
+    );
+  return a.id;
+}
+
 export async function deliverVehicle(
   id: string,
   values: DeliverValues,
   by?: string | null,
 ) {
   const v = await requireStage(id, "PDI_DONE", "deliver");
+  const customer = values.customerName.trim();
+
   await prisma.$transaction(async (tx) => {
+    const veh = await tx.vehicle.findUnique({
+      where: { id },
+      select: { vin: true, sellingRate: true },
+    });
+    const price = Number(veh?.sellingRate ?? 0);
+
     await tx.vehicle.update({
       where: { id },
       data: {
         status: "DELIVERED",
         customerId: values.customerId || null,
-        customerName: values.customerName.trim(),
+        customerName: customer,
         deliveredAt: new Date(),
       },
     });
+
+    // Post the sale to the GL (Debtors Dr / Vehicle Sales Cr) — same
+    // revenue-posting pattern as Job Cards. Skipped when there's no price.
+    if (price > 0) {
+      const debtors = await getAccountId(tx, "Debtors");
+      const sales = await vehicleSalesAccountId(tx);
+      await postGL(tx, {
+        lines: [
+          { accountId: debtors, debit: price },
+          { accountId: sales, credit: price },
+        ],
+        voucherType: "Vehicle Delivery",
+        voucherNo: veh!.vin,
+        postingAt: new Date(),
+        againstParty: customer,
+      });
+    }
+
     await logEvent(tx, {
       vehicleId: id,
       stage: "DELIVERED",
-      note: values.note || `Handed over to ${values.customerName.trim()}`,
+      note:
+        values.note ||
+        (price > 0
+          ? `Handed over to ${customer} · sale posted to the ledger`
+          : `Handed over to ${customer}`),
       dealerId: v.dealerId,
       by,
     });

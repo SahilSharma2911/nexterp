@@ -8,7 +8,7 @@ import {
   getVehicleLifecycle,
 } from "@/lib/services/vehicle-lifecycle";
 import { prisma } from "@/lib/prisma";
-import { resetDb, makeVehicle } from "./helpers";
+import { resetDb, makeVehicle, seedAccounts, glFor } from "./helpers";
 
 async function setup() {
   const dealer = await prisma.dealer.create({
@@ -74,6 +74,35 @@ describe("vehicle lifecycle", () => {
     await expect(
       deliverVehicle(vehicleId, { customerName: "X" }),
     ).rejects.toThrow(/stage/i);
+  });
+
+  it("posts Debtors / Vehicle Sales to the GL on delivery", async () => {
+    await seedAccounts();
+    const dealer = await prisma.dealer.create({ data: { code: "D2", name: "D2" } });
+    const v = await makeVehicle("VIN-SALE", { sellingRate: 999000 });
+    await allocateVehicle(v.id, { dealerId: dealer.id });
+    await dispatchVehicle(v.id, undefined);
+    await receiveVehicleAtDealer(v.id, undefined);
+    await recordPdi(v.id, { items: pdiItems(true) });
+    await deliverVehicle(v.id, { customerName: "Anita K" });
+
+    const gl = await glFor("VIN-SALE"); // voucherNo = VIN
+    const debtors = gl.find((g) => g.account.accountName === "Debtors");
+    const sales = gl.find((g) => g.account.accountName === "Vehicle Sales");
+    expect(Number(debtors?.debit)).toBe(999000);
+    expect(Number(sales?.credit)).toBe(999000);
+  });
+
+  it("skips the GL posting when the vehicle has no selling price", async () => {
+    await seedAccounts();
+    const dealer = await prisma.dealer.create({ data: { code: "D3", name: "D3" } });
+    const v = await makeVehicle("VIN-FREE"); // sellingRate 0
+    await allocateVehicle(v.id, { dealerId: dealer.id });
+    await dispatchVehicle(v.id, undefined);
+    await receiveVehicleAtDealer(v.id, undefined);
+    await recordPdi(v.id, { items: pdiItems(true) });
+    await deliverVehicle(v.id, { customerName: "No Charge" });
+    expect(await glFor("VIN-FREE")).toHaveLength(0);
   });
 
   it("a failed PDI records the inspection but does not advance", async () => {
