@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import type { ColumnDef } from "@tanstack/react-table";
+import { Car } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { sortableHeader } from "@/components/data-table/sortable-header";
 import { cn } from "@/lib/utils";
@@ -43,12 +45,28 @@ export const columns: ColumnDef<Vehicle>[] = [
     accessorKey: "vin",
     header: sortableHeader<Vehicle>("vin", "VIN"),
     cell: ({ row }) => (
-      <Link
-        href={`/dms/vehicles/${row.original.id}`}
-        className="font-mono text-xs font-medium text-primary hover:underline"
-      >
-        {row.original.vin}
-      </Link>
+      <div className="flex items-center gap-2">
+        {row.original.imageUrl ? (
+          <Image
+            src={row.original.imageUrl}
+            alt=""
+            width={32}
+            height={32}
+            className="size-8 shrink-0 rounded object-cover"
+            unoptimized
+          />
+        ) : (
+          <span className="flex size-8 shrink-0 items-center justify-center rounded bg-muted text-muted-foreground">
+            <Car className="size-4" />
+          </span>
+        )}
+        <Link
+          href={`/dms/vehicles/${row.original.id}`}
+          className="font-mono text-xs font-medium text-primary hover:underline"
+        >
+          {row.original.vin}
+        </Link>
+      </div>
     ),
   },
   {

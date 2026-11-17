@@ -49,6 +49,7 @@ function toItem(r: Row, wh: Map<string, string>): Vehicle {
     warehouse: r.warehouseId ? (wh.get(r.warehouseId) ?? null) : null,
     dealerId: r.dealerId,
     dealer: r.dealer?.name ?? null,
+    imageUrl: r.imageUrl,
     remarks: r.remarks,
   };
 }
@@ -68,6 +69,7 @@ function toData(v: VehicleFormValues) {
     sellingRate: v.sellingRate,
     warehouseId: v.warehouseId || null,
     dealerId: v.dealerId || null,
+    imageUrl: v.imageUrl?.trim() || null,
     remarks: v.remarks?.trim() || null,
   };
 }

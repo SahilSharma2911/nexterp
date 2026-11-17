@@ -60,6 +60,7 @@ function toItem(r: ItemRow): Item {
     valuationRate: Number(r.valuationRate),
     salesRate: Number(r.salesRate),
     reorderLevel: r.reorderLevel,
+    imageUrl: r.imageUrl,
     disabled: r.disabled,
     hasVariants: r.hasVariants,
     variantOfId: r.variantOfId,
@@ -98,6 +99,7 @@ function toScalarData(v: ItemFormValues) {
     valuationRate: v.valuationRate ?? 0,
     salesRate: v.salesRate ?? 0,
     reorderLevel: v.reorderLevel ?? 0,
+    imageUrl: v.imageUrl?.trim() || null,
     disabled: v.disabled,
     hasVariants: v.hasVariants,
   };

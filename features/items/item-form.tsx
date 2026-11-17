@@ -20,6 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ImageUpload } from "@/components/image-upload";
 import { emptyItem, itemFormSchema, type ItemFormValues } from "./schema";
 import { COMMON_UOMS } from "./uom";
 import { useCreateItem, useItem, useUpdateItem } from "./queries";
@@ -138,6 +139,7 @@ export function ItemForm({ itemId }: { itemId?: string }) {
         valuationRate: existing.valuationRate,
         salesRate: existing.salesRate,
         reorderLevel: existing.reorderLevel,
+        imageUrl: existing.imageUrl ?? null,
         disabled: existing.disabled,
         hasVariants: existing.hasVariants,
         specifications: existing.specifications,
@@ -180,6 +182,19 @@ export function ItemForm({ itemId }: { itemId?: string }) {
             <CardTitle className="text-sm">Basic details</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem className="sm:col-span-2 lg:col-span-3">
+                  <FormLabel>Image</FormLabel>
+                  <FormControl>
+                    <ImageUpload value={field.value} onChange={field.onChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="itemCode"

@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ImageUpload } from "@/components/image-upload";
 import { useWarehouseOptions } from "@/features/warehouses/queries";
 import { useDealerOptions } from "@/modules/dms/dealers/queries";
 import {
@@ -73,6 +74,7 @@ export function VehicleForm({ vehicleId }: { vehicleId?: string }) {
         sellingRate: existing.sellingRate,
         warehouseId: existing.warehouseId ?? "",
         dealerId: existing.dealerId ?? "",
+        imageUrl: existing.imageUrl ?? null,
         remarks: existing.remarks ?? "",
       });
     }
@@ -100,6 +102,19 @@ export function VehicleForm({ vehicleId }: { vehicleId?: string }) {
             <CardTitle className="text-sm">Identity</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem className="sm:col-span-2 lg:col-span-4">
+                  <FormLabel>Photo</FormLabel>
+                  <FormControl>
+                    <ImageUpload value={field.value} onChange={field.onChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="vin"

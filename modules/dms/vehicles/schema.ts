@@ -35,6 +35,7 @@ export const vehicleFormSchema = z.object({
   sellingRate: z.number().min(0, "Must be ≥ 0"),
   warehouseId: z.string().optional().nullable(),
   dealerId: z.string().optional().nullable(),
+  imageUrl: z.string().optional().nullable(),
   remarks: z.string().trim().optional(),
 });
 
@@ -54,6 +55,7 @@ export const emptyVehicle: VehicleFormValues = {
   sellingRate: 0,
   warehouseId: "",
   dealerId: "",
+  imageUrl: null,
   remarks: "",
 };
 
@@ -74,6 +76,7 @@ export type Vehicle = {
   warehouse: string | null;
   dealerId: string | null;
   dealer: string | null;
+  imageUrl: string | null;
   remarks: string | null;
 };
 

@@ -55,6 +55,7 @@ model Item {
   salesRate    Decimal  @default(0) @db.Decimal(18, 6)
   // Reorder when projected stock falls below this (0 = no reorder).
   reorderLevel Float    @default(0)
+  imageUrl     String? // product image
   disabled     Boolean  @default(false)
 
   // Variants (ERPNext: Item Variants). A template item defines variant
@@ -799,6 +800,7 @@ model Vehicle {
   sellingRate   Decimal       @default(0) @db.Decimal(18, 2)
   warehouseId   String?       @db.Uuid // loose ref to core Warehouse
   dealerId      String?       @db.Uuid // intra-module link to Dealer
+  imageUrl      String? // vehicle photo
   remarks       String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt

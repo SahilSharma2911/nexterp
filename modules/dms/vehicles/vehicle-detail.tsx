@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Pencil, Trash2, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -98,6 +99,19 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
           </div>
         }
       />
+
+      {v.imageUrl && (
+        <div className="relative h-56 w-full overflow-hidden rounded-lg border bg-muted sm:h-72">
+          <Image
+            src={v.imageUrl}
+            alt={v.vin}
+            fill
+            sizes="100vw"
+            className="object-cover"
+            unoptimized
+          />
+        </div>
+      )}
 
       <Card>
         <CardHeader>

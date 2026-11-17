@@ -27,6 +27,7 @@ export const itemFormSchema = z.object({
   valuationRate: z.number().min(0, "Must be ≥ 0"),
   salesRate: z.number().min(0, "Must be ≥ 0"),
   reorderLevel: z.number().min(0, "Must be ≥ 0"),
+  imageUrl: z.string().optional().nullable(),
   disabled: z.boolean(),
   hasVariants: z.boolean(),
   specifications: z.array(itemSpecSchema),
@@ -60,6 +61,7 @@ export const emptyItem: ItemFormValues = {
   valuationRate: 0,
   salesRate: 0,
   reorderLevel: 0,
+  imageUrl: null,
   disabled: false,
   hasVariants: false,
   specifications: [],
@@ -86,6 +88,7 @@ export type Item = {
   valuationRate: number;
   salesRate: number;
   reorderLevel: number;
+  imageUrl: string | null;
   disabled: boolean;
   hasVariants: boolean;
   variantOfId: string | null;
