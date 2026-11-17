@@ -803,8 +803,9 @@ model Vehicle {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  dealer   Dealer?   @relation(fields: [dealerId], references: [id])
-  jobCards JobCard[]
+  dealer      Dealer?    @relation(fields: [dealerId], references: [id])
+  jobCards    JobCard[]
+  warranties  Warranty[]
 
   @@index([status])
   @@index([dealerId])
@@ -901,5 +902,77 @@ model JobCardLabor {
 enum JobStatus {
   OPEN
   COMPLETED
+  CANCELLED
+}
+
+// DMS vertical — component-level warranty registration for a vehicle. Battery
+// warranties carry an optional State-of-Health threshold used by claim
+// eligibility checks.
+model Warranty {
+  id           String            @id @default(uuid()) @db.Uuid
+  vehicleId    String            @db.Uuid
+  component    WarrantyComponent
+  startDate    DateTime
+  months       Int // coverage period
+  kmLimit      Int? // optional usage cap
+  soHThreshold Float? // battery: covered if SoH drops below this %
+  status       WarrantyStatus    @default(ACTIVE)
+  notes        String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  vehicle Vehicle         @relation(fields: [vehicleId], references: [id])
+  claims  WarrantyClaim[]
+
+  @@index([vehicleId])
+  @@index([component])
+}
+
+// DMS vertical — a claim raised against a warranty, tracked through the OEM
+// reimbursement workflow. May be raised from a Job Card (loose ref).
+model WarrantyClaim {
+  id              String      @id @default(uuid()) @db.Uuid
+  name            String      @unique // WCLM-2026-00001
+  warrantyId      String      @db.Uuid
+  jobCardId       String?     @db.Uuid // loose ref to the job that found it
+  claimDate       DateTime    @default(now())
+  description     String?
+  status          ClaimStatus @default(DRAFT)
+  claimAmount     Decimal     @default(0) @db.Decimal(18, 2)
+  approvedAmount  Decimal     @default(0) @db.Decimal(18, 2)
+  oemRef          String?
+  eligible        Boolean? // verdict computed at submit
+  eligibilityNote String?
+  remarks         String?
+  submittedAt     DateTime?
+  settledAt       DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  warranty Warranty @relation(fields: [warrantyId], references: [id])
+
+  @@index([status])
+  @@index([warrantyId])
+}
+
+enum WarrantyComponent {
+  VEHICLE
+  BATTERY
+  MOTOR
+  CONTROLLER
+  CHARGER
+}
+
+enum WarrantyStatus {
+  ACTIVE
+  VOID
+}
+
+enum ClaimStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  SETTLED
   CANCELLED
 }

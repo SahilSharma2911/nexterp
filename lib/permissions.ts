@@ -78,6 +78,8 @@ export function areaForPath(path: string): Area | null {
     ["/api/vehicles", "dms"],
     ["/api/dealers", "dms"],
     ["/api/job-cards", "dms"],
+    ["/api/warranties", "dms"],
+    ["/api/warranty-claims", "dms"],
     ["/api/items", "stock"],
     ["/api/warehouses", "stock"],
     ["/api/stock-entries", "stock"],
