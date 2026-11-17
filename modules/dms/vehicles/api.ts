@@ -1,6 +1,11 @@
 import { api } from "@/lib/axios";
 import type { ListQuery, ListResponse } from "@/lib/api-list";
-import type { Vehicle, VehicleFormValues, VehicleOption } from "./schema";
+import type {
+  Vehicle,
+  VehicleFormValues,
+  VehicleOption,
+  VehicleRelated,
+} from "./schema";
 
 export type VehiclesQuery = ListQuery & { status: string; dealer?: string };
 
@@ -16,6 +21,11 @@ export async function fetchVehicleOptions() {
 
 export async function fetchVehicle(id: string) {
   const { data } = await api.get<Vehicle>(`/vehicles/${id}`);
+  return data;
+}
+
+export async function fetchVehicleRelated(id: string) {
+  const { data } = await api.get<VehicleRelated>(`/vehicles/${id}/related`);
   return data;
 }
 

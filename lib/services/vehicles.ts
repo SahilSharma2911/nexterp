@@ -1,9 +1,12 @@
 import type { Prisma, VehicleStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
+import { warrantyExpiry } from "@/lib/services/warranty-eligibility";
+import { COMPONENT_LABELS } from "@/modules/dms/warranties/schema";
 import type {
   Vehicle,
   VehicleFormValues,
+  VehicleRelated,
 } from "@/modules/dms/vehicles/schema";
 
 const SORTABLE = ["vin", "model", "status", "batterySoH", "createdAt"] as const;
@@ -162,6 +165,71 @@ export async function updateVehicle(
   return toItem(r, wh);
 }
 
+// A vehicle's full DMS history across modules — service, warranty, subsidy.
+export async function getVehicleRelated(id: string): Promise<VehicleRelated> {
+  const [jobCards, warranties, subsidyClaims] = await Promise.all([
+    prisma.jobCard.findMany({
+      where: { vehicleId: id },
+      orderBy: { serviceDate: "desc" },
+      take: 20,
+      select: { id: true, name: true, status: true, serviceDate: true, total: true },
+    }),
+    prisma.warranty.findMany({
+      where: { vehicleId: id },
+      orderBy: { startDate: "desc" },
+      select: {
+        id: true,
+        component: true,
+        status: true,
+        startDate: true,
+        months: true,
+      },
+    }),
+    prisma.subsidyClaim.findMany({
+      where: { vehicleId: id },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: { scheme: { select: { code: true } } },
+    }),
+  ]);
+  const now = new Date();
+  return {
+    jobCards: jobCards.map((j) => ({
+      id: j.id,
+      name: j.name,
+      status: j.status,
+      serviceDate: j.serviceDate.toISOString(),
+      total: Number(j.total),
+    })),
+    warranties: warranties.map((w) => {
+      const exp = warrantyExpiry(w.startDate, w.months);
+      return {
+        id: w.id,
+        component: COMPONENT_LABELS[w.component],
+        status: w.status,
+        expiryDate: exp.toISOString(),
+        active: w.status === "ACTIVE" && now <= exp,
+      };
+    }),
+    subsidyClaims: subsidyClaims.map((s) => ({
+      id: s.id,
+      name: s.name,
+      scheme: s.scheme.code,
+      status: s.status,
+      claimAmount: Number(s.claimAmount),
+    })),
+  };
+}
+
 export async function deleteVehicle(id: string): Promise<void> {
+  const [jobs, warranties, subsidies] = await Promise.all([
+    prisma.jobCard.count({ where: { vehicleId: id } }),
+    prisma.warranty.count({ where: { vehicleId: id } }),
+    prisma.subsidyClaim.count({ where: { vehicleId: id } }),
+  ]);
+  if (jobs + warranties + subsidies > 0)
+    throw new Error(
+      "Can't delete — this vehicle has job cards, warranties or subsidy claims. Reassign or remove them first.",
+    );
   await prisma.vehicle.delete({ where: { id } });
 }

@@ -83,6 +83,30 @@ export type VehicleOption = {
   model: string;
 };
 
+export type VehicleRelated = {
+  jobCards: {
+    id: string;
+    name: string;
+    status: string;
+    serviceDate: string;
+    total: number;
+  }[];
+  warranties: {
+    id: string;
+    component: string;
+    status: string;
+    expiryDate: string;
+    active: boolean;
+  }[];
+  subsidyClaims: {
+    id: string;
+    name: string;
+    scheme: string;
+    status: string;
+    claimAmount: number;
+  }[];
+};
+
 export type VehiclesTableMeta = {
   sort: string;
   onSort: (field: string) => void;

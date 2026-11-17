@@ -22,7 +22,7 @@ import { useCanWrite } from "@/components/session-context";
 import { cn } from "@/lib/utils";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
 import { StatusBadge } from "./columns";
-import { useDeleteVehicle, useVehicle } from "./queries";
+import { useDeleteVehicle, useVehicle, useVehicleRelated } from "./queries";
 
 function Meta({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -171,6 +171,8 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
         </CardContent>
       </Card>
 
+      <VehicleHistory vehicleId={v.id} />
+
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -199,6 +201,89 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function HistoryPanel({
+  title,
+  empty,
+  children,
+}: {
+  title: string;
+  empty: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        {empty ? (
+          <p className="px-6 pb-5 text-sm text-muted-foreground">Nothing yet.</p>
+        ) : (
+          <ul className="divide-y text-sm">{children}</ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function VehicleHistory({ vehicleId }: { vehicleId: string }) {
+  const { data } = useVehicleRelated(vehicleId);
+  if (!data) return null;
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-3">
+      <HistoryPanel title="Service history" empty={data.jobCards.length === 0}>
+        {data.jobCards.map((j) => (
+          <li key={j.id} className="flex items-center justify-between px-6 py-2.5">
+            <Link
+              href={`/dms/job-cards/${j.id}`}
+              className="font-mono text-xs text-primary hover:underline"
+            >
+              {j.name}
+            </Link>
+            <span className="text-xs text-muted-foreground">
+              {j.status} · {fmtMoney(j.total)}
+            </span>
+          </li>
+        ))}
+      </HistoryPanel>
+
+      <HistoryPanel title="Warranties" empty={data.warranties.length === 0}>
+        {data.warranties.map((w) => (
+          <li key={w.id} className="flex items-center justify-between px-6 py-2.5">
+            <Link
+              href={`/dms/warranties/${w.id}`}
+              className="text-xs text-primary hover:underline"
+            >
+              {w.component}
+            </Link>
+            <span className="text-xs text-muted-foreground">
+              {w.active ? "Active" : w.status === "VOID" ? "Void" : "Expired"} ·{" "}
+              {fmtDateTime(w.expiryDate)}
+            </span>
+          </li>
+        ))}
+      </HistoryPanel>
+
+      <HistoryPanel title="Subsidy claims" empty={data.subsidyClaims.length === 0}>
+        {data.subsidyClaims.map((s) => (
+          <li key={s.id} className="flex items-center justify-between px-6 py-2.5">
+            <Link
+              href={`/dms/subsidy-claims/${s.id}`}
+              className="font-mono text-xs text-primary hover:underline"
+            >
+              {s.name}
+            </Link>
+            <span className="text-xs text-muted-foreground">
+              {s.status} · {fmtMoney(s.claimAmount)}
+            </span>
+          </li>
+        ))}
+      </HistoryPanel>
     </div>
   );
 }

@@ -123,11 +123,12 @@ export async function updateDealer(
 }
 
 export async function deleteDealer(id: string): Promise<void> {
-  try {
-    await prisma.dealer.delete({ where: { id } });
-  } catch {
+  // The Vehicle→Dealer FK is ON DELETE SET NULL, so a raw delete would silently
+  // unassign vehicles — check explicitly and refuse instead.
+  const assigned = await prisma.vehicle.count({ where: { dealerId: id } });
+  if (assigned > 0)
     throw new Error(
       "Can't delete — this dealer has vehicles assigned. Reassign them or disable the dealer instead.",
     );
-  }
+  await prisma.dealer.delete({ where: { id } });
 }

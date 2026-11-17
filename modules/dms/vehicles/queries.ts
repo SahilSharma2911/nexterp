@@ -42,6 +42,14 @@ export function useVehicle(id?: string) {
   });
 }
 
+export function useVehicleRelated(id?: string) {
+  return useQuery({
+    queryKey: [...vehicleKeys.detail(id ?? ""), "related"] as const,
+    queryFn: () => vehiclesApi.fetchVehicleRelated(id as string),
+    enabled: !!id,
+  });
+}
+
 export function useCreateVehicle() {
   const qc = useQueryClient();
   return useMutation({
