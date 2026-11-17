@@ -74,6 +74,14 @@ describe("subsidy claims service", () => {
     expect((await getSubsidyClaim(id))?.status).toBe("REJECTED");
   });
 
+  it("stores the KYC document url", async () => {
+    const { schemeId, vehicleId } = await setup();
+    const { id } = await createSubsidyClaim(
+      form(schemeId, vehicleId, { kycDocUrl: "/uploads/kyc.png" }),
+    );
+    expect((await getSubsidyClaim(id))?.kycDocUrl).toBe("/uploads/kyc.png");
+  });
+
   it("cancels a draft claim", async () => {
     const { schemeId, vehicleId } = await setup();
     const { id } = await createSubsidyClaim(form(schemeId, vehicleId));

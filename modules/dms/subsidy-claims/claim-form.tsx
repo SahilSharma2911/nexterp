@@ -24,6 +24,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ImageUpload } from "@/components/image-upload";
 import { useVehicleOptions } from "@/modules/dms/vehicles/queries";
 import { useSchemeOptions } from "@/modules/dms/subsidy-schemes/queries";
 import {
@@ -68,6 +69,7 @@ export function SubsidyClaimForm({
         customerName: existing.customerName,
         kycDocType: existing.kycDocType ?? "",
         kycRef: existing.kycRef ?? "",
+        kycDocUrl: existing.kycDocUrl ?? null,
         kycVerified: existing.kycVerified,
         claimAmount: existing.claimAmount,
         remarks: existing.remarks ?? "",
@@ -244,6 +246,19 @@ export function SubsidyClaimForm({
                     <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                   <FormLabel className="font-normal">KYC verified</FormLabel>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="kycDocUrl"
+              render={({ field }) => (
+                <FormItem className="sm:col-span-2 lg:col-span-3">
+                  <FormLabel>KYC Document</FormLabel>
+                  <FormControl>
+                    <ImageUpload value={field.value} onChange={field.onChange} />
+                  </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />

@@ -33,6 +33,7 @@ export const subsidyClaimFormSchema = z.object({
   customerName: z.string().trim().min(1, "Customer name is required"),
   kycDocType: z.string().trim().optional(),
   kycRef: z.string().trim().optional(),
+  kycDocUrl: z.string().optional().nullable(),
   kycVerified: z.boolean(),
   claimAmount: z.number().min(0, "Must be ≥ 0"),
   remarks: z.string().trim().optional(),
@@ -46,6 +47,7 @@ export const emptySubsidyClaim: SubsidyClaimFormValues = {
   customerName: "",
   kycDocType: "",
   kycRef: "",
+  kycDocUrl: null,
   kycVerified: false,
   claimAmount: 0,
   remarks: "",
@@ -72,6 +74,7 @@ export type SubsidyClaimDetail = {
   customerName: string;
   kycDocType: string | null;
   kycRef: string | null;
+  kycDocUrl: string | null;
   kycVerified: boolean;
   claimAmount: number;
   status: SubsidyClaimStatus;

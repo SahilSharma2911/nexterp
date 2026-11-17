@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Check,
@@ -184,6 +185,25 @@ export function SubsidyClaimDetail({ claimId }: { claimId: string }) {
               : " — verify before submitting."}
         </span>
       </div>
+
+      {c.kycDocUrl && (
+        <a
+          href={c.kycDocUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="relative block h-40 w-60 overflow-hidden rounded-lg border bg-muted"
+          title="KYC document"
+        >
+          <Image
+            src={c.kycDocUrl}
+            alt="KYC document"
+            fill
+            sizes="240px"
+            className="object-cover"
+            unoptimized
+          />
+        </a>
+      )}
 
       {c.voucherNo && (
         <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">

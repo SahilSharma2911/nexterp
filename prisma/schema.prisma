@@ -1013,6 +1013,7 @@ model SubsidyClaim {
   customerName String
   kycDocType   String? // Aadhaar / PAN / Passport …
   kycRef       String? // document number
+  kycDocUrl    String? // scan/photo of the KYC document
   kycVerified  Boolean            @default(false)
   claimAmount  Decimal            @default(0) @db.Decimal(18, 2)
   status       SubsidyClaimStatus @default(DRAFT)
