@@ -801,24 +801,81 @@ model Vehicle {
   warehouseId   String?       @db.Uuid // loose ref to core Warehouse
   dealerId      String?       @db.Uuid // intra-module link to Dealer
   imageUrl      String? // vehicle photo
+  customerId    String?       @db.Uuid // core Customer (loose ref), set at delivery
+  customerName  String? // buyer name captured at delivery
+  deliveredAt   DateTime?
   remarks       String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  dealer         Dealer?        @relation(fields: [dealerId], references: [id])
-  jobCards       JobCard[]
-  warranties     Warranty[]
-  subsidyClaims  SubsidyClaim[]
+  dealer        Dealer?             @relation(fields: [dealerId], references: [id])
+  jobCards      JobCard[]
+  warranties    Warranty[]
+  subsidyClaims SubsidyClaim[]
+  events        VehicleEvent[]
+  inspections   VehicleInspection[]
 
   @@index([status])
   @@index([dealerId])
 }
 
+// Lifecycle stage of a vehicle unit. IN_STOCK = received at warehouse.
 enum VehicleStatus {
   IN_STOCK
   ALLOCATED
+  IN_TRANSIT
+  AT_DEALER
+  PDI_DONE
   DELIVERED
   IN_SERVICE
+}
+
+// DMS vertical — one movement/event in a vehicle's lifecycle (audit timeline).
+model VehicleEvent {
+  id          String        @id @default(uuid()) @db.Uuid
+  vehicleId   String        @db.Uuid
+  stage       VehicleStatus // stage this event set the vehicle to
+  note        String?
+  dealerId    String?       @db.Uuid
+  warehouseId String?       @db.Uuid
+  byUser      String? // who performed it (name/email from session)
+  at          DateTime      @default(now())
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+}
+
+// DMS vertical — Pre-Delivery Inspection, run before handover.
+model VehicleInspection {
+  id        String            @id @default(uuid()) @db.Uuid
+  vehicleId String            @db.Uuid
+  inspector String?
+  result    InspectionResult  @default(PASS)
+  note      String?
+  createdAt DateTime          @default(now())
+
+  vehicle Vehicle               @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  items   VehicleInspItem[]
+
+  @@index([vehicleId])
+}
+
+model VehicleInspItem {
+  id           String  @id @default(uuid()) @db.Uuid
+  inspectionId String  @db.Uuid
+  label        String
+  ok           Boolean @default(true)
+  note         String?
+
+  inspection VehicleInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+
+  @@index([inspectionId])
+}
+
+enum InspectionResult {
+  PASS
+  FAIL
 }
 
 // DMS vertical — dealership in the OEM network. A specialization of the generic

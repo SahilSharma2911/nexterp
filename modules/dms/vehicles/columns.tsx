@@ -15,10 +15,13 @@ import {
 import { CellAction } from "./cell-action";
 
 const statusStyle: Record<VehicleStatus, string> = {
-  IN_STOCK: "bg-primary/10 text-primary",
+  IN_STOCK: "bg-muted text-muted-foreground",
   ALLOCATED: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  IN_TRANSIT: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+  AT_DEALER: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
+  PDI_DONE: "bg-primary/10 text-primary",
   DELIVERED: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-  IN_SERVICE: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+  IN_SERVICE: "bg-purple-500/15 text-purple-600 dark:text-purple-400",
 };
 
 export function StatusBadge({ status }: { status: VehicleStatus }) {

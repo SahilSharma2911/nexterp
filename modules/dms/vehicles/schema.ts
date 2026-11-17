@@ -3,6 +3,9 @@ import { z } from "zod";
 export const VEHICLE_STATUSES = [
   "IN_STOCK",
   "ALLOCATED",
+  "IN_TRANSIT",
+  "AT_DEALER",
+  "PDI_DONE",
   "DELIVERED",
   "IN_SERVICE",
 ] as const;
@@ -10,8 +13,11 @@ export const VEHICLE_STATUSES = [
 export type VehicleStatus = (typeof VEHICLE_STATUSES)[number];
 
 export const VEHICLE_STATUS_LABELS: Record<VehicleStatus, string> = {
-  IN_STOCK: "In Stock",
+  IN_STOCK: "At Warehouse",
   ALLOCATED: "Allocated",
+  IN_TRANSIT: "In Transit",
+  AT_DEALER: "At Dealer",
+  PDI_DONE: "PDI Passed",
   DELIVERED: "Delivered",
   IN_SERVICE: "In Service",
 };

@@ -27,8 +27,6 @@ import { ImageUpload } from "@/components/image-upload";
 import { useWarehouseOptions } from "@/features/warehouses/queries";
 import { useDealerOptions } from "@/modules/dms/dealers/queries";
 import {
-  VEHICLE_STATUSES,
-  VEHICLE_STATUS_LABELS,
   emptyVehicle,
   vehicleFormSchema,
   type VehicleFormValues,
@@ -230,30 +228,6 @@ export function VehicleForm({ vehicleId }: { vehicleId?: string }) {
             <CardTitle className="text-sm">Commercial</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {VEHICLE_STATUSES.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {VEHICLE_STATUS_LABELS[s]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="warehouseId"

@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
 import { StatusBadge } from "./columns";
 import { useDeleteVehicle, useVehicle, useVehicleRelated } from "./queries";
+import { VehicleLifecyclePanel } from "./vehicle-lifecycle-panel";
 
 function Meta({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -112,6 +113,8 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
           />
         </div>
       )}
+
+      <VehicleLifecyclePanel vehicleId={v.id} />
 
       <Card>
         <CardHeader>
