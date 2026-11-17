@@ -3,6 +3,7 @@ import { z } from "zod";
 export const dealerFormSchema = z.object({
   code: z.string().trim().min(1, "Dealer code is required"),
   name: z.string().trim().min(1, "Name is required"),
+  logoUrl: z.string().optional().nullable(),
   legalName: z.string().trim().optional(),
   contactPerson: z.string().trim().optional(),
   phone: z.string().trim().optional(),
@@ -22,6 +23,7 @@ export type DealerFormValues = z.infer<typeof dealerFormSchema>;
 export const emptyDealer: DealerFormValues = {
   code: "",
   name: "",
+  logoUrl: null,
   legalName: "",
   contactPerson: "",
   phone: "",
@@ -40,6 +42,7 @@ export type Dealer = {
   id: string;
   code: string;
   name: string;
+  logoUrl: string | null;
   legalName: string | null;
   contactPerson: string | null;
   phone: string | null;

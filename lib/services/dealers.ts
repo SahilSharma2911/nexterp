@@ -12,6 +12,7 @@ function toItem(r: Row): Dealer {
     id: r.id,
     code: r.code,
     name: r.name,
+    logoUrl: r.logoUrl,
     legalName: r.legalName,
     contactPerson: r.contactPerson,
     phone: r.phone,
@@ -32,6 +33,7 @@ function toData(v: DealerFormValues) {
   return {
     code: v.code.trim(),
     name: v.name.trim(),
+    logoUrl: v.logoUrl?.trim() || null,
     legalName: v.legalName?.trim() || null,
     contactPerson: v.contactPerson?.trim() || null,
     phone: v.phone?.trim() || null,

@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ImageUpload } from "@/components/image-upload";
 import {
   dealerFormSchema,
   emptyDealer,
@@ -79,6 +80,7 @@ export function DealerForm({ dealerId }: { dealerId?: string }) {
     if (isEdit && existing) {
       form.reset({
         code: existing.code,
+        logoUrl: existing.logoUrl ?? null,
         name: existing.name,
         legalName: existing.legalName ?? "",
         contactPerson: existing.contactPerson ?? "",
@@ -118,6 +120,19 @@ export function DealerForm({ dealerId }: { dealerId?: string }) {
             <CardTitle className="text-sm">Dealership</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <FormField
+              control={form.control}
+              name="logoUrl"
+              render={({ field }) => (
+                <FormItem className="sm:col-span-2 lg:col-span-3">
+                  <FormLabel>Logo</FormLabel>
+                  <FormControl>
+                    <ImageUpload value={field.value} onChange={field.onChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <TextField form={form} name="code" label="Dealer Code" placeholder="DLR-001" />
             <TextField form={form} name="name" label="Name" placeholder="Metro EV Motors" />
             <TextField form={form} name="legalName" label="Legal Name" />

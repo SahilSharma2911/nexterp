@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -94,6 +95,18 @@ export function DealerDetail({ dealerId }: { dealerId: string }) {
           <CardTitle className="text-sm">Overview</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {d.logoUrl && (
+            <div className="sm:col-span-2 lg:col-span-4">
+              <Image
+                src={d.logoUrl}
+                alt={d.name}
+                width={120}
+                height={120}
+                className="size-28 rounded-lg border object-contain p-2"
+                unoptimized
+              />
+            </div>
+          )}
           <Meta label="Legal Name" value={d.legalName ?? dash} />
           <Meta label="GSTIN / Tax ID" value={d.gstin ?? dash} />
           <Meta

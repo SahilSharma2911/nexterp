@@ -26,6 +26,11 @@ describe("dealers service", () => {
     expect(d.vehicleCount).toBe(0);
   });
 
+  it("stores a logo url", async () => {
+    const d = await createDealer(form({ logoUrl: "/uploads/logo.png" }));
+    expect(d.logoUrl).toBe("/uploads/logo.png");
+  });
+
   it("rejects a duplicate code", async () => {
     await createDealer(form({ code: "DUP" }));
     await expect(createDealer(form({ code: "DUP", name: "Other" }))).rejects.toThrow(

@@ -30,6 +30,7 @@ export const jobCardFormSchema = z.object({
   serviceDate: z.string().optional().nullable(),
   parts: z.array(jobCardPartSchema),
   labor: z.array(jobCardLaborSchema),
+  photos: z.array(z.string()),
   remarks: z.string().trim().optional(),
 });
 
@@ -47,6 +48,7 @@ export const emptyJobCard: JobCardFormValues = {
   serviceDate: "",
   parts: [],
   labor: [{ ...emptyJobCardLabor }],
+  photos: [],
 };
 
 // ---- read models ----
@@ -96,6 +98,7 @@ export type JobCardDetail = {
   laborTotal: number;
   total: number;
   remarks: string | null;
+  photos: string[];
   parts: JobCardPart[];
   labor: JobCardLabor[];
 };

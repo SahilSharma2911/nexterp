@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MultiImageUpload } from "@/components/multi-image-upload";
 import { fmtMoney } from "@/lib/format";
 import { useItemOptions } from "@/features/items/queries";
 import { useWarehouseOptions } from "@/features/warehouses/queries";
@@ -91,6 +92,7 @@ export function JobCardForm({
           rate: l.rate,
         })),
         remarks: existing.remarks ?? "",
+        photos: existing.photos ?? [],
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -490,6 +492,29 @@ export function JobCardForm({
                   })}
                 </tbody>
               </table>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-2">
+          <h2 className="text-sm font-medium">Photos</h2>
+          <Card>
+            <CardContent>
+              <FormField
+                control={form.control}
+                name="photos"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <MultiImageUpload
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
         </div>

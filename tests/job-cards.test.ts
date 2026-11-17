@@ -38,6 +38,7 @@ const jobForm = (c: Ctx, over: Record<string, unknown> = {}) => ({
   serviceDate: "2026-11-17",
   parts: [{ itemId: c.itemId, qty: 2, rate: 500 }],
   labor: [{ description: "General service", hours: 1.5, rate: 400 }],
+  photos: [],
   remarks: "",
   ...over,
 });
@@ -102,6 +103,17 @@ describe("job cards service", () => {
     const { id } = await createJobCard(jobForm(c));
     await completeJobCard(id);
     await expect(updateJobCard(id, jobForm(c))).rejects.toThrow(/open/i);
+  });
+
+  it("stores workshop photos", async () => {
+    const c = await ctx();
+    const { id } = await createJobCard(
+      jobForm(c, { photos: ["/uploads/a.jpg", "/uploads/b.jpg"] }),
+    );
+    expect((await getJobCard(id))?.photos).toEqual([
+      "/uploads/a.jpg",
+      "/uploads/b.jpg",
+    ]);
   });
 
   it("a labour-only job posts GL and issues nothing", async () => {

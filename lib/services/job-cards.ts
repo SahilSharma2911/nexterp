@@ -141,6 +141,7 @@ export async function getJobCard(id: string): Promise<JobCardDetail | null> {
     laborTotal: Number(r.laborTotal),
     total: Number(r.total),
     remarks: r.remarks,
+    photos: r.photos,
     parts: r.parts.map((p) => ({
       id: p.id,
       itemId: p.itemId,
@@ -180,6 +181,7 @@ export async function createJobCard(
       laborTotal,
       total,
       remarks: values.remarks?.trim() || null,
+      photos: values.photos ?? [],
       parts: { create: parts },
       labor: { create: labor },
     },
@@ -214,6 +216,7 @@ export async function updateJobCard(
         laborTotal,
         total,
         remarks: values.remarks?.trim() || null,
+        photos: values.photos ?? [],
         parts: { create: parts },
         labor: { create: labor },
       },

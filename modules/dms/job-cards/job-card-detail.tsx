@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -206,6 +207,34 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
                 </tr>
               </tbody>
             </table>
+          </CardContent>
+        </Card>
+      )}
+
+      {j.photos.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Photos</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-3">
+            {j.photos.map((p, i) => (
+              <a
+                key={`${p}-${i}`}
+                href={p}
+                target="_blank"
+                rel="noreferrer"
+                className="relative size-28 overflow-hidden rounded-lg border bg-muted"
+              >
+                <Image
+                  src={p}
+                  alt={`Photo ${i + 1}`}
+                  fill
+                  sizes="112px"
+                  className="object-cover"
+                  unoptimized
+                />
+              </a>
+            ))}
           </CardContent>
         </Card>
       )}
