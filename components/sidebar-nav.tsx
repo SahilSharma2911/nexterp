@@ -28,7 +28,16 @@ import {
   Wallet,
   Warehouse,
 } from "lucide-react";
-import { Building2, Car, ShieldCheck, FileWarning, UserCog, Wrench } from "lucide-react";
+import {
+  BadgeIndianRupee,
+  BadgePercent,
+  Building2,
+  Car,
+  ShieldCheck,
+  FileWarning,
+  UserCog,
+  Wrench,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canSeeNav, isAdmin, type Area, type Role } from "@/lib/permissions";
 import { isModuleEnabled, type ModuleId } from "@/lib/modules";
@@ -121,6 +130,8 @@ const NAV: NavGroup[] = [
       { href: "/dms/job-cards", label: "Job Cards", icon: Wrench },
       { href: "/dms/warranties", label: "Warranties", icon: ShieldCheck },
       { href: "/dms/warranty-claims", label: "Claims", icon: FileWarning },
+      { href: "/dms/subsidy-schemes", label: "Subsidy Schemes", icon: BadgePercent },
+      { href: "/dms/subsidy-claims", label: "Subsidy Claims", icon: BadgeIndianRupee },
     ],
   },
   {

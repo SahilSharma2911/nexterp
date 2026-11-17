@@ -803,9 +803,10 @@ model Vehicle {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  dealer      Dealer?    @relation(fields: [dealerId], references: [id])
-  jobCards    JobCard[]
-  warranties  Warranty[]
+  dealer         Dealer?        @relation(fields: [dealerId], references: [id])
+  jobCards       JobCard[]
+  warranties     Warranty[]
+  subsidyClaims  SubsidyClaim[]
 
   @@index([status])
   @@index([dealerId])
@@ -974,5 +975,68 @@ enum ClaimStatus {
   APPROVED
   REJECTED
   SETTLED
+  CANCELLED
+}
+
+// DMS vertical — a government/OEM EV incentive scheme (e.g. FAME-II, state EV
+// policy) that pays a subsidy per qualifying vehicle.
+model SubsidyScheme {
+  id        String         @id @default(uuid()) @db.Uuid
+  code      String         @unique
+  name      String
+  authority String? // granting body
+  amount    Decimal        @default(0) @db.Decimal(18, 2) // subsidy per vehicle
+  validFrom DateTime?
+  validTo   DateTime?
+  status    SubsidyStatus  @default(ACTIVE)
+  notes     String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  claims SubsidyClaim[]
+
+  @@index([status])
+}
+
+// DMS vertical — a subsidy claim for one vehicle sale. KYC must be verified
+// before submission; an e-voucher is generated on approval; disbursement is
+// tracked for reconciliation.
+model SubsidyClaim {
+  id           String             @id @default(uuid()) @db.Uuid
+  name         String             @unique // SUB-2026-00001
+  schemeId     String             @db.Uuid
+  vehicleId    String             @db.Uuid
+  customerName String
+  kycDocType   String? // Aadhaar / PAN / Passport …
+  kycRef       String? // document number
+  kycVerified  Boolean            @default(false)
+  claimAmount  Decimal            @default(0) @db.Decimal(18, 2)
+  status       SubsidyClaimStatus @default(DRAFT)
+  voucherNo    String? // e-voucher, generated on approval
+  approvedAt   DateTime?
+  disbursedAt  DateTime?
+  remarks      String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  scheme  SubsidyScheme @relation(fields: [schemeId], references: [id])
+  vehicle Vehicle       @relation(fields: [vehicleId], references: [id])
+
+  @@index([status])
+  @@index([schemeId])
+  @@index([vehicleId])
+}
+
+enum SubsidyStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum SubsidyClaimStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  DISBURSED
+  REJECTED
   CANCELLED
 }
