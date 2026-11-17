@@ -26,6 +26,14 @@ export function useVehicles(params: vehiclesApi.VehiclesQuery) {
   });
 }
 
+export function useVehicleOptions() {
+  return useQuery({
+    queryKey: [...vehicleKeys.all, "options"] as const,
+    queryFn: () => vehiclesApi.fetchVehicleOptions(),
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useVehicle(id?: string) {
   return useQuery({
     queryKey: vehicleKeys.detail(id ?? ""),

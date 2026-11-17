@@ -110,6 +110,14 @@ export async function listVehicles(
   };
 }
 
+export async function vehicleOptions() {
+  return prisma.vehicle.findMany({
+    orderBy: { createdAt: "desc" },
+    select: { id: true, vin: true, model: true },
+    take: 500,
+  });
+}
+
 export async function getVehicleById(id: string): Promise<Vehicle | null> {
   const r = await prisma.vehicle.findUnique({
     where: { id },

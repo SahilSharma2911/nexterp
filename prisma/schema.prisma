@@ -803,7 +803,8 @@ model Vehicle {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  dealer Dealer? @relation(fields: [dealerId], references: [id])
+  dealer   Dealer?   @relation(fields: [dealerId], references: [id])
+  jobCards JobCard[]
 
   @@index([status])
   @@index([dealerId])
@@ -838,4 +839,67 @@ model Dealer {
   updatedAt     DateTime @updatedAt
 
   vehicles Vehicle[]
+}
+
+// DMS vertical — workshop Job Card. Reuses the CORE engines on completion:
+// parts are issued through the stock ledger (lib/stock-ledger) and revenue is
+// posted to the GL (lib/gl). Parts reference core Item by id only (no relation)
+// so the core stays unaware of this module.
+model JobCard {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique // JOB-2026-00001
+  vehicleId   String    @db.Uuid
+  warehouseId String?   @db.Uuid // core Warehouse parts are issued from
+  status      JobStatus @default(OPEN)
+  complaint   String?
+  technician  String?
+  odometer    Int?
+  serviceDate DateTime  @default(now())
+  partsTotal  Decimal   @default(0) @db.Decimal(18, 2)
+  laborTotal  Decimal   @default(0) @db.Decimal(18, 2)
+  total       Decimal   @default(0) @db.Decimal(18, 2)
+  remarks     String?
+  completedAt DateTime?
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  vehicle Vehicle        @relation(fields: [vehicleId], references: [id])
+  parts   JobCardPart[]
+  labor   JobCardLabor[]
+
+  @@index([status])
+  @@index([vehicleId])
+}
+
+model JobCardPart {
+  id        String  @id @default(uuid()) @db.Uuid
+  jobCardId String  @db.Uuid
+  itemId    String  @db.Uuid // loose ref to core Item
+  qty       Float
+  rate      Decimal @default(0) @db.Decimal(18, 6)
+  amount    Decimal @default(0) @db.Decimal(18, 2)
+
+  jobCard JobCard @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
+
+  @@index([jobCardId])
+}
+
+model JobCardLabor {
+  id          String  @id @default(uuid()) @db.Uuid
+  jobCardId   String  @db.Uuid
+  description String
+  hours       Float   @default(0)
+  rate        Decimal @default(0) @db.Decimal(18, 2)
+  amount      Decimal @default(0) @db.Decimal(18, 2)
+
+  jobCard JobCard @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
+
+  @@index([jobCardId])
+}
+
+enum JobStatus {
+  OPEN
+  COMPLETED
+  CANCELLED
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -65,8 +65,20 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
         actions={
           <div className="flex items-center gap-2">
             <StatusBadge status={v.status} />
+            <Button asChild variant="outline">
+              <Link href={`/dms/job-cards?vehicle=${v.id}`}>
+                <Wrench className="size-4" />
+                Service history
+              </Link>
+            </Button>
             {canWrite && (
               <>
+                <Button asChild>
+                  <Link href={`/dms/job-cards/new?vehicle=${v.id}`}>
+                    <Wrench className="size-4" />
+                    New Job Card
+                  </Link>
+                </Button>
                 <Button asChild variant="outline">
                   <Link href={`/dms/vehicles/${v.id}/edit`}>
                     <Pencil className="size-4" />

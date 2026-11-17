@@ -77,6 +77,12 @@ export type Vehicle = {
   remarks: string | null;
 };
 
+export type VehicleOption = {
+  id: string;
+  vin: string;
+  model: string;
+};
+
 export type VehiclesTableMeta = {
   sort: string;
   onSort: (field: string) => void;

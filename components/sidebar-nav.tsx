@@ -28,7 +28,7 @@ import {
   Wallet,
   Warehouse,
 } from "lucide-react";
-import { Building2, Car, UserCog } from "lucide-react";
+import { Building2, Car, UserCog, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canSeeNav, isAdmin, type Area, type Role } from "@/lib/permissions";
 import { isModuleEnabled, type ModuleId } from "@/lib/modules";
@@ -118,6 +118,7 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/dms/vehicles", label: "Vehicles", icon: Car },
       { href: "/dms/dealers", label: "Dealers", icon: Building2 },
+      { href: "/dms/job-cards", label: "Job Cards", icon: Wrench },
     ],
   },
   {

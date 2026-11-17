@@ -17,6 +17,11 @@ const STANDARD: { accountName: string; accountType: string; rootType: RootType }
     { accountName: "Creditors", accountType: "Payable", rootType: "LIABILITY" },
     { accountName: "Sales", accountType: "Income Account", rootType: "INCOME" },
     {
+      accountName: "Service Income",
+      accountType: "Income Account",
+      rootType: "INCOME",
+    },
+    {
       accountName: "Cost of Goods Sold",
       accountType: "Expense Account",
       rootType: "EXPENSE",
