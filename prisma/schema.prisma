@@ -10,7 +10,9 @@ datasource db {
   provider = "postgresql"
 }
 
-/* ============================== Auth ============================== */
+/**
+ * ============================== Auth ==============================
+ */
 
 // A login account. One simple role per user drives access.
 model User {
@@ -33,52 +35,54 @@ enum Role {
   VIEWER // read-only everywhere
 }
 
-/* ============================== Masters ============================== */
+/**
+ * ============================== Masters ==============================
+ */
 
 // ERPNext: Item
 model Item {
-  id           String   @id @default(uuid()) @db.Uuid
-  itemCode     String   @unique
-  itemName     String
-  description  String?
-  itemGroup    String?
-  stockUom     String   @default("Nos")
-  brand        String?
-  barcode      String?
-  taxCode      String?  // HSN / tax classification code
-  isStockItem  Boolean  @default(true)
-  hasSerialNo  Boolean  @default(false)
-  hasBatchNo   Boolean  @default(false)
+  id            String  @id @default(uuid()) @db.Uuid
+  itemCode      String  @unique
+  itemName      String
+  description   String?
+  itemGroup     String?
+  stockUom      String  @default("Nos")
+  brand         String?
+  barcode       String?
+  taxCode       String? // HSN / tax classification code
+  isStockItem   Boolean @default(true)
+  hasSerialNo   Boolean @default(false)
+  hasBatchNo    Boolean @default(false)
   // Default/standard valuation (cost) rate used when no prior stock exists.
   valuationRate Decimal @default(0) @db.Decimal(18, 6)
   // Standard selling price.
-  salesRate    Decimal  @default(0) @db.Decimal(18, 6)
+  salesRate     Decimal @default(0) @db.Decimal(18, 6)
   // Reorder when projected stock falls below this (0 = no reorder).
-  reorderLevel Float    @default(0)
-  imageUrl     String? // product image
-  disabled     Boolean  @default(false)
+  reorderLevel  Float   @default(0)
+  imageUrl      String? // product image
+  disabled      Boolean @default(false)
 
   // Variants (ERPNext: Item Variants). A template item defines variant
   // attributes; concrete variants point back via variantOfId.
-  hasVariants  Boolean  @default(false)
-  variantOfId  String?  @db.Uuid
-  variantOf    Item?    @relation("ItemVariants", fields: [variantOfId], references: [id])
-  variants     Item[]   @relation("ItemVariants")
+  hasVariants Boolean @default(false)
+  variantOfId String? @db.Uuid
+  variantOf   Item?   @relation("ItemVariants", fields: [variantOfId], references: [id])
+  variants    Item[]  @relation("ItemVariants")
 
   specifications    ItemSpecification[]
   variantAttributes ItemVariantAttribute[]
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   ledgerEntries   StockLedgerEntry[]
   bins            Bin[]
   stockEntryItems StockEntryDetail[]
-  boms            Bom[]              @relation("BomFinished")
-  bomComponents   BomItem[]          @relation("BomComponent")
-  bomExplosions   BomExplosionItem[] @relation("BomExploded")
-  workOrders      WorkOrder[]        @relation("WoProduction")
-  workOrderItems  WorkOrderItem[]    @relation("WoItem")
+  boms            Bom[]                     @relation("BomFinished")
+  bomComponents   BomItem[]                 @relation("BomComponent")
+  bomExplosions   BomExplosionItem[]        @relation("BomExploded")
+  workOrders      WorkOrder[]               @relation("WoProduction")
+  workOrderItems  WorkOrderItem[]           @relation("WoItem")
   reconItems      StockReconciliationItem[] @relation("SRItem")
   prItems         PurchaseReceiptItem[]     @relation("PRItem")
   dnItems         DeliveryNoteItem[]        @relation("DNItem")
@@ -94,11 +98,11 @@ model Item {
 
 // Generic key/value spec for an item (e.g. Material: Steel, Weight: 2 kg).
 model ItemSpecification {
-  id     String @id @default(uuid()) @db.Uuid
-  itemId String @db.Uuid
-  label  String
-  value  String
-  sortOrder Int  @default(0)
+  id        String @id @default(uuid()) @db.Uuid
+  itemId    String @db.Uuid
+  label     String
+  value     String
+  sortOrder Int    @default(0)
 
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
@@ -139,22 +143,24 @@ model Warehouse {
 
   ledgerEntries    StockLedgerEntry[]
   bins             Bin[]
-  stockEntriesFrom StockEntry[]       @relation("SEFrom")
-  stockEntriesTo   StockEntry[]       @relation("SETo")
-  sedFrom          StockEntryDetail[] @relation("SEDFrom")
-  sedTo            StockEntryDetail[] @relation("SEDTo")
-  woSource         WorkOrder[]        @relation("WoSource")
-  woFg             WorkOrder[]        @relation("WoFg")
+  stockEntriesFrom StockEntry[]              @relation("SEFrom")
+  stockEntriesTo   StockEntry[]              @relation("SETo")
+  sedFrom          StockEntryDetail[]        @relation("SEDFrom")
+  sedTo            StockEntryDetail[]        @relation("SEDTo")
+  woSource         WorkOrder[]               @relation("WoSource")
+  woFg             WorkOrder[]               @relation("WoFg")
   reconItems       StockReconciliationItem[] @relation("SRWh")
-  purchaseReceipts PurchaseReceipt[]  @relation("PRWh")
-  deliveryNotes    DeliveryNote[]     @relation("DNWh")
-  purchaseOrders   PurchaseOrder[]    @relation("POWh")
-  salesOrders      SalesOrder[]       @relation("SOWh")
+  purchaseReceipts PurchaseReceipt[]         @relation("PRWh")
+  deliveryNotes    DeliveryNote[]            @relation("DNWh")
+  purchaseOrders   PurchaseOrder[]           @relation("POWh")
+  salesOrders      SalesOrder[]              @relation("SOWh")
 
   @@index([disabled])
 }
 
-/* ============================== Stock ledger ============================== */
+/**
+ * ============================== Stock ledger ==============================
+ */
 
 enum StockEntryPurpose {
   MATERIAL_RECEIPT
@@ -250,7 +256,9 @@ model StockEntry {
   @@index([purpose])
 }
 
-/* ============================== Manufacturing ============================== */
+/**
+ * ============================== Manufacturing ==============================
+ */
 
 enum WorkOrderStatus {
   NOT_STARTED
@@ -261,19 +269,19 @@ enum WorkOrderStatus {
 
 // ERPNext: Bom — a submittable recipe for a finished item.
 model Bom {
-  id             String    @id @default(uuid()) @db.Uuid
-  name           String    @unique
-  itemId         String    @db.Uuid
-  quantity       Float     @default(1)
-  uom            String    @default("Nos")
-  isActive       Boolean   @default(true)
-  isDefault      Boolean   @default(false)
-  status         DocStatus @default(DRAFT)
-  totalCost      Decimal   @default(0) @db.Decimal(18, 2)
-  remarks        String?
-  submittedAt    DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique
+  itemId      String    @db.Uuid
+  quantity    Float     @default(1)
+  uom         String    @default("Nos")
+  isActive    Boolean   @default(true)
+  isDefault   Boolean   @default(false)
+  status      DocStatus @default(DRAFT)
+  totalCost   Decimal   @default(0) @db.Decimal(18, 2)
+  remarks     String?
+  submittedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   item           Item               @relation("BomFinished", fields: [itemId], references: [id])
   items          BomItem[]
@@ -317,19 +325,19 @@ model BomExplosionItem {
 
 // ERPNext: Work Order — produce N of an item from a Bom.
 model WorkOrder {
-  id               String          @id @default(uuid()) @db.Uuid
-  name             String          @unique
-  productionItemId String          @db.Uuid
-  bomId            String          @db.Uuid
-  qty              Float
-  producedQty      Float           @default(0)
-  useMultiLevelBom Boolean         @default(true)
-  status           WorkOrderStatus @default(NOT_STARTED)
-  sourceWarehouseId String?        @db.Uuid
-  fgWarehouseId    String?         @db.Uuid
-  remarks          String?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id                String          @id @default(uuid()) @db.Uuid
+  name              String          @unique
+  productionItemId  String          @db.Uuid
+  bomId             String          @db.Uuid
+  qty               Float
+  producedQty       Float           @default(0)
+  useMultiLevelBom  Boolean         @default(true)
+  status            WorkOrderStatus @default(NOT_STARTED)
+  sourceWarehouseId String?         @db.Uuid
+  fgWarehouseId     String?         @db.Uuid
+  remarks           String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   productionItem  Item            @relation("WoProduction", fields: [productionItemId], references: [id])
   bom             Bom             @relation(fields: [bomId], references: [id])
@@ -416,7 +424,9 @@ model StockEntryDetail {
   @@index([itemId])
 }
 
-/* ============================== Parties ============================== */
+/**
+ * ============================== Parties ==============================
+ */
 
 model Customer {
   id            String   @id @default(uuid()) @db.Uuid
@@ -441,26 +451,28 @@ model Supplier {
   disabled      Boolean  @default(false)
   createdAt     DateTime @default(now())
 
-  purchaseReceipts  PurchaseReceipt[]
-  purchaseOrders    PurchaseOrder[]
-  purchaseInvoices  PurchaseInvoice[]
-  paymentEntries    PaymentEntry[]
+  purchaseReceipts PurchaseReceipt[]
+  purchaseOrders   PurchaseOrder[]
+  purchaseInvoices PurchaseInvoice[]
+  paymentEntries   PaymentEntry[]
 
   @@index([disabled])
 }
 
-/* ============================== Buying ============================== */
+/**
+ * ============================== Buying ==============================
+ */
 
 // ERPNext: Purchase Receipt — receives goods into a warehouse (stock in).
 model PurchaseReceipt {
-  id          String    @id @default(uuid()) @db.Uuid
-  name        String    @unique
-  supplierId  String    @db.Uuid
-  warehouseId String    @db.Uuid
-  status      DocStatus @default(DRAFT)
-  postingAt   DateTime  @default(now())
-  totalQty    Float     @default(0)
-  totalAmount Decimal   @default(0) @db.Decimal(18, 2)
+  id              String    @id @default(uuid()) @db.Uuid
+  name            String    @unique
+  supplierId      String    @db.Uuid
+  warehouseId     String    @db.Uuid
+  status          DocStatus @default(DRAFT)
+  postingAt       DateTime  @default(now())
+  totalQty        Float     @default(0)
+  totalAmount     Decimal   @default(0) @db.Decimal(18, 2)
   remarks         String?
   purchaseOrderId String?   @db.Uuid
   submittedAt     DateTime?
@@ -492,19 +504,21 @@ model PurchaseReceiptItem {
   @@index([purchaseReceiptId])
 }
 
-/* ============================== Selling ============================== */
+/**
+ * ============================== Selling ==============================
+ */
 
 // ERPNext: Delivery Note — ships goods out of a warehouse (stock out).
 model DeliveryNote {
-  id          String    @id @default(uuid()) @db.Uuid
-  name        String    @unique
-  customerId  String    @db.Uuid
-  warehouseId String    @db.Uuid
-  status      DocStatus @default(DRAFT)
-  postingAt   DateTime  @default(now())
-  totalQty    Float     @default(0)
-  totalAmount Decimal   @default(0) @db.Decimal(18, 2) // selling value
-  totalCogs   Decimal   @default(0) @db.Decimal(18, 2) // cost of goods delivered
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String    @unique
+  customerId   String    @db.Uuid
+  warehouseId  String    @db.Uuid
+  status       DocStatus @default(DRAFT)
+  postingAt    DateTime  @default(now())
+  totalQty     Float     @default(0)
+  totalAmount  Decimal   @default(0) @db.Decimal(18, 2) // selling value
+  totalCogs    Decimal   @default(0) @db.Decimal(18, 2) // cost of goods delivered
   remarks      String?
   salesOrderId String?   @db.Uuid
   submittedAt  DateTime?
@@ -537,7 +551,9 @@ model DeliveryNoteItem {
   @@index([deliveryNoteId])
 }
 
-/* ============================== Orders (planning) ============================== */
+/**
+ * ============================== Orders (planning) ==============================
+ */
 
 enum OrderStatus {
   DRAFT
@@ -626,7 +642,9 @@ model SalesOrderItem {
   @@index([salesOrderId])
 }
 
-/* ============================== Accounts ============================== */
+/**
+ * ============================== Accounts ==============================
+ */
 
 enum RootType {
   ASSET
@@ -694,7 +712,7 @@ model SalesInvoice {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  customer       Customer            @relation(fields: [customerId], references: [id])
+  customer       Customer           @relation(fields: [customerId], references: [id])
   items          SalesInvoiceItem[]
   paymentEntries PaymentEntry[]
 
@@ -808,13 +826,14 @@ model Vehicle {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  dealer        Dealer?             @relation(fields: [dealerId], references: [id])
+  dealer        Dealer?              @relation(fields: [dealerId], references: [id])
   jobCards      JobCard[]
   warranties    Warranty[]
   subsidyClaims SubsidyClaim[]
   events        VehicleEvent[]
   inspections   VehicleInspection[]
   accessories   VehicleAccessory[]
+  appointments  ServiceAppointment[]
 
   @@index([status])
   @@index([dealerId])
@@ -864,14 +883,14 @@ model VehicleEvent {
 
 // DMS vertical — Pre-Delivery Inspection, run before handover.
 model VehicleInspection {
-  id        String            @id @default(uuid()) @db.Uuid
-  vehicleId String            @db.Uuid
+  id        String           @id @default(uuid()) @db.Uuid
+  vehicleId String           @db.Uuid
   inspector String?
-  result    InspectionResult  @default(PASS)
+  result    InspectionResult @default(PASS)
   note      String?
-  createdAt DateTime          @default(now())
+  createdAt DateTime         @default(now())
 
-  vehicle Vehicle               @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  vehicle Vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   items   VehicleInspItem[]
 
   @@index([vehicleId])
@@ -924,28 +943,37 @@ model Dealer {
 // posted to the GL (lib/gl). Parts reference core Item by id only (no relation)
 // so the core stays unaware of this module.
 model JobCard {
-  id          String    @id @default(uuid()) @db.Uuid
-  name        String    @unique // JOB-2026-00001
-  vehicleId   String    @db.Uuid
-  warehouseId String?   @db.Uuid // core Warehouse parts are issued from
-  status      JobStatus @default(OPEN)
-  complaint   String?
-  technician  String?
-  odometer    Int?
-  serviceDate DateTime  @default(now())
-  partsTotal  Decimal   @default(0) @db.Decimal(18, 2)
-  laborTotal  Decimal   @default(0) @db.Decimal(18, 2)
-  total       Decimal   @default(0) @db.Decimal(18, 2)
-  photos      String[]  @default([]) // workshop photo documentation
-  remarks     String?
-  completedAt DateTime?
-  cancelledAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String    @unique // JOB-2026-00001
+  vehicleId    String    @db.Uuid
+  warehouseId  String?   @db.Uuid // core Warehouse parts are issued from
+  status       JobStatus @default(OPEN)
+  complaint    String?
+  technician   String? // free-text name (legacy / walk-in); prefer technicianId
+  technicianId String?   @db.Uuid // Service & Workshop — assigned Technician entity
+  bayId        String?   @db.Uuid // Service & Workshop — assigned ServiceBay
+  isHV         Boolean   @default(false) // high-voltage (battery/motor) work
+  odometer     Int?
+  serviceDate  DateTime  @default(now())
+  partsTotal   Decimal   @default(0) @db.Decimal(18, 2)
+  laborTotal   Decimal   @default(0) @db.Decimal(18, 2)
+  total        Decimal   @default(0) @db.Decimal(18, 2)
+  photos       String[]  @default([]) // workshop photo documentation
+  remarks      String?
+  qcBy         String? // Service & Workshop — quality check sign-off
+  qcAt         DateTime?
+  qcNote       String?
+  completedAt  DateTime?
+  cancelledAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  vehicle Vehicle        @relation(fields: [vehicleId], references: [id])
-  parts   JobCardPart[]
-  labor   JobCardLabor[]
+  vehicle       Vehicle             @relation(fields: [vehicleId], references: [id])
+  technicianRef Technician?         @relation(fields: [technicianId], references: [id])
+  bay           ServiceBay?         @relation(fields: [bayId], references: [id])
+  appointment   ServiceAppointment?
+  parts         JobCardPart[]
+  labor         JobCardLabor[]
 
   @@index([status])
   @@index([vehicleId])
@@ -980,6 +1008,74 @@ model JobCardLabor {
 enum JobStatus {
   OPEN
   COMPLETED
+  CANCELLED
+}
+
+// DMS · Service & Workshop — a workshop technician. HV-certified techs are the
+// only ones allowed on high-voltage (battery/motor) work.
+model Technician {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String
+  skills        String? // free-text specialities
+  phone         String?
+  isHVCertified Boolean  @default(false) // cleared for high-voltage work
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  appointments ServiceAppointment[]
+  jobCards     JobCard[]
+
+  @@index([active])
+}
+
+// DMS · Service & Workshop — a physical service bay. HV bays are required for
+// high-voltage work.
+model ServiceBay {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  isHV      Boolean  @default(false) // equipped for high-voltage work
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointments ServiceAppointment[]
+  jobCards     JobCard[]
+
+  @@index([active])
+}
+
+// DMS · Service & Workshop — a booking for a service visit. Assigns a bay +
+// technician (enforcing the HV rule), then converts into a Job Card when work
+// starts. References core Vehicle by relation inside the module.
+model ServiceAppointment {
+  id           String            @id @default(uuid()) @db.Uuid
+  name         String            @unique // APPT-2026-00001
+  vehicleId    String            @db.Uuid
+  customerName String?
+  requestedAt  DateTime
+  isHV         Boolean           @default(false) // high-voltage work requested?
+  bayId        String?           @db.Uuid
+  technicianId String?           @db.Uuid
+  complaint    String?
+  status       AppointmentStatus @default(BOOKED)
+  jobCardId    String?           @unique @db.Uuid // set once converted
+  remarks      String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  vehicle    Vehicle     @relation(fields: [vehicleId], references: [id])
+  bay        ServiceBay? @relation(fields: [bayId], references: [id])
+  technician Technician? @relation(fields: [technicianId], references: [id])
+  jobCard    JobCard?    @relation(fields: [jobCardId], references: [id])
+
+  @@index([status])
+  @@index([vehicleId])
+}
+
+enum AppointmentStatus {
+  BOOKED
+  CONVERTED
   CANCELLED
 }
 
@@ -1058,17 +1154,17 @@ enum ClaimStatus {
 // DMS vertical — a government/OEM EV incentive scheme (e.g. FAME-II, state EV
 // policy) that pays a subsidy per qualifying vehicle.
 model SubsidyScheme {
-  id        String         @id @default(uuid()) @db.Uuid
-  code      String         @unique
+  id        String        @id @default(uuid()) @db.Uuid
+  code      String        @unique
   name      String
   authority String? // granting body
-  amount    Decimal        @default(0) @db.Decimal(18, 2) // subsidy per vehicle
+  amount    Decimal       @default(0) @db.Decimal(18, 2) // subsidy per vehicle
   validFrom DateTime?
   validTo   DateTime?
-  status    SubsidyStatus  @default(ACTIVE)
+  status    SubsidyStatus @default(ACTIVE)
   notes     String?
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   claims SubsidyClaim[]
 

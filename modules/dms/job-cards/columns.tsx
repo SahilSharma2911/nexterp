@@ -56,6 +56,22 @@ export const columns: ColumnDef<JobCardListItem>[] = [
     ),
   },
   {
+    id: "technician",
+    header: "Technician",
+    cell: ({ row }) => (
+      <span className="flex items-center gap-1.5 text-sm">
+        {row.original.technician ?? (
+          <span className="text-muted-foreground">—</span>
+        )}
+        {row.original.isHV && (
+          <span className="inline-flex rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+            HV
+          </span>
+        )}
+      </span>
+    ),
+  },
+  {
     accessorKey: "serviceDate",
     header: sortableHeader<JobCardListItem>("serviceDate", "Service Date"),
     cell: ({ row }) => (

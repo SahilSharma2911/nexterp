@@ -1,12 +1,32 @@
 # DMS · Service & Workshop — v1 design & discussion
 
-> Status: **DISCUSSION / not built yet.** Captures DMSJoy's "Service & Workshop"
-> module, maps it to nexterp's **existing Job Cards** module, and proposes a
-> scoped first version.
+> Status: **v1 BUILT** (appointments + technicians + bays + QC sign-off + HV
+> rule, on top of Job Cards). Deferred to **v1.1**: cost-estimate doc, warranty
+> vs paid line split, and deep EV sign-offs (HV-isolation / BMS / OTA fields).
+> See "What shipped in v1" below.
 >
 > Source: https://www.dmsjoy.com/products (Service & Workshop / Service
-> Management). UI reference: `slide-1.png … slide-5.png` _(pending — not yet
-> attached)._
+> Management).
+
+---
+
+## What shipped in v1
+
+- **Technicians** master — name, skills, phone, **HV-certified** flag, active.
+  (`/dms/technicians`)
+- **Service Bays** master — name, **HV** flag, active. (`/dms/service-bays`)
+- **Service Appointments** — book a visit (vehicle, customer, time, complaint),
+  assign a **bay + technician**. The **HV rule** is enforced: high-voltage work
+  only accepts HV-certified technicians + HV bays. **Start work** converts the
+  appointment into an open **Job Card** (carrying vehicle, complaint, technician,
+  bay, HV flag). (`/dms/service-appointments`)
+- **Job Card** gains optional **technician** + **bay** links, an **HV** flag, and
+  a non-gating **Quality Check** sign-off (checked-by + note + timestamp). The
+  existing Open → Complete → Cancel flow (stock issue + GL posting) is unchanged.
+
+Deferred to v1.1: separate cost-estimate doc with digital approval; warranty vs
+paid classification per line (split billing); deep EV sign-off fields
+(HV-isolation test, BMS/OTA attachments) beyond the single QC note.
 
 ---
 

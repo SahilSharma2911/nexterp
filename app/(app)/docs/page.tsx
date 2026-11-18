@@ -78,7 +78,14 @@ export default function DocsHome() {
             Vehicle
           </Link>{" "}
           is sold once through its lifecycle (and delivery posts to the ledger),
-          then serviced many times via{" "}
+          then serviced many times — booked as{" "}
+          <Link
+            href="/docs/service-appointments"
+            className="text-primary hover:underline"
+          >
+            Service Appointments
+          </Link>{" "}
+          (assigning a bay + technician) that become{" "}
           <Link href="/docs/job-cards" className="text-primary hover:underline">
             Job Cards
           </Link>

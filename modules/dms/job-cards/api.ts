@@ -4,6 +4,7 @@ import type {
   JobCardDetail,
   JobCardFormValues,
   JobCardListItem,
+  JobCardQcValues,
 } from "./schema";
 
 export type JobCardsQuery = ListQuery & { status: string; vehicle?: string };
@@ -46,4 +47,8 @@ export async function completeJobCard(id: string) {
 
 export async function cancelJobCard(id: string) {
   await api.post(`/job-cards/${id}/cancel`);
+}
+
+export async function recordJobCardQc(id: string, values: JobCardQcValues) {
+  await api.post(`/job-cards/${id}/qc`, values);
 }

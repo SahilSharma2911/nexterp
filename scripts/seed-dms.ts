@@ -19,6 +19,10 @@ import {
 } from "../lib/services/vehicle-lifecycle";
 import { createJobCard, completeJobCard } from "../lib/services/job-cards";
 import { createWarranty } from "../lib/services/warranties";
+import {
+  createServiceAppointment,
+  startServiceAppointment,
+} from "../lib/services/service-appointments";
 
 const today = new Date().toISOString().slice(0, 10);
 const PDI = [
@@ -32,7 +36,10 @@ async function wipe() {
   await prisma.subsidyClaim.deleteMany();
   await prisma.warrantyClaim.deleteMany();
   await prisma.warranty.deleteMany();
+  await prisma.serviceAppointment.deleteMany(); // FK to jobCard + vehicle
   await prisma.jobCard.deleteMany();
+  await prisma.technician.deleteMany();
+  await prisma.serviceBay.deleteMany();
   await prisma.vehicle.deleteMany(); // cascades events + inspections + accessories
   await prisma.dealer.deleteMany();
   await prisma.gLEntry.deleteMany({
@@ -85,6 +92,45 @@ async function main() {
   };
   for (const it of [...Object.values(parts), ...Object.values(acc)])
     await stock(it.id, warehouse.id, 100, Number(it.valuationRate));
+
+  // Service & Workshop masters — technicians (some HV-certified) + bays.
+  const techs = {
+    ravi: await prisma.technician.create({
+      data: {
+        name: "Ravi Kumar",
+        skills: "Brakes, suspension, general service",
+        isHVCertified: false,
+        active: true,
+      },
+    }),
+    priya: await prisma.technician.create({
+      data: {
+        name: "Priya Nair",
+        skills: "Battery diagnostics, BMS, motor",
+        isHVCertified: true,
+        active: true,
+      },
+    }),
+    arjun: await prisma.technician.create({
+      data: {
+        name: "Arjun Mehta",
+        skills: "HV systems, charger, controller",
+        isHVCertified: true,
+        active: true,
+      },
+    }),
+  };
+  const bays = {
+    bay1: await prisma.serviceBay.create({
+      data: { name: "Bay 1", isHV: false, active: true },
+    }),
+    bay2: await prisma.serviceBay.create({
+      data: { name: "Bay 2", isHV: false, active: true },
+    }),
+    hvBay: await prisma.serviceBay.create({
+      data: { name: "HV Bay 1", isHV: true, active: true },
+    }),
+  };
 
   const dealers = await Promise.all(
     [
@@ -226,12 +272,50 @@ async function main() {
     await completeJobCard(jc.id);
   }
 
+  // Service appointments — a standard booking, an HV booking, and one already
+  // converted into a job card (exercises the HV rule + conversion).
+  await createServiceAppointment({
+    vehicleId: deliveredIds[0],
+    customerName: "Anita Rao",
+    requestedAt: `${today}T10:00`,
+    isHV: false,
+    bayId: bays.bay1.id,
+    technicianId: techs.ravi.id,
+    complaint: "Scheduled service — 5,000 km",
+    remarks: "",
+  });
+  await createServiceAppointment({
+    vehicleId: deliveredIds[1],
+    customerName: "Vikram Shah",
+    requestedAt: `${today}T14:30`,
+    isHV: true,
+    bayId: bays.hvBay.id,
+    technicianId: techs.priya.id,
+    complaint: "Battery health check — range drop reported",
+    remarks: "HV-certified tech + HV bay required",
+  });
+  const converted = await createServiceAppointment({
+    vehicleId: vehicles[7].id,
+    customerName: "Walk-in",
+    requestedAt: `${today}T09:00`,
+    isHV: false,
+    bayId: bays.bay2.id,
+    technicianId: techs.ravi.id,
+    complaint: "Brake noise",
+    remarks: "",
+  });
+  await startServiceAppointment(converted.id);
+
   const byStage = await prisma.vehicle.groupBy({ by: ["status"], _count: true });
   console.log(`Seeded ${vehicles.length} vehicles, ${dealers.length} dealers.`);
   console.log("By stage:", JSON.stringify(byStage.map((s) => ({ [s.status]: s._count }))));
   console.log(
     `Items: ${Object.keys(parts).length} spare parts, ${Object.keys(acc).length} accessories. ` +
-      `Job cards: 2. Warranties: ${deliveredIds.length * 2}.`,
+      `Job cards: 3. Warranties: ${deliveredIds.length * 2}.`,
+  );
+  console.log(
+    `Service & Workshop: ${Object.keys(techs).length} technicians, ` +
+      `${Object.keys(bays).length} bays, 3 appointments (1 converted).`,
   );
 }
 

@@ -7,7 +7,10 @@ export async function resetDb() {
   await prisma.subsidyScheme.deleteMany();
   await prisma.warrantyClaim.deleteMany();
   await prisma.warranty.deleteMany();
+  await prisma.serviceAppointment.deleteMany(); // FK to jobCard + vehicle
   await prisma.jobCard.deleteMany(); // cascades parts + labor
+  await prisma.technician.deleteMany();
+  await prisma.serviceBay.deleteMany();
   await prisma.vehicle.deleteMany();
   await prisma.dealer.deleteMany();
   await prisma.gLEntry.deleteMany();

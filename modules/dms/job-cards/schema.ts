@@ -26,6 +26,9 @@ export const jobCardFormSchema = z.object({
   warehouseId: z.string().optional().nullable(),
   complaint: z.string().trim().optional(),
   technician: z.string().trim().optional(),
+  technicianId: z.string().optional().nullable(),
+  bayId: z.string().optional().nullable(),
+  isHV: z.boolean().optional(),
   odometer: z.number().int().min(0).optional().nullable(),
   serviceDate: z.string().optional().nullable(),
   parts: z.array(jobCardPartSchema),
@@ -33,6 +36,14 @@ export const jobCardFormSchema = z.object({
   photos: z.array(z.string()),
   remarks: z.string().trim().optional(),
 });
+
+// Quality-check sign-off recorded before/at completion (non-gating in v1).
+export const jobCardQcSchema = z.object({
+  qcBy: z.string().trim().min(1, "Who signed off?"),
+  qcNote: z.string().trim().optional(),
+});
+
+export type JobCardQcValues = z.infer<typeof jobCardQcSchema>;
 
 export type JobCardFormValues = z.infer<typeof jobCardFormSchema>;
 
@@ -44,6 +55,9 @@ export const emptyJobCard: JobCardFormValues = {
   warehouseId: "",
   complaint: "",
   technician: "",
+  technicianId: "",
+  bayId: "",
+  isHV: false,
   odometer: null,
   serviceDate: "",
   parts: [],
@@ -58,6 +72,8 @@ export type JobCardListItem = {
   name: string;
   vehicle: string;
   vehicleModel: string;
+  technician: string | null;
+  isHV: boolean;
   status: JobStatus;
   serviceDate: string;
   total: number;
@@ -92,6 +108,11 @@ export type JobCardDetail = {
   status: JobStatus;
   complaint: string | null;
   technician: string | null;
+  technicianId: string | null;
+  technicianName: string | null;
+  bayId: string | null;
+  bayName: string | null;
+  isHV: boolean;
   odometer: number | null;
   serviceDate: string;
   partsTotal: number;
@@ -99,6 +120,11 @@ export type JobCardDetail = {
   total: number;
   remarks: string | null;
   photos: string[];
+  qcBy: string | null;
+  qcAt: string | null;
+  qcNote: string | null;
+  appointmentId: string | null;
+  appointmentName: string | null;
   parts: JobCardPart[];
   labor: JobCardLabor[];
 };

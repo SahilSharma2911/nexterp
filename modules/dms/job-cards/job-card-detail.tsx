@@ -4,10 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Pencil, Trash2 } from "lucide-react";
+import { CheckCircle2, ClipboardCheck, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +22,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { PageHeader } from "@/components/page-header";
 import { useCanWrite } from "@/components/session-context";
 import { fmtMoney, fmtQty, fmtRate, fmtDateTime } from "@/lib/format";
@@ -27,6 +39,7 @@ import {
   useCompleteJobCard,
   useDeleteJobCard,
   useJobCard,
+  useRecordJobCardQc,
 } from "./queries";
 
 function Meta({ label, value }: { label: string; value: React.ReactNode }) {
@@ -45,7 +58,11 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
   const complete = useCompleteJobCard();
   const cancel = useCancelJobCard();
   const del = useDeleteJobCard();
+  const qc = useRecordJobCardQc(jobId);
   const [confirm, setConfirm] = useState<null | "cancel" | "delete">(null);
+  const [qcOpen, setQcOpen] = useState(false);
+  const [qcBy, setQcBy] = useState("");
+  const [qcNote, setQcNote] = useState("");
 
   if (isLoading || !j) {
     return (
@@ -67,6 +84,11 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
         subtitle={`${j.vehicle} · ${j.vehicleModel}`}
         actions={
           <div className="flex items-center gap-2">
+            {j.isHV && (
+              <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                HV
+              </Badge>
+            )}
             <JobStatusBadge status={j.status} />
             {canWrite && isOpen && (
               <>
@@ -83,6 +105,17 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
                 >
                   <Trash2 className="size-4" />
                   Delete
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setQcBy(j.qcBy ?? "");
+                    setQcNote(j.qcNote ?? "");
+                    setQcOpen(true);
+                  }}
+                >
+                  <ClipboardCheck className="size-4" />
+                  {j.qcAt ? "QC ✓" : "Record QC"}
                 </Button>
                 <Button
                   disabled={complete.isPending}
@@ -116,12 +149,50 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
             }
           />
           <Meta label="Parts Warehouse" value={j.warehouse ?? dash} />
-          <Meta label="Technician" value={j.technician ?? dash} />
+          <Meta
+            label="Technician"
+            value={j.technicianName ?? j.technician ?? dash}
+          />
+          <Meta label="Service Bay" value={j.bayName ?? dash} />
           <Meta label="Odometer" value={j.odometer != null ? `${j.odometer} km` : dash} />
           <Meta label="Service Date" value={fmtDateTime(j.serviceDate)} />
+          <Meta
+            label="Work type"
+            value={j.isHV ? "High-voltage" : "Standard"}
+          />
+          {j.appointmentId && j.appointmentName && (
+            <Meta
+              label="From appointment"
+              value={
+                <Link
+                  href={`/dms/service-appointments/${j.appointmentId}`}
+                  className="text-primary hover:underline"
+                >
+                  {j.appointmentName}
+                </Link>
+              }
+            />
+          )}
+          <Meta
+            label="Quality check"
+            value={
+              j.qcAt ? (
+                <span className="text-emerald-600 dark:text-emerald-400">
+                  ✓ {j.qcBy} · {fmtDateTime(j.qcAt)}
+                </span>
+              ) : (
+                <span className="text-muted-foreground">Not done</span>
+              )
+            }
+          />
           {j.complaint && (
-            <div className="sm:col-span-2 lg:col-span-3">
+            <div className="sm:col-span-2 lg:col-span-4">
               <Meta label="Complaint" value={j.complaint} />
+            </div>
+          )}
+          {j.qcNote && (
+            <div className="sm:col-span-2 lg:col-span-4">
+              <Meta label="QC note" value={j.qcNote} />
             </div>
           )}
         </CardContent>
@@ -284,6 +355,53 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={qcOpen} onOpenChange={setQcOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record quality check</DialogTitle>
+            <DialogDescription>
+              Sign off the workshop quality check before completing the job.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="qc-by">Checked by</Label>
+              <Input
+                id="qc-by"
+                value={qcBy}
+                onChange={(e) => setQcBy(e.target.value)}
+                placeholder="Inspector name"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="qc-note">Note (optional)</Label>
+              <Textarea
+                id="qc-note"
+                value={qcNote}
+                onChange={(e) => setQcNote(e.target.value)}
+                placeholder="Observations, re-work needed, etc."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQcOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={qc.isPending || !qcBy.trim()}
+              onClick={() =>
+                qc.mutate(
+                  { qcBy, qcNote },
+                  { onSuccess: () => setQcOpen(false) },
+                )
+              }
+            >
+              {qc.isPending ? "Saving…" : "Record QC"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

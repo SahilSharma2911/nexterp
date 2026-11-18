@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MultiImageUpload } from "@/components/multi-image-upload";
@@ -28,6 +29,8 @@ import { fmtMoney } from "@/lib/format";
 import { useItemOptions } from "@/features/items/queries";
 import { useWarehouseOptions } from "@/features/warehouses/queries";
 import { useVehicleOptions } from "@/modules/dms/vehicles/queries";
+import { useTechnicianOptions } from "@/modules/dms/technicians/queries";
+import { useServiceBayOptions } from "@/modules/dms/service-bays/queries";
 import {
   emptyJobCard,
   emptyJobCardLabor,
@@ -60,6 +63,8 @@ export function JobCardForm({
   const { data: vehicleOptions = [] } = useVehicleOptions();
   const { data: warehouseOptions = [] } = useWarehouseOptions();
   const { data: itemOptions = [] } = useItemOptions();
+  const { data: technicianOptions = [] } = useTechnicianOptions();
+  const { data: bayOptions = [] } = useServiceBayOptions();
   const create = useCreateJobCard();
   const update = useUpdateJobCard();
 
@@ -79,6 +84,9 @@ export function JobCardForm({
         warehouseId: existing.warehouseId ?? "",
         complaint: existing.complaint ?? "",
         technician: existing.technician ?? "",
+        technicianId: existing.technicianId ?? "",
+        bayId: existing.bayId ?? "",
+        isHV: existing.isHV,
         odometer: existing.odometer,
         serviceDate: existing.serviceDate ? existing.serviceDate.slice(0, 10) : "",
         parts: existing.parts.map((p) => ({
@@ -186,14 +194,80 @@ export function JobCardForm({
             />
             <FormField
               control={form.control}
-              name="technician"
+              name="technicianId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Technician</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ""} />
-                  </FormControl>
+                  <Select
+                    value={field.value || UNASSIGNED}
+                    onValueChange={(v) =>
+                      field.onChange(v === UNASSIGNED ? "" : v)
+                    }
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={UNASSIGNED}>— Unassigned —</SelectItem>
+                      {technicianOptions.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name}
+                          {t.isHVCertified ? " · HV" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="bayId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Service Bay</FormLabel>
+                  <Select
+                    value={field.value || UNASSIGNED}
+                    onValueChange={(v) =>
+                      field.onChange(v === UNASSIGNED ? "" : v)
+                    }
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={UNASSIGNED}>— Unassigned —</SelectItem>
+                      {bayOptions.map((b) => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {b.name}
+                          {b.isHV ? " · HV" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="isHV"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center gap-2 space-y-0 self-end rounded-lg border bg-muted/30 p-3">
+                  <FormControl>
+                    <Checkbox
+                      checked={!!field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="font-normal">
+                    High-voltage (battery / motor) work
+                  </FormLabel>
                 </FormItem>
               )}
             />

@@ -628,6 +628,75 @@ export const DOCS: Doc[] = [
           "On Complete, the parts are issued from the warehouse (stock goes down) and the bill posts to the ledger (Debtors Dr / Service Income Cr). Cancel reverses both. It stays in the vehicle's service history.",
         ],
       },
+      {
+        heading: "Service & Workshop",
+        body: [
+          "A job card can be assigned a Technician and a Service Bay, flagged as high-voltage work, and signed off with a Quality Check (who inspected it + a note). Starting a Service Appointment creates the job card for you with these already filled in.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "service-appointments",
+    title: "Service Appointments",
+    area: "Dealership",
+    open: "/dms/service-appointments",
+    summary: "Book a service visit, assign a bay + technician, then start work.",
+    sections: [
+      {
+        heading: "What it is",
+        body: [
+          "An Appointment is a booking for a future service visit. It captures the vehicle, customer, requested time, and the planned bay + technician — before any work or parts are committed.",
+        ],
+      },
+      {
+        heading: "The HV rule",
+        body: [
+          "Tick “high-voltage work” for battery/motor jobs. Only HV-certified technicians and HV-equipped bays can then be assigned — the system blocks an unsafe pairing.",
+        ],
+      },
+      {
+        heading: "Start work",
+        body: [
+          "When the vehicle arrives, Start work converts the appointment into an open Job Card — carrying the vehicle, complaint, technician, bay and HV flag across. You then add parts/labour and Complete it as usual. The appointment is marked Converted and links to its job card.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "technicians",
+    title: "Technicians",
+    area: "Dealership",
+    open: "/dms/technicians",
+    summary: "Workshop technicians, including HV certification.",
+    sections: [
+      {
+        heading: "What it is",
+        body: [
+          "The people who do the work. Each technician has their skills and an HV-certified flag. Only HV-certified technicians can be assigned to high-voltage appointments and job cards.",
+        ],
+      },
+      {
+        heading: "Note",
+        body: [
+          "Technicians referenced by appointments or job cards can't be deleted — mark them inactive instead, which hides them from new assignments while keeping history intact.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "service-bays",
+    title: "Service Bays",
+    area: "Dealership",
+    open: "/dms/service-bays",
+    summary: "Physical workshop bays, including HV bays.",
+    sections: [
+      {
+        heading: "What it is",
+        body: [
+          "The physical stalls where vehicles are serviced. An HV bay is equipped for high-voltage work; standard bays are not. High-voltage appointments and job cards require an HV bay.",
+        ],
+      },
     ],
   },
   {

@@ -92,7 +92,10 @@ export async function listJobCards(
       orderBy,
       skip: (p.page - 1) * p.limit,
       take: p.limit,
-      include: { vehicle: { select: { vin: true, model: true } } },
+      include: {
+        vehicle: { select: { vin: true, model: true } },
+        technicianRef: { select: { name: true } },
+      },
     }),
     prisma.jobCard.count({ where }),
   ]);
@@ -103,6 +106,8 @@ export async function listJobCards(
       name: r.name,
       vehicle: r.vehicle.vin,
       vehicleModel: r.vehicle.model,
+      technician: r.technicianRef?.name ?? r.technician,
+      isHV: r.isHV,
       status: r.status,
       serviceDate: r.serviceDate.toISOString(),
       total: Number(r.total),
@@ -118,6 +123,9 @@ export async function getJobCard(id: string): Promise<JobCardDetail | null> {
     where: { id },
     include: {
       vehicle: { select: { vin: true, model: true } },
+      technicianRef: { select: { name: true } },
+      bay: { select: { name: true } },
+      appointment: { select: { id: true, name: true } },
       parts: true,
       labor: true,
     },
@@ -135,6 +143,11 @@ export async function getJobCard(id: string): Promise<JobCardDetail | null> {
     status: r.status,
     complaint: r.complaint,
     technician: r.technician,
+    technicianId: r.technicianId,
+    technicianName: r.technicianRef?.name ?? null,
+    bayId: r.bayId,
+    bayName: r.bay?.name ?? null,
+    isHV: r.isHV,
     odometer: r.odometer,
     serviceDate: r.serviceDate.toISOString(),
     partsTotal: Number(r.partsTotal),
@@ -142,6 +155,11 @@ export async function getJobCard(id: string): Promise<JobCardDetail | null> {
     total: Number(r.total),
     remarks: r.remarks,
     photos: r.photos,
+    qcBy: r.qcBy,
+    qcAt: r.qcAt ? r.qcAt.toISOString() : null,
+    qcNote: r.qcNote,
+    appointmentId: r.appointment?.id ?? null,
+    appointmentName: r.appointment?.name ?? null,
     parts: r.parts.map((p) => ({
       id: p.id,
       itemId: p.itemId,
@@ -175,6 +193,9 @@ export async function createJobCard(
       warehouseId: values.warehouseId || null,
       complaint: values.complaint?.trim() || null,
       technician: values.technician?.trim() || null,
+      technicianId: values.technicianId || null,
+      bayId: values.bayId || null,
+      isHV: values.isHV ?? false,
       odometer: values.odometer ?? null,
       serviceDate: values.serviceDate ? new Date(values.serviceDate) : new Date(),
       partsTotal,
@@ -208,6 +229,9 @@ export async function updateJobCard(
         warehouseId: values.warehouseId || null,
         complaint: values.complaint?.trim() || null,
         technician: values.technician?.trim() || null,
+        technicianId: values.technicianId || null,
+        bayId: values.bayId || null,
+        isHV: values.isHV ?? false,
         odometer: values.odometer ?? null,
         serviceDate: values.serviceDate
           ? new Date(values.serviceDate)
@@ -282,6 +306,27 @@ export async function completeJobCard(id: string): Promise<void> {
       where: { id: job.id },
       data: { status: "COMPLETED", completedAt: new Date() },
     });
+  });
+}
+
+// Quality-check sign-off (Service & Workshop). Records who inspected the work
+// and an optional note. Non-gating in v1 — it does not block completion, it
+// just stamps the QC onto the job card's audit trail. Allowed while OPEN.
+export async function recordJobCardQc(
+  id: string,
+  values: { qcBy: string; qcNote?: string },
+): Promise<void> {
+  const job = await prisma.jobCard.findUnique({ where: { id } });
+  if (!job) throw new Error("Job Card not found");
+  if (job.status !== "OPEN")
+    throw new Error("Quality checks can only be recorded on open job cards");
+  await prisma.jobCard.update({
+    where: { id },
+    data: {
+      qcBy: values.qcBy.trim(),
+      qcNote: values.qcNote?.trim() || null,
+      qcAt: new Date(),
+    },
   });
 }
 

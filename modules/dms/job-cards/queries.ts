@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as jobsApi from "./api";
-import type { JobCardFormValues } from "./schema";
+import type { JobCardFormValues, JobCardQcValues } from "./schema";
 
 export const jobCardKeys = {
   all: ["job-cards"] as const,
@@ -93,6 +93,19 @@ export function useCancelJobCard() {
       qc.invalidateQueries({ queryKey: jobCardKeys.all });
       qc.invalidateQueries({ queryKey: jobCardKeys.detail(id) });
       toast.success("Job cancelled — stock & ledger reversed");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useRecordJobCardQc(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (values: JobCardQcValues) =>
+      jobsApi.recordJobCardQc(id, values),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: jobCardKeys.detail(id) });
+      toast.success("Quality check recorded");
     },
     onError: (e: Error) => toast.error(e.message),
   });

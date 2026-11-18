@@ -77,6 +77,9 @@ export function areaForPath(path: string): Area | null {
   const apiMap: [string, Area][] = [
     ["/api/vehicles", "dms"],
     ["/api/dealers", "dms"],
+    ["/api/technicians", "dms"],
+    ["/api/service-bays", "dms"],
+    ["/api/service-appointments", "dms"],
     ["/api/job-cards", "dms"],
     ["/api/warranties", "dms"],
     ["/api/warranty-claims", "dms"],
