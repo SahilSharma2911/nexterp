@@ -21,6 +21,7 @@ export const AREAS = [
   "Buying",
   "Selling",
   "Accounts",
+  "Dealership",
 ] as const;
 
 export const DOCS: Doc[] = [
@@ -45,6 +46,7 @@ export const DOCS: Doc[] = [
           "Item Code (SKU) — the unique id. Leave blank and the system auto-generates one like ITEM-00042.",
           "Unit of Measure (UOM) — how it's counted/sold (Nos, Kg, Litre, Box…).",
           "Valuation Rate — cost per unit. Standard Selling Rate — default sale price.",
+          "Image — an optional product photo, shown in lists and on the item.",
           "Maintain stock — track it in inventory (uncheck for services).",
           "Has serial / batch — declare serial- or batch-tracked items.",
           "Specifications — free key/value facts (Material, Weight…).",
@@ -407,7 +409,10 @@ export const DOCS: Doc[] = [
       },
       {
         heading: "How it connects",
-        body: ["Every accounting entry hits two accounts (a debit and a credit). Invoices and payments post to these accounts automatically."],
+        body: [
+          "Every accounting entry hits two accounts (a debit and a credit). Invoices and payments post to these accounts automatically.",
+          "The dealership side posts here too: a vehicle delivery credits Vehicle Sales (and Accessory Sales for extras), and a completed service job card credits Service Income — all against Debtors.",
+        ],
       },
     ],
   },
@@ -498,6 +503,197 @@ export const DOCS: Doc[] = [
         heading: "What it is",
         body: [
           "A summary of every account's closing balance. Total debits must equal total credits — if they do, the books are balanced (double-entry is intact).",
+        ],
+      },
+    ],
+  },
+
+  // ---------------- Dealership (EV DMS) ----------------
+  {
+    slug: "dealership",
+    title: "Dealership — start here",
+    area: "Dealership",
+    open: "/dms/vehicles",
+    summary:
+      "The EV dealer side — selling, servicing and warrantying individual vehicles.",
+    sections: [
+      {
+        heading: "The big picture",
+        body: [
+          "The Dealership module manages actual EV units — each a unique vehicle with its own VIN, battery and motor. It sits on top of the generic ERP and reuses its stock + accounting.",
+          "Two different journeys happen to every vehicle: you sell it ONCE, and you service it MANY times after.",
+        ],
+      },
+      {
+        heading: "Vehicle vs Item — the key idea",
+        body: [
+          "A Vehicle is a unique, serialized unit, tracked one-by-one by VIN. An Item is generic stock, counted by quantity (150 wheels, 40 chargers).",
+          "Spare parts and accessories are Items. They attach to a specific vehicle only through a document — an accessory line at delivery, or a part on a service job card.",
+        ],
+      },
+      {
+        heading: "Sell once, service forever",
+        list: [
+          "Lifecycle — selling a NEW vehicle: warehouse → allocated → in transit → at dealer → PDI → delivered. Happens once.",
+          "Job Card — servicing/repairing the vehicle LATER: happens again and again over its life.",
+          "Warranty — coverage registered at the sale; claims raised when a component fails.",
+          "Subsidy — a government/OEM EV incentive claimed for the sale.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "vehicles",
+    title: "Vehicles & Lifecycle",
+    area: "Dealership",
+    open: "/dms/vehicles",
+    summary: "Each EV unit and its journey from the warehouse to the customer.",
+    sections: [
+      {
+        heading: "What a vehicle is",
+        list: [
+          "VIN — the vehicle's unique id (like a chassis number).",
+          "Motor serial & Battery serial — exactly which motor/battery is in this car (vital for warranty and recalls).",
+          "Battery State of Health (SoH) — the battery's condition as a %.",
+          "Model, variant, colour, purchase/selling rates, and a photo.",
+        ],
+      },
+      {
+        heading: "The lifecycle — selling a new vehicle",
+        body: [
+          "A vehicle moves through stages, one step at a time. You advance it with the action button on its detail page; every step is recorded in the timeline, so you always know where each car is.",
+        ],
+        list: [
+          "At Warehouse — arrived at your store, not assigned yet.",
+          "Allocated — assigned to a dealer (allocate the oldest-received first — FIFO).",
+          "In Transit — shipped to the dealer.",
+          "At Dealer — arrived at the showroom.",
+          "PDI Passed — Pre-Delivery Inspection passed (a checklist: brakes, battery, lights…). Must pass before delivery.",
+          "Delivered — handed over to the customer.",
+        ],
+      },
+      {
+        heading: "Delivery posts to the books",
+        body: [
+          "On Deliver you record the customer and any accessories sold (helmet, floor mat…). Accessories are issued from stock, and the whole sale posts to the ledger: Debtors Dr, Vehicle Sales Cr (plus Accessory Sales Cr for the extras).",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "dealers",
+    title: "Dealers",
+    area: "Dealership",
+    open: "/dms/dealers",
+    summary: "The dealerships in your network.",
+    sections: [
+      {
+        heading: "What it is",
+        body: [
+          "A Dealer is a dealership location — code, name, contact person, address, GSTIN. Vehicles get allocated to dealers, and each dealer shows its assigned vehicle count.",
+        ],
+      },
+      {
+        heading: "How it connects",
+        body: [
+          "Allocating a vehicle links it to a dealer. A dealer that still has vehicles assigned can't be deleted — disable it instead.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "job-cards",
+    title: "Job Cards (Service)",
+    area: "Dealership",
+    open: "/dms/job-cards",
+    summary: "A workshop service or repair visit for one vehicle.",
+    sections: [
+      {
+        heading: "What it is",
+        body: [
+          "A Job Card is one service visit — like a garage job-sheet. It records the vehicle, the complaint, the parts used, the labour, and photos. A vehicle has many job cards over its life.",
+        ],
+      },
+      {
+        heading: "Parts + labour",
+        list: [
+          "Parts — Items consumed from stock (brake pads, coolant).",
+          "Labour — the work done, as hours × rate.",
+          "Photos — documentation of the job.",
+        ],
+      },
+      {
+        heading: "Completing it",
+        body: [
+          "On Complete, the parts are issued from the warehouse (stock goes down) and the bill posts to the ledger (Debtors Dr / Service Income Cr). Cancel reverses both. It stays in the vehicle's service history.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "warranties",
+    title: "Warranties",
+    area: "Dealership",
+    open: "/dms/warranties",
+    summary: "Component coverage registered for a vehicle.",
+    sections: [
+      {
+        heading: "What it is",
+        body: [
+          "A Warranty is coverage for a vehicle component — Vehicle (bumper-to-bumper), Battery, Motor, Controller or Charger — each with its own terms.",
+        ],
+      },
+      {
+        heading: "Key fields",
+        list: [
+          "Start date & months — the coverage window.",
+          "Km limit — an optional usage cap.",
+          "Battery SoH threshold — for battery warranties, coverage applies if State of Health drops below this %.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "warranty-claims",
+    title: "Warranty Claims",
+    area: "Dealership",
+    open: "/dms/warranty-claims",
+    summary: "Claiming a warranty, from submission to OEM settlement.",
+    sections: [
+      {
+        heading: "The flow",
+        list: [
+          "Draft → Submitted → Approved / Rejected → Settled.",
+          "On submit, eligibility is checked automatically — coverage period, km limit, and for batteries whether SoH dropped below the threshold.",
+        ],
+      },
+      {
+        heading: "Eligibility",
+        body: [
+          "The claim shows an Eligible / Not eligible verdict with the reason — e.g. “battery SoH 72% is below the 80% threshold”. You can still submit, but the verdict guides the OEM decision.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "subsidy",
+    title: "EV Subsidy & Incentives",
+    area: "Dealership",
+    open: "/dms/subsidy-claims",
+    summary: "Government/OEM EV incentives claimed per vehicle sale.",
+    sections: [
+      {
+        heading: "Schemes",
+        body: [
+          "A Subsidy Scheme is an incentive programme (e.g. FAME-II) that pays a fixed amount per qualifying vehicle.",
+        ],
+      },
+      {
+        heading: "Claims",
+        list: [
+          "Raised per vehicle sale, with the buyer's KYC document attached.",
+          "KYC must be verified before you can submit.",
+          "Flow: Draft → Submitted → Approved (an e-voucher is generated) → Disbursed.",
         ],
       },
     ],

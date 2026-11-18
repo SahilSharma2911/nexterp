@@ -66,6 +66,38 @@ export default function DocsHome() {
         </p>
       </section>
 
+      <section>
+        <h2 className="text-base font-semibold">On the EV dealership side</h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          The{" "}
+          <Link href="/docs/dealership" className="text-primary hover:underline">
+            Dealership
+          </Link>{" "}
+          module adds EV-specific flows on top of the ERP: each{" "}
+          <Link href="/docs/vehicles" className="text-primary hover:underline">
+            Vehicle
+          </Link>{" "}
+          is sold once through its lifecycle (and delivery posts to the ledger),
+          then serviced many times via{" "}
+          <Link href="/docs/job-cards" className="text-primary hover:underline">
+            Job Cards
+          </Link>
+          , with{" "}
+          <Link href="/docs/warranties" className="text-primary hover:underline">
+            Warranties
+          </Link>{" "}
+          and{" "}
+          <Link href="/docs/subsidy" className="text-primary hover:underline">
+            EV subsidies
+          </Link>{" "}
+          tracked alongside. New to it? Start with{" "}
+          <Link href="/docs/dealership" className="text-primary hover:underline">
+            Dealership — start here
+          </Link>
+          .
+        </p>
+      </section>
+
       {groups.map((g) => (
         <section key={g.area}>
           <h2 className="text-base font-semibold">{g.area}</h2>
