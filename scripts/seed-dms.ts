@@ -1,11 +1,14 @@
 /**
- * Demo DMS data: dealers + vehicles spread across lifecycle stages.
- * Run:  npm run seed:dms   (writes to DATABASE_URL in .env — your local dev DB)
+ * Demo DMS data: dealers + vehicles across lifecycle stages, plus spare-part &
+ * accessory items (stocked), job cards, warranties, and accessories sold at
+ * delivery — so every DMS screen has something to show.
  *
- * Safe to re-run: clears existing DMS vehicles/dealers first.
+ * Run:  npm run seed:dms   (writes to DATABASE_URL in .env — your local dev DB)
+ * Safe to re-run: clears existing DMS data first (top-ups stock each run).
  */
 import "dotenv/config";
 import { prisma } from "../lib/prisma";
+import { postStockLedger } from "../lib/stock-ledger";
 import { seedStandardChart } from "../lib/services/chart-of-accounts";
 import {
   allocateVehicle,
@@ -14,7 +17,10 @@ import {
   recordPdi,
   deliverVehicle,
 } from "../lib/services/vehicle-lifecycle";
+import { createJobCard, completeJobCard } from "../lib/services/job-cards";
+import { createWarranty } from "../lib/services/warranties";
 
+const today = new Date().toISOString().slice(0, 10);
 const PDI = [
   { label: "Battery State of Health", ok: true, note: "" },
   { label: "Motor & controller", ok: true, note: "" },
@@ -27,21 +33,58 @@ async function wipe() {
   await prisma.warrantyClaim.deleteMany();
   await prisma.warranty.deleteMany();
   await prisma.jobCard.deleteMany();
-  await prisma.vehicle.deleteMany(); // cascades events + inspections
+  await prisma.vehicle.deleteMany(); // cascades events + inspections + accessories
   await prisma.dealer.deleteMany();
-  await prisma.gLEntry.deleteMany({ where: { voucherType: "Vehicle Delivery" } });
+  await prisma.gLEntry.deleteMany({
+    where: { voucherType: { in: ["Vehicle Delivery", "Job Card"] } },
+  });
+}
+
+async function upsertItem(itemCode: string, itemName: string, rate: number, group: string) {
+  return prisma.item.upsert({
+    where: { itemCode },
+    update: { itemName, valuationRate: rate, itemGroup: group },
+    create: { itemCode, itemName, valuationRate: rate, itemGroup: group },
+  });
+}
+
+async function stock(itemId: string, warehouseId: string, qty: number, rate: number) {
+  await prisma.$transaction((tx) =>
+    postStockLedger(tx, {
+      itemId,
+      warehouseId,
+      actualQty: qty,
+      incomingRate: rate,
+      voucherType: "SEED-STOCK",
+      voucherNo: "SEED",
+      postingAt: new Date(),
+    }),
+  );
 }
 
 async function main() {
   await seedStandardChart();
   await wipe();
 
-  // A warehouse for incoming units (reuse one if it exists).
   const warehouse =
     (await prisma.warehouse.findFirst()) ??
     (await prisma.warehouse.create({
       data: { warehouseName: "Central EV Warehouse", warehouseType: "Stores" },
     }));
+
+  // Spare parts + accessories (Items), with stock to draw from.
+  const parts = {
+    brake: await upsertItem("SP-BRAKE", "Brake Pad Set", 800, "Spare Parts"),
+    charger: await upsertItem("SP-CHARGER", "Portable Charger", 3500, "Spare Parts"),
+    coolant: await upsertItem("SP-COOLANT", "Coolant 1L", 400, "Spare Parts"),
+  };
+  const acc = {
+    helmet: await upsertItem("ACC-HELMET", "Helmet", 1500, "Accessories"),
+    mat: await upsertItem("ACC-MAT", "Floor Mat Set", 900, "Accessories"),
+    seat: await upsertItem("ACC-SEAT", "Seat Cover", 1200, "Accessories"),
+  };
+  for (const it of [...Object.values(parts), ...Object.values(acc)])
+    await stock(it.id, warehouse.id, 100, Number(it.valuationRate));
 
   const dealers = await Promise.all(
     [
@@ -49,9 +92,7 @@ async function main() {
       ["DLR-BLR", "Coastal EV", "Bengaluru", "KA"],
       ["DLR-DEL", "Capital EV Hub", "New Delhi", "DL"],
     ].map(([code, name, city, state]) =>
-      prisma.dealer.create({
-        data: { code, name, city, state, contactPerson: "Sales Desk" },
-      }),
+      prisma.dealer.create({ data: { code, name, city, state, contactPerson: "Sales Desk" } }),
     ),
   );
 
@@ -96,7 +137,7 @@ async function main() {
   const by = "Demo";
   const d = (i: number) => dealers[i % dealers.length].id;
 
-  // Leave [0,1,2] at warehouse. Advance the rest through stages.
+  // [0,1,2] stay at warehouse. Advance the rest.
   await allocateVehicle(vehicles[3].id, { dealerId: d(0) }, by);
   await allocateVehicle(vehicles[4].id, { dealerId: d(1) }, by);
 
@@ -104,40 +145,94 @@ async function main() {
     await allocateVehicle(v.id, { dealerId: d(1) }, by);
     await dispatchVehicle(v.id, "Loaded on carrier", by);
   }
-
   for (const v of [vehicles[7], vehicles[8]]) {
     await allocateVehicle(v.id, { dealerId: d(2) }, by);
     await dispatchVehicle(v.id, undefined, by);
     await receiveVehicleAtDealer(v.id, "Unloaded at showroom", by);
   }
 
-  await allocateVehicle(vehicles[9].id, { dealerId: d(0) }, by);
-  await dispatchVehicle(vehicles[9].id, undefined, by);
-  await receiveVehicleAtDealer(vehicles[9].id, undefined, by);
-  await recordPdi(vehicles[9].id, { inspector: "A. Khan", items: PDI }, by);
+  // One at PDI_DONE.
+  const ready = vehicles[9];
+  await allocateVehicle(ready.id, { dealerId: d(0) }, by);
+  await dispatchVehicle(ready.id, undefined, by);
+  await receiveVehicleAtDealer(ready.id, undefined, by);
+  await recordPdi(ready.id, { inspector: "A. Khan", items: PDI }, by);
 
+  // Two delivered — with accessories sold at handover.
   const buyers = ["Anita Rao", "Vikram Shah"];
+  const deliveredIds: string[] = [];
   for (let k = 0; k < 2; k++) {
     const v = vehicles[10 + k];
     await allocateVehicle(v.id, { dealerId: d(k) }, by);
     await dispatchVehicle(v.id, undefined, by);
     await receiveVehicleAtDealer(v.id, undefined, by);
     await recordPdi(v.id, { inspector: "A. Khan", items: PDI }, by);
-    await deliverVehicle(v.id, { customerName: buyers[k] }, by);
+    await deliverVehicle(
+      v.id,
+      {
+        customerName: buyers[k],
+        accessories: [
+          { itemId: acc.helmet.id, qty: 1, rate: 1500 },
+          { itemId: acc.mat.id, qty: 1, rate: 900 },
+        ],
+      },
+      by,
+    );
+    deliveredIds.push(v.id);
   }
 
-  const byStage = await prisma.vehicle.groupBy({
-    by: ["status"],
-    _count: true,
-  });
-  console.log(
-    "Seeded",
-    vehicles.length,
-    "vehicles,",
-    dealers.length,
-    "dealers.",
-  );
+  // Warranties on the delivered vehicles.
+  for (const vehicleId of deliveredIds) {
+    await createWarranty({
+      vehicleId,
+      component: "VEHICLE",
+      startDate: today,
+      months: 36,
+      kmLimit: 100000,
+      soHThreshold: null,
+      status: "ACTIVE",
+      notes: "Bumper-to-bumper",
+    });
+    await createWarranty({
+      vehicleId,
+      component: "BATTERY",
+      startDate: today,
+      months: 96,
+      kmLimit: null,
+      soHThreshold: 70,
+      status: "ACTIVE",
+      notes: "Battery degradation",
+    });
+  }
+
+  // Job cards (one on a delivered car, one at a dealer) with parts + labour.
+  const serviceVehicles = [deliveredIds[0], vehicles[7].id];
+  for (let i = 0; i < serviceVehicles.length; i++) {
+    const jc = await createJobCard({
+      vehicleId: serviceVehicles[i],
+      warehouseId: warehouse.id,
+      technician: "Ravi Kumar",
+      complaint: i === 0 ? "First free service" : "Brake noise",
+      odometer: 1500 + i * 800,
+      serviceDate: today,
+      parts: [
+        { itemId: parts.brake.id, qty: 1, rate: 1000 },
+        { itemId: parts.coolant.id, qty: 2, rate: 500 },
+      ],
+      labor: [{ description: "General service", hours: 1.5, rate: 400 }],
+      photos: [],
+      remarks: "",
+    });
+    await completeJobCard(jc.id);
+  }
+
+  const byStage = await prisma.vehicle.groupBy({ by: ["status"], _count: true });
+  console.log(`Seeded ${vehicles.length} vehicles, ${dealers.length} dealers.`);
   console.log("By stage:", JSON.stringify(byStage.map((s) => ({ [s.status]: s._count }))));
+  console.log(
+    `Items: ${Object.keys(parts).length} spare parts, ${Object.keys(acc).length} accessories. ` +
+      `Job cards: 2. Warranties: ${deliveredIds.length * 2}.`,
+  );
 }
 
 main()

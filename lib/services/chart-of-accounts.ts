@@ -27,6 +27,11 @@ const STANDARD: { accountName: string; accountType: string; rootType: RootType }
       rootType: "INCOME",
     },
     {
+      accountName: "Accessory Sales",
+      accountType: "Income Account",
+      rootType: "INCOME",
+    },
+    {
       accountName: "Cost of Goods Sold",
       accountType: "Expense Account",
       rootType: "EXPENSE",

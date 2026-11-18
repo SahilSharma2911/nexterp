@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, CheckCircle2, ClipboardCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardCheck, Plus, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,8 @@ import { cn } from "@/lib/utils";
 import { fmtDateTime } from "@/lib/format";
 import { useDealerOptions } from "@/modules/dms/dealers/queries";
 import { useCustomerOptions } from "@/features/customers/queries";
+import { useItemOptions } from "@/features/items/queries";
+import { fmtMoney } from "@/lib/format";
 import { VEHICLE_STATUS_LABELS } from "./schema";
 import { LIFECYCLE_ORDER, PDI_CHECKLIST } from "./lifecycle-schema";
 import { StatusBadge } from "./columns";
@@ -47,6 +49,7 @@ export function VehicleLifecyclePanel({ vehicleId }: { vehicleId: string }) {
   const { data } = useVehicleLifecycle(vehicleId);
   const { data: dealerOptions = [] } = useDealerOptions();
   const { data: customerOptions = [] } = useCustomerOptions();
+  const { data: itemOptions = [] } = useItemOptions();
 
   const allocate = useAllocateVehicle(vehicleId);
   const dispatch = useDispatchVehicle(vehicleId);
@@ -63,6 +66,9 @@ export function VehicleLifecyclePanel({ vehicleId }: { vehicleId: string }) {
   );
   const [customerId, setCustomerId] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [accessories, setAccessories] = useState<
+    { itemId: string; qty: number; rate: number }[]
+  >([]);
 
   if (!data) return null;
   const stage = data.stage;
@@ -76,6 +82,7 @@ export function VehicleLifecyclePanel({ vehicleId }: { vehicleId: string }) {
     setItems(PDI_CHECKLIST.map((label) => ({ label, ok: true, note: "" })));
     setCustomerId("");
     setCustomerName("");
+    setAccessories([]);
     setOpen(k);
   };
 
@@ -155,6 +162,30 @@ export function VehicleLifecyclePanel({ vehicleId }: { vehicleId: string }) {
             </li>
           )}
         </ol>
+
+        {data.accessories.length > 0 && (
+          <div className="rounded-lg border">
+            <div className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
+              Accessories sold
+            </div>
+            <ul className="divide-y text-sm">
+              {data.accessories.map((a) => (
+                <li
+                  key={a.id}
+                  className="flex items-center justify-between px-3 py-2"
+                >
+                  <span>
+                    <span className="font-mono text-xs">{a.itemCode}</span>{" "}
+                    <span className="text-muted-foreground">{a.itemName}</span>
+                  </span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {a.qty} × {fmtMoney(a.rate)} = {fmtMoney(a.amount)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Timeline */}
         {data.timeline.length > 0 ? (
@@ -357,6 +388,93 @@ export function VehicleLifecyclePanel({ vehicleId }: { vehicleId: string }) {
                 placeholder="Buyer name"
               />
             </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Accessories (optional)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setAccessories((a) => [...a, { itemId: "", qty: 1, rate: 0 }])
+                  }
+                >
+                  <Plus className="size-4" /> Add
+                </Button>
+              </div>
+              {accessories.map((row, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Select
+                    value={row.itemId || undefined}
+                    onValueChange={(val) =>
+                      setAccessories((arr) =>
+                        arr.map((x, j) => {
+                          if (j !== i) return x;
+                          const opt = itemOptions.find((o) => o.id === val);
+                          return {
+                            ...x,
+                            itemId: val,
+                            rate: x.rate || opt?.valuationRate || 0,
+                          };
+                        }),
+                      )
+                    }
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Item…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {itemOptions.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          {o.itemCode} — {o.itemName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    className="w-16"
+                    value={row.qty}
+                    onChange={(e) =>
+                      setAccessories((arr) =>
+                        arr.map((x, j) =>
+                          j === i ? { ...x, qty: Number(e.target.value) || 0 } : x,
+                        ),
+                      )
+                    }
+                  />
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className="w-24"
+                    value={row.rate}
+                    onChange={(e) =>
+                      setAccessories((arr) =>
+                        arr.map((x, j) =>
+                          j === i ? { ...x, rate: Number(e.target.value) || 0 } : x,
+                        ),
+                      )
+                    }
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    onClick={() =>
+                      setAccessories((arr) => arr.filter((_, j) => j !== i))
+                    }
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
             <NoteField value={note} onChange={setNote} />
           </div>
           <DialogFooter>
@@ -370,6 +488,7 @@ export function VehicleLifecyclePanel({ vehicleId }: { vehicleId: string }) {
                   {
                     customerId: customerId || null,
                     customerName,
+                    accessories: accessories.filter((a) => a.itemId),
                     note: note || undefined,
                   },
                   { onSuccess: close },

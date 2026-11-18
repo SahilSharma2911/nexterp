@@ -44,15 +44,23 @@ export const pdiSchema = z.object({
   items: z.array(pdiItemSchema).min(1),
 });
 
+export const vehicleAccessorySchema = z.object({
+  itemId: z.string().min(1, "Select an item"),
+  qty: z.number().positive("Qty must be > 0"),
+  rate: z.number().min(0, "Rate must be ≥ 0"),
+});
+
 export const deliverSchema = z.object({
   customerId: z.string().optional().nullable(),
   customerName: z.string().trim().min(1, "Customer name is required"),
+  accessories: z.array(vehicleAccessorySchema).default([]),
   note: z.string().trim().optional(),
 });
 
 export type AllocateValues = z.infer<typeof allocateSchema>;
 export type PdiValues = z.infer<typeof pdiSchema>;
-export type DeliverValues = z.infer<typeof deliverSchema>;
+// z.input so `accessories` (which has a default) is optional for callers.
+export type DeliverValues = z.input<typeof deliverSchema>;
 
 // ---- read models ----
 
@@ -75,8 +83,19 @@ export type InspectionRead = {
   items: { label: string; ok: boolean; note: string | null }[];
 };
 
+export type AccessoryRead = {
+  id: string;
+  itemId: string;
+  itemCode: string;
+  itemName: string;
+  qty: number;
+  rate: number;
+  amount: number;
+};
+
 export type VehicleLifecycle = {
   stage: VehicleStatus;
   timeline: TimelineEvent[];
   inspections: InspectionRead[];
+  accessories: AccessoryRead[];
 };

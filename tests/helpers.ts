@@ -35,6 +35,7 @@ export async function seedAccounts() {
     ["Sales", "Income Account", "INCOME"],
     ["Service Income", "Income Account", "INCOME"],
     ["Vehicle Sales", "Income Account", "INCOME"],
+    ["Accessory Sales", "Income Account", "INCOME"],
     ["Creditors", "Payable", "LIABILITY"],
     ["Bank", "Bank", "ASSET"],
     ["Cash", "Cash", "ASSET"],

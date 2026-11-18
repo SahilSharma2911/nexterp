@@ -1,6 +1,9 @@
 import type { Prisma, VehicleStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { postGL, getAccountId } from "@/lib/gl";
+import { postStockLedger } from "@/lib/stock-ledger";
+
+const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 import type {
   AllocateValues,
   DeliverValues,
@@ -147,16 +150,17 @@ export async function recordPdi(
   return { result: passed ? "PASS" : "FAIL" };
 }
 
-// Revenue account for a vehicle sale: prefer "Vehicle Sales", fall back to "Sales".
-async function vehicleSalesAccountId(
+// Revenue accounts for a sale: prefer the dedicated one, fall back to "Sales".
+async function incomeAccountId(
   tx: Prisma.TransactionClient,
+  preferred: string,
 ): Promise<string> {
   const a =
-    (await tx.account.findFirst({ where: { accountName: "Vehicle Sales" } })) ??
+    (await tx.account.findFirst({ where: { accountName: preferred } })) ??
     (await tx.account.findFirst({ where: { accountName: "Sales" } }));
   if (!a)
     throw new Error(
-      'No "Vehicle Sales" or "Sales" account — seed the chart of accounts first',
+      `No "${preferred}" or "Sales" account — seed the chart of accounts first`,
     );
   return a.id;
 }
@@ -168,6 +172,13 @@ export async function deliverVehicle(
 ) {
   const v = await requireStage(id, "PDI_DONE", "deliver");
   const customer = values.customerName.trim();
+  const accessories = (values.accessories ?? []).map((a) => ({
+    itemId: a.itemId,
+    qty: a.qty,
+    rate: a.rate,
+    amount: round2(a.qty * a.rate),
+  }));
+  const accTotal = round2(accessories.reduce((s, a) => s + a.amount, 0));
 
   await prisma.$transaction(async (tx) => {
     const veh = await tx.vehicle.findUnique({
@@ -183,19 +194,38 @@ export async function deliverVehicle(
         customerId: values.customerId || null,
         customerName: customer,
         deliveredAt: new Date(),
+        accessories: { create: accessories },
       },
     });
 
-    // Post the sale to the GL (Debtors Dr / Vehicle Sales Cr) — same
-    // revenue-posting pattern as Job Cards. Skipped when there's no price.
-    if (price > 0) {
+    // Issue the accessories from the vehicle's warehouse (core stock ledger).
+    if (accessories.length && v.warehouseId) {
+      for (const a of accessories) {
+        await postStockLedger(tx, {
+          itemId: a.itemId,
+          warehouseId: v.warehouseId,
+          actualQty: -a.qty,
+          voucherType: "Vehicle Delivery",
+          voucherNo: veh!.vin,
+          postingAt: new Date(),
+        });
+      }
+    }
+
+    // Post the sale to the GL: Debtors Dr total / Vehicle Sales + Accessory
+    // Sales Cr — same revenue-posting pattern as Job Cards.
+    const total = round2(price + accTotal);
+    if (total > 0) {
       const debtors = await getAccountId(tx, "Debtors");
-      const sales = await vehicleSalesAccountId(tx);
+      const lines: { accountId: string; debit?: number; credit?: number }[] = [
+        { accountId: debtors, debit: total },
+      ];
+      if (price > 0)
+        lines.push({ accountId: await incomeAccountId(tx, "Vehicle Sales"), credit: price });
+      if (accTotal > 0)
+        lines.push({ accountId: await incomeAccountId(tx, "Accessory Sales"), credit: accTotal });
       await postGL(tx, {
-        lines: [
-          { accountId: debtors, debit: price },
-          { accountId: sales, credit: price },
-        ],
+        lines,
         voucherType: "Vehicle Delivery",
         voucherNo: veh!.vin,
         postingAt: new Date(),
@@ -208,7 +238,7 @@ export async function deliverVehicle(
       stage: "DELIVERED",
       note:
         values.note ||
-        (price > 0
+        (total > 0
           ? `Handed over to ${customer} · sale posted to the ledger`
           : `Handed over to ${customer}`),
       dealerId: v.dealerId,
@@ -226,7 +256,7 @@ export async function getVehicleLifecycle(
   });
   if (!vehicle) return null;
 
-  const [events, inspections] = await Promise.all([
+  const [events, inspections, accRows] = await Promise.all([
     prisma.vehicleEvent.findMany({
       where: { vehicleId: id },
       orderBy: { at: "desc" },
@@ -236,7 +266,18 @@ export async function getVehicleLifecycle(
       orderBy: { createdAt: "desc" },
       include: { items: true },
     }),
+    prisma.vehicleAccessory.findMany({ where: { vehicleId: id } }),
   ]);
+
+  // Resolve accessory item codes/names (loose ref to core Item).
+  const accItemIds = [...new Set(accRows.map((a) => a.itemId))];
+  const items = accItemIds.length
+    ? await prisma.item.findMany({
+        where: { id: { in: accItemIds } },
+        select: { id: true, itemCode: true, itemName: true },
+      })
+    : [];
+  const itemMap = new Map(items.map((i) => [i.id, i]));
 
   // Resolve dealer + warehouse names referenced by the events.
   const dealerIds = [...new Set(events.map((e) => e.dealerId).filter(Boolean))] as string[];
@@ -270,6 +311,15 @@ export async function getVehicleLifecycle(
       note: ins.note,
       createdAt: ins.createdAt.toISOString(),
       items: ins.items.map((it) => ({ label: it.label, ok: it.ok, note: it.note })),
+    })),
+    accessories: accRows.map((a) => ({
+      id: a.id,
+      itemId: a.itemId,
+      itemCode: itemMap.get(a.itemId)?.itemCode ?? "—",
+      itemName: itemMap.get(a.itemId)?.itemName ?? "",
+      qty: a.qty,
+      rate: Number(a.rate),
+      amount: Number(a.amount),
     })),
   };
 }

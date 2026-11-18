@@ -8,7 +8,16 @@ import {
   getVehicleLifecycle,
 } from "@/lib/services/vehicle-lifecycle";
 import { prisma } from "@/lib/prisma";
-import { resetDb, makeVehicle, seedAccounts, glFor } from "./helpers";
+import {
+  resetDb,
+  makeVehicle,
+  makeWarehouse,
+  makeItem,
+  stockIn,
+  binQty,
+  seedAccounts,
+  glFor,
+} from "./helpers";
 
 async function setup() {
   const dealer = await prisma.dealer.create({
@@ -91,6 +100,37 @@ describe("vehicle lifecycle", () => {
     const sales = gl.find((g) => g.account.accountName === "Vehicle Sales");
     expect(Number(debtors?.debit)).toBe(999000);
     expect(Number(sales?.credit)).toBe(999000);
+  });
+
+  it("sells accessories at delivery: issues stock + posts Accessory Sales", async () => {
+    await seedAccounts();
+    const dealer = await prisma.dealer.create({ data: { code: "DA", name: "DA" } });
+    const wh = await makeWarehouse();
+    const helmet = await makeItem("HELMET", 1500);
+    await stockIn(helmet.id, wh.id, 10, 1500);
+    const v = await makeVehicle("VIN-ACC", {
+      sellingRate: 800000,
+      warehouseId: wh.id,
+    });
+    await allocateVehicle(v.id, { dealerId: dealer.id });
+    await dispatchVehicle(v.id, undefined);
+    await receiveVehicleAtDealer(v.id, undefined);
+    await recordPdi(v.id, { items: pdiItems(true) });
+    await deliverVehicle(v.id, {
+      customerName: "Anita K",
+      accessories: [{ itemId: helmet.id, qty: 2, rate: 2000 }],
+    });
+
+    // accessory issued from stock
+    expect(await binQty(helmet.id, wh.id)).toBe(8); // 10 - 2
+    // recorded on the vehicle
+    const lc = await getVehicleLifecycle(v.id);
+    expect(lc?.accessories[0].amount).toBe(4000);
+    // GL: vehicle 800000 + accessories 4000
+    const gl = await glFor("VIN-ACC");
+    expect(Number(gl.find((g) => g.account.accountName === "Debtors")?.debit)).toBe(804000);
+    expect(Number(gl.find((g) => g.account.accountName === "Vehicle Sales")?.credit)).toBe(800000);
+    expect(Number(gl.find((g) => g.account.accountName === "Accessory Sales")?.credit)).toBe(4000);
   });
 
   it("skips the GL posting when the vehicle has no selling price", async () => {
