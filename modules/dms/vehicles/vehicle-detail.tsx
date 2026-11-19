@@ -34,7 +34,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { StatCards, type StatItem } from "@/components/analytics/stat-cards";
 import { useCanWrite } from "@/components/session-context";
 import { cn } from "@/lib/utils";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
@@ -55,6 +54,29 @@ function sohClass(soh: number) {
   return "text-red-600 dark:text-red-400";
 }
 
+// Compact inline metric for the header.
+function Stat({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div>
+      <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+        {label}
+      </p>
+      <p className={cn("mt-0.5 text-base font-semibold tabular-nums", className)}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+// Compact icon-led label/value for the detail cards.
 function Field({
   icon: Icon,
   label,
@@ -65,16 +87,12 @@ function Field({
   value: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3">
-      <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-        <Icon className="size-4" />
-      </span>
-      <div className="min-w-0">
-        <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-          {label}
-        </p>
-        <p className="mt-0.5 truncate text-sm font-medium">{value}</p>
-      </div>
+    <div className="min-w-0">
+      <p className="flex items-center gap-1.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+        <Icon className="size-3.5" />
+        {label}
+      </p>
+      <p className="mt-0.5 truncate text-sm font-medium">{value}</p>
     </div>
   );
 }
@@ -88,56 +106,18 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
 
   if (isLoading || !v) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-72 w-full rounded-2xl" />
-        <Skeleton className="h-24 w-full rounded-xl" />
+      <div className="space-y-4">
+        <Skeleton className="h-32 w-full rounded-xl" />
         <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     );
   }
 
   const dash = <span className="text-muted-foreground">—</span>;
-  const margin = v.sellingRate - v.purchaseRate;
   const subtitle = [v.model, v.variant, v.color].filter(Boolean).join(" · ");
 
-  const metrics: StatItem[] = [
-    {
-      label: "Battery health",
-      value: v.batterySoH != null ? `${v.batterySoH}%` : "—",
-      icon: BatteryCharging,
-      tone:
-        v.batterySoH == null
-          ? "default"
-          : v.batterySoH >= 80
-            ? "positive"
-            : v.batterySoH >= 60
-              ? "warning"
-              : "negative",
-      sub: "State of Health",
-    },
-    {
-      label: "Selling price",
-      value: compactMoney(v.sellingRate),
-      icon: Wallet,
-      sub: "listed",
-    },
-    {
-      label: "Est. margin",
-      value: compactMoney(margin),
-      icon: TrendingUp,
-      tone: margin > 0 ? "positive" : "default",
-      sub: "selling − cost",
-    },
-    {
-      label: "Stage",
-      value: VEHICLE_STATUS_LABELS[v.status],
-      icon: Gauge,
-      sub: "lifecycle",
-    },
-  ];
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Actions */}
       <div className="flex flex-wrap items-center justify-end gap-2">
         <Button asChild variant="outline" size="sm">
@@ -173,48 +153,56 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
         )}
       </div>
 
-      {/* Hero */}
-      <section className="relative h-64 overflow-hidden rounded-2xl ring-1 ring-foreground/10 sm:h-80">
-        {v.imageUrl ? (
-          <Image
-            src={v.imageUrl}
-            alt={v.vin}
-            fill
-            sizes="100vw"
-            className="object-cover"
-            unoptimized
-            priority
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/80 to-primary/50">
-            <Car className="absolute -right-6 -bottom-8 size-64 text-white/10" />
+      {/* Compact header: image + identity + inline metrics */}
+      <Card>
+        <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-lg border bg-muted sm:h-20 sm:w-32">
+            {v.imageUrl ? (
+              <Image
+                src={v.imageUrl}
+                alt={v.vin}
+                fill
+                sizes="(min-width: 640px) 128px, 100vw"
+                className="object-cover"
+                unoptimized
+              />
+            ) : (
+              <span className="flex h-full items-center justify-center text-muted-foreground">
+                <Car className="size-7" />
+              </span>
+            )}
           </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 p-6">
-          <StatusBadge status={v.status} />
-          <div>
-            <h1 className="font-mono text-3xl font-semibold tracking-tight text-white drop-shadow-sm sm:text-4xl">
+
+          <div className="min-w-0 flex-1">
+            <StatusBadge status={v.status} />
+            <h1 className="mt-1.5 truncate font-mono text-xl font-semibold tracking-tight">
               {v.vin}
             </h1>
-            <p className="mt-1 text-sm text-white/85">{subtitle}</p>
+            <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {v.batterySoH != null && (
-              <Chip icon={BatteryCharging} text={`${v.batterySoH}% SoH`} />
-            )}
-            <Chip icon={Wallet} text={compactMoney(v.sellingRate)} />
-            {v.dealer && <Chip icon={Building2} text={v.dealer} />}
-          </div>
-        </div>
-      </section>
 
-      {/* Key metrics */}
-      <StatCards items={metrics} />
+          <div className="flex gap-6 sm:border-l sm:pl-6">
+            <Stat
+              label="SoH"
+              value={v.batterySoH != null ? `${v.batterySoH}%` : "—"}
+              className={
+                v.batterySoH != null ? sohClass(v.batterySoH) : undefined
+              }
+            />
+            <Stat label="Selling" value={compactMoney(v.sellingRate)} />
+            <Stat
+              label="Stage"
+              value={
+                <span className="text-sm">{VEHICLE_STATUS_LABELS[v.status]}</span>
+              }
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Content */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
           <VehicleLifecyclePanel vehicleId={v.id} />
 
           <Card>
@@ -224,7 +212,7 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
                 EV powertrain
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-5 sm:grid-cols-2">
+            <CardContent className="grid gap-4 sm:grid-cols-2">
               <Field icon={Cpu} label="Motor serial" value={v.motorSerial ?? dash} />
               <Field
                 icon={BatteryCharging}
@@ -250,7 +238,7 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
         </div>
 
         {/* Sidebar */}
-        <aside className="space-y-6">
+        <aside className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -258,7 +246,7 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
                 Commercial
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-5">
+            <CardContent className="grid gap-4">
               <Field
                 icon={MapPin}
                 label="Location"
@@ -291,12 +279,7 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
                   )
                 }
               />
-              <Field
-                icon={Calendar}
-                label="Mfg date"
-                value={v.mfgDate ? fmtDateTime(v.mfgDate) : dash}
-              />
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-2 gap-4">
                 <Field
                   icon={Wallet}
                   label="Purchase"
@@ -308,6 +291,11 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
                   value={fmtMoney(v.sellingRate)}
                 />
               </div>
+              <Field
+                icon={Calendar}
+                label="Mfg date"
+                value={v.mfgDate ? fmtDateTime(v.mfgDate) : dash}
+              />
               {v.remarks && (
                 <Field icon={Pencil} label="Remarks" value={v.remarks} />
               )}
@@ -350,15 +338,6 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
   );
 }
 
-function Chip({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
-      <Icon className="size-3.5" />
-      {text}
-    </span>
-  );
-}
-
 function HistoryPanel({
   icon: Icon,
   title,
@@ -371,16 +350,16 @@ function HistoryPanel({
   children: React.ReactNode;
 }) {
   return (
-    <Card>
+    <Card size="sm">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-sm">
           <Icon className="size-4 text-muted-foreground" />
           {title}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {empty ? (
-          <p className="px-5 pb-5 text-sm text-muted-foreground">Nothing yet.</p>
+          <p className="px-4 pb-4 text-sm text-muted-foreground">Nothing yet.</p>
         ) : (
           <ul className="divide-y text-sm">{children}</ul>
         )}
@@ -403,7 +382,7 @@ function VehicleHistory({ vehicleId }: { vehicleId: string }) {
         {data.jobCards.map((j) => (
           <li
             key={j.id}
-            className="flex items-center justify-between px-5 py-2.5"
+            className="flex items-center justify-between px-4 py-2.5"
           >
             <Link
               href={`/dms/job-cards/${j.id}`}
@@ -426,7 +405,7 @@ function VehicleHistory({ vehicleId }: { vehicleId: string }) {
         {data.warranties.map((w) => (
           <li
             key={w.id}
-            className="flex items-center justify-between px-5 py-2.5"
+            className="flex items-center justify-between px-4 py-2.5"
           >
             <Link
               href={`/dms/warranties/${w.id}`}
@@ -450,7 +429,7 @@ function VehicleHistory({ vehicleId }: { vehicleId: string }) {
         {data.subsidyClaims.map((s) => (
           <li
             key={s.id}
-            className="flex items-center justify-between px-5 py-2.5"
+            className="flex items-center justify-between px-4 py-2.5"
           >
             <Link
               href={`/dms/subsidy-claims/${s.id}`}
