@@ -121,6 +121,17 @@ export type VehiclesTableMeta = {
   onSort: (field: string) => void;
 };
 
+export type VehicleActivity = {
+  id: string;
+  vehicleId: string;
+  vin: string;
+  model: string;
+  stage: VehicleStatus;
+  note: string | null;
+  byUser: string | null;
+  at: string;
+};
+
 export type VehicleAnalytics = {
   total: number;
   inStock: number;
@@ -130,4 +141,6 @@ export type VehicleAnalytics = {
   deliveredValue: number; // sale value of delivered units
   avgSoH: number | null;
   byStage: { name: string; value: number }[];
+  deliveriesByMonth: { name: string; value: number }[];
+  recentActivity: VehicleActivity[];
 };

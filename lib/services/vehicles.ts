@@ -239,9 +239,35 @@ export async function deleteVehicle(id: string): Promise<void> {
   await prisma.vehicle.delete({ where: { id } });
 }
 
+// Six-month delivery trend: counts of vehicles delivered per calendar month.
+function deliveriesByMonth(
+  rows: { deliveredAt: Date | null }[],
+): { name: string; value: number }[] {
+  const now = new Date();
+  const months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    return {
+      key: `${d.getFullYear()}-${d.getMonth()}`,
+      name: d.toLocaleString("en-US", { month: "short" }),
+    };
+  });
+  const counts = new Map<string, number>();
+  for (const r of rows) {
+    if (!r.deliveredAt) continue;
+    const d = r.deliveredAt;
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return months.map((m) => ({ name: m.name, value: counts.get(m.key) ?? 0 }));
+}
+
 // Management insights for the Vehicles list header.
 export async function vehicleAnalytics(): Promise<VehicleAnalytics> {
-  const [grouped, inv, del, soh] = await Promise.all([
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5, 1);
+  sixMonthsAgo.setHours(0, 0, 0, 0);
+
+  const [grouped, inv, del, soh, deliveredRows, events] = await Promise.all([
     prisma.vehicle.groupBy({ by: ["status"], _count: true }),
     prisma.vehicle.aggregate({
       _sum: { purchaseRate: true },
@@ -252,6 +278,15 @@ export async function vehicleAnalytics(): Promise<VehicleAnalytics> {
       where: { status: "DELIVERED" },
     }),
     prisma.vehicle.aggregate({ _avg: { batterySoH: true } }),
+    prisma.vehicle.findMany({
+      where: { deliveredAt: { gte: sixMonthsAgo } },
+      select: { deliveredAt: true },
+    }),
+    prisma.vehicleEvent.findMany({
+      orderBy: { at: "desc" },
+      take: 8,
+      include: { vehicle: { select: { vin: true, model: true } } },
+    }),
   ]);
 
   const countFor = (s: VehicleStatus) =>
@@ -278,6 +313,17 @@ export async function vehicleAnalytics(): Promise<VehicleAnalytics> {
     byStage: VEHICLE_STATUSES.map((s) => ({
       name: VEHICLE_STATUS_LABELS[s],
       value: countFor(s),
+    })),
+    deliveriesByMonth: deliveriesByMonth(deliveredRows),
+    recentActivity: events.map((e) => ({
+      id: e.id,
+      vehicleId: e.vehicleId,
+      vin: e.vehicle.vin,
+      model: e.vehicle.model,
+      stage: e.stage,
+      note: e.note,
+      byUser: e.byUser,
+      at: e.at.toISOString(),
     })),
   };
 }
