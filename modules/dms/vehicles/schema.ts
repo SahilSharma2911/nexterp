@@ -133,6 +133,16 @@ export type VehicleActivity = {
   at: string;
 };
 
+// One in-stock unit in the FIFO (oldest-first) allocation queue.
+export type FifoVehicle = {
+  id: string;
+  vin: string;
+  model: string;
+  variant: string | null;
+  warehouse: string | null;
+  daysInStock: number;
+};
+
 export type VehicleAnalytics = {
   total: number;
   inStock: number;
@@ -144,4 +154,10 @@ export type VehicleAnalytics = {
   byStage: { name: string; value: number }[];
   deliveriesByMonth: { name: string; value: number }[];
   recentActivity: VehicleActivity[];
+  // FIFO / stock-aging
+  oldestDays: number; // age of the oldest in-stock unit
+  avgAgeDays: number; // average age of in-stock units
+  agingThreshold: number; // "aging" cut-off in days
+  agingCount: number; // in-stock units older than the threshold
+  fifoQueue: FifoVehicle[]; // in-stock units, oldest first
 };

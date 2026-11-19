@@ -267,29 +267,64 @@ export async function vehicleAnalytics(): Promise<VehicleAnalytics> {
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5, 1);
   sixMonthsAgo.setHours(0, 0, 0, 0);
 
-  const [grouped, inv, del, soh, deliveredRows, events] = await Promise.all([
-    prisma.vehicle.groupBy({ by: ["status"], _count: true }),
-    prisma.vehicle.aggregate({
-      _sum: { purchaseRate: true },
-      where: { status: { not: "DELIVERED" } },
-    }),
-    prisma.vehicle.aggregate({
-      _sum: { sellingRate: true },
-      where: { status: "DELIVERED" },
-    }),
-    prisma.vehicle.aggregate({ _avg: { batterySoH: true } }),
-    prisma.vehicle.findMany({
-      where: { deliveredAt: { gte: sixMonthsAgo } },
-      select: { deliveredAt: true },
-    }),
-    prisma.vehicleEvent.findMany({
-      orderBy: { at: "desc" },
-      take: 8,
-      include: {
-        vehicle: { select: { vin: true, model: true, imageUrl: true } },
-      },
-    }),
-  ]);
+  const AGING_THRESHOLD = 60; // days a unit may sit before it's "aging"
+
+  const [grouped, inv, del, soh, deliveredRows, events, inStockUnits, warehouses] =
+    await Promise.all([
+      prisma.vehicle.groupBy({ by: ["status"], _count: true }),
+      prisma.vehicle.aggregate({
+        _sum: { purchaseRate: true },
+        where: { status: { not: "DELIVERED" } },
+      }),
+      prisma.vehicle.aggregate({
+        _sum: { sellingRate: true },
+        where: { status: "DELIVERED" },
+      }),
+      prisma.vehicle.aggregate({ _avg: { batterySoH: true } }),
+      prisma.vehicle.findMany({
+        where: { deliveredAt: { gte: sixMonthsAgo } },
+        select: { deliveredAt: true },
+      }),
+      prisma.vehicleEvent.findMany({
+        orderBy: { at: "desc" },
+        take: 8,
+        include: {
+          vehicle: { select: { vin: true, model: true, imageUrl: true } },
+        },
+      }),
+      // FIFO queue — in-stock units oldest first (createdAt ≈ received date).
+      prisma.vehicle.findMany({
+        where: { status: "IN_STOCK" },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          vin: true,
+          model: true,
+          variant: true,
+          warehouseId: true,
+          createdAt: true,
+        },
+      }),
+      prisma.warehouse.findMany({ select: { id: true, warehouseName: true } }),
+    ]);
+
+  const now = Date.now();
+  const ageDays = (d: Date) => Math.floor((now - d.getTime()) / 86_400_000);
+  const whName = new Map(warehouses.map((w) => [w.id, w.warehouseName]));
+  const ages = inStockUnits.map((v) => ageDays(v.createdAt));
+  const oldestDays = ages.length ? Math.max(...ages) : 0;
+  const avgAgeDays = ages.length
+    ? Math.round(ages.reduce((s, a) => s + a, 0) / ages.length)
+    : 0;
+  const agingCount = ages.filter((a) => a > AGING_THRESHOLD).length;
+  const fifoQueue = inStockUnits.slice(0, 8).map((v) => ({
+    id: v.id,
+    vin: v.vin,
+    model: v.model,
+    variant: v.variant,
+    warehouse: v.warehouseId ? (whName.get(v.warehouseId) ?? null) : null,
+    daysInStock: ageDays(v.createdAt),
+  }));
 
   const countFor = (s: VehicleStatus) =>
     grouped.find((g) => g.status === s)?._count ?? 0;
@@ -328,5 +363,10 @@ export async function vehicleAnalytics(): Promise<VehicleAnalytics> {
       byUser: e.byUser,
       at: e.at.toISOString(),
     })),
+    oldestDays,
+    avgAgeDays,
+    agingThreshold: AGING_THRESHOLD,
+    agingCount,
+    fifoQueue,
   };
 }
