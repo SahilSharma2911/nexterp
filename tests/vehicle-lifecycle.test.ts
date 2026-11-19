@@ -6,6 +6,7 @@ import {
   recordPdi,
   deliverVehicle,
   getVehicleLifecycle,
+  addVehicleAccessory,
 } from "@/lib/services/vehicle-lifecycle";
 import { prisma } from "@/lib/prisma";
 import {
@@ -143,6 +144,51 @@ describe("vehicle lifecycle", () => {
     await recordPdi(v.id, { items: pdiItems(true) });
     await deliverVehicle(v.id, { customerName: "No Charge" });
     expect(await glFor("VIN-FREE")).toHaveLength(0);
+  });
+
+  it("fits an accessory before delivery, then bills it once at delivery", async () => {
+    await seedAccounts();
+    const dealer = await prisma.dealer.create({ data: { code: "DPF", name: "DPF" } });
+    const wh = await makeWarehouse();
+    const helmet = await makeItem("HELMET2", 1500);
+    await stockIn(helmet.id, wh.id, 10, 1500);
+    const v = await makeVehicle("VIN-PREFIT", {
+      sellingRate: 500000,
+      warehouseId: wh.id,
+    });
+    await allocateVehicle(v.id, { dealerId: dealer.id });
+    await dispatchVehicle(v.id, undefined);
+    await receiveVehicleAtDealer(v.id, undefined);
+
+    // Fit an accessory while AT_DEALER (before delivery).
+    await addVehicleAccessory(v.id, { itemId: helmet.id, qty: 1, rate: 2000 });
+    let lc = await getVehicleLifecycle(v.id);
+    expect(lc?.accessories).toHaveLength(1);
+    expect(lc?.accessories[0].amount).toBe(2000);
+    // Pre-fit = plan only: no stock move, no GL yet.
+    expect(await binQty(helmet.id, wh.id)).toBe(10);
+    expect(await glFor("VIN-PREFIT")).toHaveLength(0);
+
+    // Deliver, carrying the fitted accessory through to the sale.
+    await recordPdi(v.id, { items: pdiItems(true) });
+    await deliverVehicle(v.id, {
+      customerName: "Buyer",
+      accessories: [{ itemId: helmet.id, qty: 1, rate: 2000 }],
+    });
+
+    // Now (and only now) stock is issued and revenue posted — once.
+    expect(await binQty(helmet.id, wh.id)).toBe(9);
+    lc = await getVehicleLifecycle(v.id);
+    expect(lc?.accessories).toHaveLength(1); // not duplicated
+    const gl = await glFor("VIN-PREFIT");
+    expect(
+      Number(gl.find((g) => g.account.accountName === "Accessory Sales")?.credit),
+    ).toBe(2000);
+
+    // Locked after delivery.
+    await expect(
+      addVehicleAccessory(v.id, { itemId: helmet.id, qty: 1, rate: 100 }),
+    ).rejects.toThrow(/delivered/i);
   });
 
   it("a failed PDI records the inspection but does not advance", async () => {

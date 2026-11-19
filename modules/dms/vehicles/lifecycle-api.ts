@@ -3,6 +3,7 @@ import type {
   AllocateValues,
   DeliverValues,
   PdiValues,
+  VehicleAccessoryValues,
   VehicleLifecycle,
 } from "./lifecycle-schema";
 
@@ -29,4 +30,10 @@ export async function runPdi(id: string, values: PdiValues) {
 }
 export async function deliver(id: string, values: DeliverValues) {
   await api.post(`/vehicles/${id}/deliver`, values);
+}
+export async function addAccessory(id: string, values: VehicleAccessoryValues) {
+  await api.post(`/vehicles/${id}/accessories`, values);
+}
+export async function removeAccessory(id: string, accId: string) {
+  await api.delete(`/vehicles/${id}/accessories/${accId}`);
 }

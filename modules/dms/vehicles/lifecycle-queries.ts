@@ -4,7 +4,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as lc from "./lifecycle-api";
 import { vehicleKeys } from "./queries";
-import type { AllocateValues, DeliverValues, PdiValues } from "./lifecycle-schema";
+import type {
+  AllocateValues,
+  DeliverValues,
+  PdiValues,
+  VehicleAccessoryValues,
+} from "./lifecycle-schema";
 
 export const lifecycleKey = (id: string) =>
   [...vehicleKeys.detail(id), "lifecycle"] as const;
@@ -42,6 +47,18 @@ export const useReceiveVehicle = (id: string) =>
   useStageMutation<string | undefined>(id, (note) => lc.receiveAtDealer(id, note), "Received at dealer");
 export const useDeliverVehicle = (id: string) =>
   useStageMutation<DeliverValues>(id, (v) => lc.deliver(id, v), "Delivered to customer");
+export const useAddVehicleAccessory = (id: string) =>
+  useStageMutation<VehicleAccessoryValues>(
+    id,
+    (v) => lc.addAccessory(id, v),
+    "Accessory added",
+  );
+export const useRemoveVehicleAccessory = (id: string) =>
+  useStageMutation<string>(
+    id,
+    (accId) => lc.removeAccessory(id, accId),
+    "Accessory removed",
+  );
 
 export function useRunPdi(id: string) {
   const qc = useQueryClient();

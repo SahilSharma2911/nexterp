@@ -59,6 +59,7 @@ export const deliverSchema = z.object({
 
 export type AllocateValues = z.infer<typeof allocateSchema>;
 export type PdiValues = z.infer<typeof pdiSchema>;
+export type VehicleAccessoryValues = z.infer<typeof vehicleAccessorySchema>;
 // z.input so `accessories` (which has a default) is optional for callers.
 export type DeliverValues = z.input<typeof deliverSchema>;
 

@@ -34,10 +34,12 @@ import { VEHICLE_STATUS_LABELS } from "./schema";
 import { LIFECYCLE_ORDER, PDI_CHECKLIST } from "./lifecycle-schema";
 import { StatusBadge } from "./columns";
 import {
+  useAddVehicleAccessory,
   useAllocateVehicle,
   useDeliverVehicle,
   useDispatchVehicle,
   useReceiveVehicle,
+  useRemoveVehicleAccessory,
   useRunPdi,
   useVehicleLifecycle,
 } from "./lifecycle-queries";
@@ -56,8 +58,11 @@ export function VehicleLifecyclePanel({ vehicleId }: { vehicleId: string }) {
   const receive = useReceiveVehicle(vehicleId);
   const pdi = useRunPdi(vehicleId);
   const deliver = useDeliverVehicle(vehicleId);
+  const addAcc = useAddVehicleAccessory(vehicleId);
+  const removeAcc = useRemoveVehicleAccessory(vehicleId);
 
   const [open, setOpen] = useState<DialogKind>(null);
+  const [newAcc, setNewAcc] = useState({ itemId: "", qty: 1, rate: 0 });
   const [dealerId, setDealerId] = useState("");
   const [note, setNote] = useState("");
   const [inspector, setInspector] = useState("");
@@ -82,7 +87,16 @@ export function VehicleLifecyclePanel({ vehicleId }: { vehicleId: string }) {
     setItems(PDI_CHECKLIST.map((label) => ({ label, ok: true, note: "" })));
     setCustomerId("");
     setCustomerName("");
-    setAccessories([]);
+    // Carry already-fitted accessories into the delivery sale.
+    setAccessories(
+      k === "deliver"
+        ? data.accessories.map((a) => ({
+            itemId: a.itemId,
+            qty: a.qty,
+            rate: a.rate,
+          }))
+        : [],
+    );
     setOpen(k);
   };
 
@@ -163,27 +177,114 @@ export function VehicleLifecyclePanel({ vehicleId }: { vehicleId: string }) {
           )}
         </ol>
 
-        {data.accessories.length > 0 && (
+        {(data.accessories.length > 0 ||
+          (canWrite && stage !== "DELIVERED")) && (
           <div className="rounded-lg border">
             <div className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
-              Accessories sold
+              {stage === "DELIVERED"
+                ? "Accessories sold"
+                : "Accessories (fitted — billed at delivery)"}
             </div>
             <ul className="divide-y text-sm">
               {data.accessories.map((a) => (
                 <li
                   key={a.id}
-                  className="flex items-center justify-between px-3 py-2"
+                  className="flex items-center justify-between gap-2 px-3 py-2"
                 >
                   <span>
                     <span className="font-mono text-xs">{a.itemCode}</span>{" "}
                     <span className="text-muted-foreground">{a.itemName}</span>
                   </span>
-                  <span className="tabular-nums text-muted-foreground">
-                    {a.qty} × {fmtMoney(a.rate)} = {fmtMoney(a.amount)}
+                  <span className="flex items-center gap-2">
+                    <span className="tabular-nums text-muted-foreground">
+                      {a.qty} × {fmtMoney(a.rate)} = {fmtMoney(a.amount)}
+                    </span>
+                    {canWrite && stage !== "DELIVERED" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7"
+                        disabled={removeAcc.isPending}
+                        onClick={() => removeAcc.mutate(a.id)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    )}
                   </span>
                 </li>
               ))}
+              {data.accessories.length === 0 && (
+                <li className="px-3 py-2 text-xs text-muted-foreground">
+                  None fitted yet.
+                </li>
+              )}
             </ul>
+            {canWrite && stage !== "DELIVERED" && (
+              <div className="flex flex-wrap items-end gap-2 border-t p-3">
+                <div className="min-w-[160px] flex-1">
+                  <Label className="text-xs">Accessory</Label>
+                  <Select
+                    value={newAcc.itemId || undefined}
+                    onValueChange={(v) => {
+                      const opt = itemOptions.find((o) => o.id === v);
+                      setNewAcc((s) => ({
+                        ...s,
+                        itemId: v,
+                        rate: s.rate || (opt?.valuationRate ?? 0),
+                      }));
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select item…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {itemOptions.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          {o.itemCode} — {o.itemName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-20">
+                  <Label className="text-xs">Qty</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={newAcc.qty}
+                    onChange={(e) =>
+                      setNewAcc((s) => ({ ...s, qty: Number(e.target.value) }))
+                    }
+                  />
+                </div>
+                <div className="w-28">
+                  <Label className="text-xs">Rate</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newAcc.rate}
+                    onChange={(e) =>
+                      setNewAcc((s) => ({ ...s, rate: Number(e.target.value) }))
+                    }
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  disabled={!newAcc.itemId || newAcc.qty <= 0 || addAcc.isPending}
+                  onClick={() =>
+                    addAcc.mutate(newAcc, {
+                      onSuccess: () =>
+                        setNewAcc({ itemId: "", qty: 1, rate: 0 }),
+                    })
+                  }
+                >
+                  <Plus className="size-4" />
+                  Add
+                </Button>
+              </div>
+            )}
           </div>
         )}
 

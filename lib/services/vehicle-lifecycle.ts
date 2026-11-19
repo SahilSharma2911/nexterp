@@ -187,6 +187,10 @@ export async function deliverVehicle(
     });
     const price = Number(veh?.sellingRate ?? 0);
 
+    // Pre-fit accessories (added before delivery) are replaced by the final
+    // delivered list — stock + GL happen once here, at the sale.
+    await tx.vehicleAccessory.deleteMany({ where: { vehicleId: id } });
+
     await tx.vehicle.update({
       where: { id },
       data: {
@@ -244,6 +248,43 @@ export async function deliverVehicle(
       dealerId: v.dealerId,
       by,
     });
+  });
+}
+
+// Fit an accessory onto a vehicle at any stage before delivery. Recorded on the
+// vehicle only — stock is issued and revenue posted later, at delivery.
+export async function addVehicleAccessory(
+  id: string,
+  v: { itemId: string; qty: number; rate: number },
+) {
+  const veh = await prisma.vehicle.findUnique({
+    where: { id },
+    select: { status: true },
+  });
+  if (!veh) throw new Error("Vehicle not found");
+  if (veh.status === "DELIVERED")
+    throw new Error("Vehicle already delivered — accessories are locked.");
+  await prisma.vehicleAccessory.create({
+    data: {
+      vehicleId: id,
+      itemId: v.itemId,
+      qty: v.qty,
+      rate: v.rate,
+      amount: round2(v.qty * v.rate),
+    },
+  });
+}
+
+export async function removeVehicleAccessory(id: string, accessoryId: string) {
+  const veh = await prisma.vehicle.findUnique({
+    where: { id },
+    select: { status: true },
+  });
+  if (!veh) throw new Error("Vehicle not found");
+  if (veh.status === "DELIVERED")
+    throw new Error("Vehicle already delivered — accessories are locked.");
+  await prisma.vehicleAccessory.deleteMany({
+    where: { id: accessoryId, vehicleId: id },
   });
 }
 
