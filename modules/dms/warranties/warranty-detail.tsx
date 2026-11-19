@@ -3,7 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2 } from "lucide-react";
+import {
+  Battery,
+  Calendar,
+  Car,
+  FileText,
+  Gauge,
+  Pencil,
+  ShieldCheck,
+  Timer,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,19 +28,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PageHeader } from "@/components/page-header";
+import { DetailHeader, Field } from "@/components/detail/detail-shell";
 import { useCanWrite } from "@/components/session-context";
 import { COMPONENT_LABELS } from "./schema";
 import { useDeleteWarranty, useWarranty } from "./queries";
-
-function Meta({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-0.5 text-sm font-medium">{value}</p>
-    </div>
-  );
-}
 
 export function WarrantyDetail({ warrantyId }: { warrantyId: string }) {
   const router = useRouter();
@@ -42,8 +43,8 @@ export function WarrantyDetail({ warrantyId }: { warrantyId: string }) {
   if (isLoading || !w) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-9 w-64" />
-        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-48 w-full rounded-xl" />
       </div>
     );
   }
@@ -60,41 +61,49 @@ export function WarrantyDetail({ warrantyId }: { warrantyId: string }) {
     );
 
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <div className="space-y-4">
+      <DetailHeader
+        icon={ShieldCheck}
         title={title}
         subtitle={w.vehicleModel}
+        badge={statusBadge}
+        stats={[
+          { label: "Days left", value: w.daysLeft },
+          { label: "Claims", value: w.claimCount },
+        ]}
         actions={
-          <div className="flex items-center gap-2">
-            {statusBadge}
-            {canWrite && (
-              <>
-                <Button asChild variant="outline">
-                  <Link href={`/dms/warranties/${w.id}/edit`}>
-                    <Pencil className="size-4" />
-                    Edit
-                  </Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="text-destructive"
-                  onClick={() => setConfirmOpen(true)}
-                >
-                  <Trash2 className="size-4" />
-                  Delete
-                </Button>
-              </>
-            )}
-          </div>
+          canWrite && (
+            <>
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/dms/warranties/${w.id}/edit`}>
+                  <Pencil className="size-4" />
+                  Edit
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive"
+                onClick={() => setConfirmOpen(true)}
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </Button>
+            </>
+          )
         }
       />
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Coverage</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="size-4 text-muted-foreground" />
+            Coverage
+          </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Meta
+          <Field
+            icon={Car}
             label="Vehicle"
             value={
               <Link
@@ -105,38 +114,42 @@ export function WarrantyDetail({ warrantyId }: { warrantyId: string }) {
               </Link>
             }
           />
-          <Meta label="Component" value={COMPONENT_LABELS[w.component]} />
-          <Meta
+          <Field
+            icon={ShieldCheck}
+            label="Component"
+            value={COMPONENT_LABELS[w.component]}
+          />
+          <Field
+            icon={Calendar}
             label="Start date"
             value={new Date(w.startDate).toLocaleDateString()}
           />
-          <Meta label="Coverage" value={`${w.months} months`} />
-          <Meta
+          <Field icon={Timer} label="Coverage" value={`${w.months} months`} />
+          <Field
+            icon={Calendar}
             label="Expiry date"
             value={new Date(w.expiryDate).toLocaleDateString()}
           />
-          <Meta
-            label="Days left"
-            value={<span className="tabular-nums">{w.daysLeft}</span>}
-          />
-          <Meta
+          <Field icon={Timer} label="Days left" value={w.daysLeft} />
+          <Field
+            icon={Gauge}
             label="Km limit"
             value={w.kmLimit != null ? `${w.kmLimit} km` : dash}
           />
-          <Meta
-            label="Battery SoH threshold"
+          <Field
+            icon={Battery}
+            label="SoH threshold"
             value={w.soHThreshold != null ? `${w.soHThreshold}%` : dash}
-          />
-          <Meta
-            label="Claims"
-            value={<span className="tabular-nums">{w.claimCount}</span>}
           />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Notes</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="size-4 text-muted-foreground" />
+            Notes
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {w.notes ? (

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, ClipboardCheck, Pencil, Trash2 } from "lucide-react";
+import { CheckCircle2, ClipboardCheck, Pencil, Trash2, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { PageHeader } from "@/components/page-header";
+import { DetailHeader } from "@/components/detail/detail-shell";
 import { useCanWrite } from "@/components/session-context";
 import { fmtMoney, fmtQty, fmtRate, fmtDateTime } from "@/lib/format";
 import { JobStatusBadge } from "./columns";
@@ -44,8 +44,10 @@ import {
 
 function Meta({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
+    <div className="min-w-0">
+      <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+        {label}
+      </p>
       <p className="mt-0.5 text-sm font-medium">{value}</p>
     </div>
   );
@@ -78,11 +80,13 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
   const isCompleted = j.status === "COMPLETED";
 
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <div className="space-y-4">
+      <DetailHeader
+        icon={Wrench}
         title={j.name}
+        titleMono
         subtitle={`${j.vehicle} · ${j.vehicleModel}`}
-        actions={
+        badge={
           <div className="flex items-center gap-2">
             {j.isHV && (
               <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400">
@@ -90,9 +94,14 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
               </Badge>
             )}
             <JobStatusBadge status={j.status} />
+          </div>
+        }
+        stats={[{ label: "Total", value: fmtMoney(j.total) }]}
+        actions={
+          <>
             {canWrite && isOpen && (
               <>
-                <Button asChild variant="outline">
+                <Button asChild variant="outline" size="sm">
                   <Link href={`/dms/job-cards/${j.id}/edit`}>
                     <Pencil className="size-4" />
                     Edit
@@ -100,6 +109,7 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
                 </Button>
                 <Button
                   variant="outline"
+                  size="sm"
                   className="text-destructive"
                   onClick={() => setConfirm("delete")}
                 >
@@ -108,6 +118,7 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
                 </Button>
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => {
                     setQcBy(j.qcBy ?? "");
                     setQcNote(j.qcNote ?? "");
@@ -118,6 +129,7 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
                   {j.qcAt ? "QC ✓" : "Record QC"}
                 </Button>
                 <Button
+                  size="sm"
                   disabled={complete.isPending}
                   onClick={() => complete.mutate(j.id)}
                 >
@@ -127,11 +139,15 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
               </>
             )}
             {canWrite && isCompleted && (
-              <Button variant="destructive" onClick={() => setConfirm("cancel")}>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setConfirm("cancel")}
+              >
                 Cancel Job
               </Button>
             )}
-          </div>
+          </>
         }
       />
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2 } from "lucide-react";
+import { HardHat, Pencil, Phone, Trash2, Wrench, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,18 +18,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PageHeader } from "@/components/page-header";
+import { DetailHeader, Field } from "@/components/detail/detail-shell";
 import { useCanWrite } from "@/components/session-context";
 import { useTechnician, useDeleteTechnician } from "./queries";
-
-function Meta({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-0.5 text-sm font-medium">{value}</p>
-    </div>
-  );
-}
 
 export function TechnicianDetail({ technicianId }: { technicianId: string }) {
   const router = useRouter();
@@ -41,8 +32,8 @@ export function TechnicianDetail({ technicianId }: { technicianId: string }) {
   if (isLoading || !t) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-9 w-64" />
-        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-32 w-full rounded-xl" />
       </div>
     );
   }
@@ -50,11 +41,12 @@ export function TechnicianDetail({ technicianId }: { technicianId: string }) {
   const dash = <span className="text-muted-foreground">—</span>;
 
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <div className="space-y-4">
+      <DetailHeader
+        icon={HardHat}
         title={t.name}
         subtitle="Technician"
-        actions={
+        badge={
           <div className="flex items-center gap-2">
             {t.isHVCertified && (
               <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400">
@@ -66,40 +58,48 @@ export function TechnicianDetail({ technicianId }: { technicianId: string }) {
             ) : (
               <Badge variant="secondary">Inactive</Badge>
             )}
-            {canWrite && (
-              <>
-                <Button asChild variant="outline">
-                  <Link href={`/dms/technicians/${t.id}/edit`}>
-                    <Pencil className="size-4" />
-                    Edit
-                  </Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="text-destructive"
-                  onClick={() => setConfirmOpen(true)}
-                >
-                  <Trash2 className="size-4" />
-                  Delete
-                </Button>
-              </>
-            )}
           </div>
+        }
+        stats={[{ label: "Job cards", value: t.jobCount }]}
+        actions={
+          canWrite && (
+            <>
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/dms/technicians/${t.id}/edit`}>
+                  <Pencil className="size-4" />
+                  Edit
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive"
+                onClick={() => setConfirmOpen(true)}
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </Button>
+            </>
+          )
         }
       />
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Overview</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <HardHat className="size-4 text-muted-foreground" />
+            Overview
+          </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Meta label="Phone" value={t.phone ?? dash} />
-          <Meta label="Skills" value={t.skills ?? dash} />
-          <Meta
+          <Field icon={Phone} label="Phone" value={t.phone ?? dash} />
+          <Field icon={Wrench} label="Skills" value={t.skills ?? dash} />
+          <Field
+            icon={Zap}
             label="HV certified"
             value={t.isHVCertified ? "Yes" : "No"}
           />
-          <Meta label="Job cards" value={t.jobCount} />
+          <Field icon={Wrench} label="Job cards" value={t.jobCount} />
         </CardContent>
       </Card>
 

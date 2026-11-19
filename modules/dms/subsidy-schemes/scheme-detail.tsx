@@ -3,7 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2 } from "lucide-react";
+import {
+  BadgePercent,
+  Banknote,
+  Calendar,
+  FileText,
+  Landmark,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,19 +26,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PageHeader } from "@/components/page-header";
+import { DetailHeader, Field } from "@/components/detail/detail-shell";
 import { useCanWrite } from "@/components/session-context";
 import { fmtDateTime, fmtMoney } from "@/lib/format";
 import { useDeleteScheme, useScheme } from "./queries";
-
-function Meta({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-0.5 text-sm font-medium">{value}</p>
-    </div>
-  );
-}
 
 export function SchemeDetail({ schemeId }: { schemeId: string }) {
   const router = useRouter();
@@ -42,8 +41,8 @@ export function SchemeDetail({ schemeId }: { schemeId: string }) {
   if (isLoading || !s) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-9 w-64" />
-        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-48 w-full rounded-xl" />
       </div>
     );
   }
@@ -51,55 +50,67 @@ export function SchemeDetail({ schemeId }: { schemeId: string }) {
   const dash = <span className="text-muted-foreground">—</span>;
 
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <div className="space-y-4">
+      <DetailHeader
+        icon={BadgePercent}
         title={s.name}
         subtitle={s.code}
+        badge={
+          s.status === "ACTIVE" ? (
+            <Badge>Active</Badge>
+          ) : (
+            <Badge variant="secondary">Closed</Badge>
+          )
+        }
+        stats={[
+          { label: "Subsidy", value: fmtMoney(s.amount) },
+          { label: "Claims", value: s.claimCount },
+        ]}
         actions={
-          <div className="flex items-center gap-2">
-            {s.status === "ACTIVE" ? (
-              <Badge>Active</Badge>
-            ) : (
-              <Badge variant="secondary">Closed</Badge>
-            )}
-            {canWrite && (
-              <>
-                <Button asChild variant="outline">
-                  <Link href={`/dms/subsidy-schemes/${s.id}/edit`}>
-                    <Pencil className="size-4" />
-                    Edit
-                  </Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="text-destructive"
-                  onClick={() => setConfirmOpen(true)}
-                >
-                  <Trash2 className="size-4" />
-                  Delete
-                </Button>
-              </>
-            )}
-          </div>
+          canWrite && (
+            <>
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/dms/subsidy-schemes/${s.id}/edit`}>
+                  <Pencil className="size-4" />
+                  Edit
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive"
+                onClick={() => setConfirmOpen(true)}
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </Button>
+            </>
+          )
         }
       />
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Overview</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <BadgePercent className="size-4 text-muted-foreground" />
+            Overview
+          </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Meta label="Authority" value={s.authority ?? dash} />
-          <Meta label="Subsidy amount" value={fmtMoney(s.amount)} />
-          <Meta label="Valid from" value={fmtDateTime(s.validFrom)} />
-          <Meta label="Valid to" value={fmtDateTime(s.validTo)} />
-          <Meta label="Claims" value={s.claimCount} />
+          <Field icon={Landmark} label="Authority" value={s.authority ?? dash} />
+          <Field icon={Banknote} label="Subsidy amount" value={fmtMoney(s.amount)} />
+          <Field icon={Calendar} label="Valid from" value={fmtDateTime(s.validFrom)} />
+          <Field icon={Calendar} label="Valid to" value={fmtDateTime(s.validTo)} />
+          <Field icon={FileText} label="Claims" value={s.claimCount} />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Notes</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="size-4 text-muted-foreground" />
+            Notes
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {s.notes ? (

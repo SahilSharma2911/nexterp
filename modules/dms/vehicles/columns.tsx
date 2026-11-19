@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Car } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { sortableHeader } from "@/components/data-table/sortable-header";
 import { cn } from "@/lib/utils";
 import {

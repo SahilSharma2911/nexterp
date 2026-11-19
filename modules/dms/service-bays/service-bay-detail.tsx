@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2 } from "lucide-react";
+import { LayoutGrid, Pencil, Trash2, Wrench, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,18 +18,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PageHeader } from "@/components/page-header";
+import { DetailHeader, Field } from "@/components/detail/detail-shell";
 import { useCanWrite } from "@/components/session-context";
 import { useServiceBay, useDeleteServiceBay } from "./queries";
-
-function Meta({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-0.5 text-sm font-medium">{value}</p>
-    </div>
-  );
-}
 
 export function ServiceBayDetail({ bayId }: { bayId: string }) {
   const router = useRouter();
@@ -41,18 +32,19 @@ export function ServiceBayDetail({ bayId }: { bayId: string }) {
   if (isLoading || !b) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-9 w-64" />
-        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-32 w-full rounded-xl" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <div className="space-y-4">
+      <DetailHeader
+        icon={LayoutGrid}
         title={b.name}
         subtitle="Service bay"
-        actions={
+        badge={
           <div className="flex items-center gap-2">
             {b.isHV && (
               <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400">
@@ -64,36 +56,47 @@ export function ServiceBayDetail({ bayId }: { bayId: string }) {
             ) : (
               <Badge variant="secondary">Inactive</Badge>
             )}
-            {canWrite && (
-              <>
-                <Button asChild variant="outline">
-                  <Link href={`/dms/service-bays/${b.id}/edit`}>
-                    <Pencil className="size-4" />
-                    Edit
-                  </Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="text-destructive"
-                  onClick={() => setConfirmOpen(true)}
-                >
-                  <Trash2 className="size-4" />
-                  Delete
-                </Button>
-              </>
-            )}
           </div>
+        }
+        stats={[{ label: "Job cards", value: b.jobCount }]}
+        actions={
+          canWrite && (
+            <>
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/dms/service-bays/${b.id}/edit`}>
+                  <Pencil className="size-4" />
+                  Edit
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive"
+                onClick={() => setConfirmOpen(true)}
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </Button>
+            </>
+          )
         }
       />
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Overview</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <LayoutGrid className="size-4 text-muted-foreground" />
+            Overview
+          </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
-          <Meta label="Type" value={b.isHV ? "HV bay" : "Standard"} />
-          <Meta label="Status" value={b.active ? "Active" : "Inactive"} />
-          <Meta label="Job cards" value={b.jobCount} />
+          <Field icon={Zap} label="Type" value={b.isHV ? "HV bay" : "Standard"} />
+          <Field
+            icon={LayoutGrid}
+            label="Status"
+            value={b.active ? "Active" : "Inactive"}
+          />
+          <Field icon={Wrench} label="Job cards" value={b.jobCount} />
         </CardContent>
       </Card>
 

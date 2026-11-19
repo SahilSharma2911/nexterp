@@ -2,9 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2 } from "lucide-react";
+import {
+  Building2,
+  Car,
+  FileText,
+  Mail,
+  MapPin,
+  Pencil,
+  Phone,
+  Receipt,
+  Trash2,
+  User,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,18 +29,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PageHeader } from "@/components/page-header";
+import { DetailHeader, Field } from "@/components/detail/detail-shell";
 import { useCanWrite } from "@/components/session-context";
 import { useDealer, useDeleteDealer } from "./queries";
-
-function Meta({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-0.5 text-sm font-medium">{value}</p>
-    </div>
-  );
-}
 
 export function DealerDetail({ dealerId }: { dealerId: string }) {
   const router = useRouter();
@@ -42,8 +43,8 @@ export function DealerDetail({ dealerId }: { dealerId: string }) {
   if (isLoading || !d) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-9 w-64" />
-        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-48 w-full rounded-xl" />
       </div>
     );
   }
@@ -57,91 +58,94 @@ export function DealerDetail({ dealerId }: { dealerId: string }) {
   ].filter(Boolean);
 
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <div className="space-y-4">
+      <DetailHeader
+        icon={Building2}
+        imageUrl={d.logoUrl}
         title={d.name}
         subtitle={d.code}
-        actions={
-          <div className="flex items-center gap-2">
-            {d.disabled ? (
-              <Badge variant="secondary">Disabled</Badge>
-            ) : (
-              <Badge>Active</Badge>
-            )}
-            {canWrite && (
-              <>
-                <Button asChild variant="outline">
-                  <Link href={`/dms/dealers/${d.id}/edit`}>
-                    <Pencil className="size-4" />
-                    Edit
-                  </Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="text-destructive"
-                  onClick={() => setConfirmOpen(true)}
-                >
-                  <Trash2 className="size-4" />
-                  Delete
-                </Button>
-              </>
-            )}
-          </div>
+        badge={
+          d.disabled ? (
+            <Badge variant="secondary">Disabled</Badge>
+          ) : (
+            <Badge>Active</Badge>
+          )
         }
-      />
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Overview</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {d.logoUrl && (
-            <div className="sm:col-span-2 lg:col-span-4">
-              <Image
-                src={d.logoUrl}
-                alt={d.name}
-                width={120}
-                height={120}
-                className="size-28 rounded-lg border object-contain p-2"
-                unoptimized
-              />
-            </div>
-          )}
-          <Meta label="Legal Name" value={d.legalName ?? dash} />
-          <Meta label="GSTIN / Tax ID" value={d.gstin ?? dash} />
-          <Meta
-            label="Vehicles assigned"
-            value={
+        stats={[
+          {
+            label: "Vehicles",
+            value: (
               <Link
                 href={`/dms/vehicles?dealer=${d.id}`}
                 className="text-primary hover:underline"
               >
                 {d.vehicleCount}
               </Link>
-            }
-          />
-        </CardContent>
-      </Card>
+            ),
+          },
+        ]}
+        actions={
+          canWrite && (
+            <>
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/dms/dealers/${d.id}/edit`}>
+                  <Pencil className="size-4" />
+                  Edit
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive"
+                onClick={() => setConfirmOpen(true)}
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </Button>
+            </>
+          )
+        }
+      />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-sm">Contact</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <User className="size-4 text-muted-foreground" />
+              Contact
+            </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            <Meta label="Contact Person" value={d.contactPerson ?? dash} />
-            <Meta label="Phone" value={d.phone ?? dash} />
-            <Meta label="Email" value={d.email ?? dash} />
+            <Field icon={User} label="Contact person" value={d.contactPerson ?? dash} />
+            <Field icon={Phone} label="Phone" value={d.phone ?? dash} />
+            <Field icon={Mail} label="Email" value={d.email ?? dash} />
+            <Field icon={FileText} label="Legal name" value={d.legalName ?? dash} />
+            <Field icon={Receipt} label="GSTIN / Tax ID" value={d.gstin ?? dash} />
+            <Field
+              icon={Car}
+              label="Vehicles assigned"
+              value={
+                <Link
+                  href={`/dms/vehicles?dealer=${d.id}`}
+                  className="text-primary hover:underline"
+                >
+                  {d.vehicleCount}
+                </Link>
+              }
+            />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Address</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="size-4 text-muted-foreground" />
+              Address
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {address.length ? (
-              <address className="text-sm not-italic leading-relaxed">
+              <address className="text-sm leading-relaxed not-italic">
                 {address.map((line, i) => (
                   <div key={i}>{line}</div>
                 ))}

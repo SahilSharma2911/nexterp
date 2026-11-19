@@ -3,10 +3,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Play, Trash2, X } from "lucide-react";
+import {
+  Building2,
+  CalendarClock,
+  Car,
+  HardHat,
+  MessageSquare,
+  Pencil,
+  Play,
+  Trash2,
+  User,
+  Wrench,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -18,7 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PageHeader } from "@/components/page-header";
+import { DetailHeader, Field } from "@/components/detail/detail-shell";
 import { useCanWrite } from "@/components/session-context";
 import { fmtDateTime } from "@/lib/format";
 import { AppointmentStatusBadge } from "./columns";
@@ -28,15 +40,6 @@ import {
   useDeleteAppointment,
   useStartAppointment,
 } from "./queries";
-
-function Meta({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-0.5 text-sm font-medium">{value}</p>
-    </div>
-  );
-}
 
 export function AppointmentDetail({
   appointmentId,
@@ -54,8 +57,8 @@ export function AppointmentDetail({
   if (isLoading || !a) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-9 w-64" />
-        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-48 w-full rounded-xl" />
       </div>
     );
   }
@@ -64,11 +67,13 @@ export function AppointmentDetail({
   const isBooked = a.status === "BOOKED";
 
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <div className="space-y-4">
+      <DetailHeader
+        icon={CalendarClock}
         title={a.name}
+        titleMono
         subtitle={`${a.vehicle} · ${a.vehicleModel}`}
-        actions={
+        badge={
           <div className="flex items-center gap-2">
             {a.isHV && (
               <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400">
@@ -76,9 +81,14 @@ export function AppointmentDetail({
               </Badge>
             )}
             <AppointmentStatusBadge status={a.status} />
+          </div>
+        }
+        stats={[{ label: "Requested", value: fmtDateTime(a.requestedAt) }]}
+        actions={
+          <>
             {canWrite && isBooked && (
               <>
-                <Button asChild variant="outline">
+                <Button asChild variant="outline" size="sm">
                   <Link href={`/dms/service-appointments/${a.id}/edit`}>
                     <Pencil className="size-4" />
                     Edit
@@ -86,12 +96,14 @@ export function AppointmentDetail({
                 </Button>
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => setConfirm("cancel")}
                 >
                   <X className="size-4" />
                   Cancel
                 </Button>
                 <Button
+                  size="sm"
                   disabled={start.isPending}
                   onClick={() =>
                     start.mutate(a.id, {
@@ -108,6 +120,7 @@ export function AppointmentDetail({
             {canWrite && !isBooked && (
               <Button
                 variant="outline"
+                size="sm"
                 className="text-destructive"
                 onClick={() => setConfirm("delete")}
               >
@@ -115,56 +128,73 @@ export function AppointmentDetail({
                 Delete
               </Button>
             )}
-          </div>
+          </>
         }
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Details</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Meta
-            label="Vehicle"
-            value={
-              <Link
-                href={`/dms/vehicles/${a.vehicleId}`}
-                className="font-mono text-xs text-primary hover:underline"
-              >
-                {a.vehicle}
-              </Link>
-            }
-          />
-          <Meta label="Customer" value={a.customerName ?? dash} />
-          <Meta label="Requested" value={fmtDateTime(a.requestedAt)} />
-          <Meta label="Technician" value={a.technician ?? dash} />
-          <Meta label="Service Bay" value={a.bay ?? dash} />
-          <Meta label="Work type" value={a.isHV ? "High-voltage" : "Standard"} />
-          {a.jobCardId && a.jobCardName && (
-            <Meta
-              label="Job card"
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarClock className="size-4 text-muted-foreground" />
+              Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <Field
+              icon={Car}
+              label="Vehicle"
               value={
                 <Link
-                  href={`/dms/job-cards/${a.jobCardId}`}
-                  className="text-primary hover:underline"
+                  href={`/dms/vehicles/${a.vehicleId}`}
+                  className="font-mono text-primary hover:underline"
                 >
-                  {a.jobCardName}
+                  {a.vehicle}
                 </Link>
               }
             />
-          )}
-          {a.complaint && (
-            <div className="sm:col-span-2 lg:col-span-3">
-              <Meta label="Complaint" value={a.complaint} />
-            </div>
-          )}
-          {a.remarks && (
-            <div className="sm:col-span-2 lg:col-span-3">
-              <Meta label="Remarks" value={a.remarks} />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            <Field icon={User} label="Customer" value={a.customerName ?? dash} />
+            <Field icon={HardHat} label="Technician" value={a.technician ?? dash} />
+            <Field icon={Building2} label="Service bay" value={a.bay ?? dash} />
+            <Field
+              icon={Wrench}
+              label="Work type"
+              value={a.isHV ? "High-voltage" : "Standard"}
+            />
+            {a.jobCardId && a.jobCardName && (
+              <Field
+                icon={Wrench}
+                label="Job card"
+                value={
+                  <Link
+                    href={`/dms/job-cards/${a.jobCardId}`}
+                    className="text-primary hover:underline"
+                  >
+                    {a.jobCardName}
+                  </Link>
+                }
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="size-4 text-muted-foreground" />
+              Notes
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <Field
+              icon={MessageSquare}
+              label="Complaint"
+              value={a.complaint ?? dash}
+            />
+            <Field icon={Pencil} label="Remarks" value={a.remarks ?? dash} />
+          </CardContent>
+        </Card>
+      </div>
 
       <AlertDialog
         open={confirm !== null}
@@ -173,9 +203,7 @@ export function AppointmentDetail({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {confirm === "delete"
-                ? `Delete ${a.name}?`
-                : `Cancel ${a.name}?`}
+              {confirm === "delete" ? `Delete ${a.name}?` : `Cancel ${a.name}?`}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirm === "delete"

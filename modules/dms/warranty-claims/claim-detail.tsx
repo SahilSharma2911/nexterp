@@ -3,9 +3,24 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Pencil, Send, Trash2, X } from "lucide-react";
+import {
+  Calendar,
+  Car,
+  Check,
+  CircleDollarSign,
+  FileText,
+  FileWarning,
+  Hash,
+  Landmark,
+  Pencil,
+  Send,
+  ShieldCheck,
+  Trash2,
+  Wrench,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -17,7 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PageHeader } from "@/components/page-header";
+import { DetailHeader, Field } from "@/components/detail/detail-shell";
 import { useCanWrite } from "@/components/session-context";
 import { cn } from "@/lib/utils";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
@@ -31,15 +46,6 @@ import {
   useSettleClaim,
   useSubmitClaim,
 } from "./queries";
-
-function Meta({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-0.5 text-sm font-medium">{value}</p>
-    </div>
-  );
-}
 
 type Confirm = null | "delete" | "reject" | "cancel";
 
@@ -58,8 +64,8 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
   if (isLoading || !c) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-9 w-64" />
-        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-48 w-full rounded-xl" />
       </div>
     );
   }
@@ -74,7 +80,10 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
     reject.isPending ||
     settle.isPending;
 
-  const confirmCopy: Record<Exclude<Confirm, null>, { title: string; body: string; action: string }> = {
+  const confirmCopy: Record<
+    Exclude<Confirm, null>,
+    { title: string; body: string; action: string }
+  > = {
     delete: {
       title: `Delete ${c.name}?`,
       body: "This permanently deletes the draft claim.",
@@ -93,16 +102,19 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <div className="space-y-4">
+      <DetailHeader
+        icon={FileWarning}
         title={c.name}
+        titleMono
         subtitle={`${c.vehicle} · ${c.component}`}
+        badge={<ClaimStatusBadge status={c.status} />}
+        stats={[{ label: "Claim", value: fmtMoney(c.claimAmount) }]}
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <ClaimStatusBadge status={c.status} />
+          <>
             {canWrite && isDraft && (
               <>
-                <Button asChild variant="outline">
+                <Button asChild variant="outline" size="sm">
                   <Link href={`/dms/warranty-claims/${c.id}/edit`}>
                     <Pencil className="size-4" />
                     Edit
@@ -110,13 +122,14 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
                 </Button>
                 <Button
                   variant="outline"
+                  size="sm"
                   className="text-destructive"
                   onClick={() => setConfirm("delete")}
                 >
                   <Trash2 className="size-4" />
                   Delete
                 </Button>
-                <Button disabled={busy} onClick={() => submit.mutate(c.id)}>
+                <Button size="sm" disabled={busy} onClick={() => submit.mutate(c.id)}>
                   <Send className="size-4" />
                   {submit.isPending ? "Submitting…" : "Submit to OEM"}
                 </Button>
@@ -126,28 +139,33 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
               <>
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => setConfirm("reject")}
                 >
                   <X className="size-4" />
                   Reject
                 </Button>
-                <Button disabled={busy} onClick={() => approve.mutate(c.id)}>
+                <Button size="sm" disabled={busy} onClick={() => approve.mutate(c.id)}>
                   <Check className="size-4" />
                   {approve.isPending ? "Approving…" : "Approve"}
                 </Button>
               </>
             )}
             {canWrite && isApproved && (
-              <Button disabled={busy} onClick={() => settle.mutate(c.id)}>
+              <Button size="sm" disabled={busy} onClick={() => settle.mutate(c.id)}>
                 {settle.isPending ? "Settling…" : "Mark Settled"}
               </Button>
             )}
             {canWrite && (isDraft || isSubmitted) && (
-              <Button variant="destructive" onClick={() => setConfirm("cancel")}>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setConfirm("cancel")}
+              >
                 Cancel Claim
               </Button>
             )}
-          </div>
+          </>
         }
       />
 
@@ -175,8 +193,15 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
       )}
 
       <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileWarning className="size-4 text-muted-foreground" />
+            Claim details
+          </CardTitle>
+        </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Meta
+          <Field
+            icon={ShieldCheck}
             label="Warranty"
             value={
               <Link
@@ -187,24 +212,26 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
               </Link>
             }
           />
-          <Meta
+          <Field
+            icon={Car}
             label="Vehicle"
             value={
               <Link
                 href={`/dms/vehicles/${c.vehicleId}`}
-                className="font-mono text-xs text-primary hover:underline"
+                className="font-mono text-primary hover:underline"
               >
                 {c.vehicle}
               </Link>
             }
           />
-          <Meta
-            label="Job Card"
+          <Field
+            icon={Wrench}
+            label="Job card"
             value={
               c.jobCardId && c.jobCard ? (
                 <Link
                   href={`/dms/job-cards/${c.jobCardId}`}
-                  className="font-mono text-xs text-primary hover:underline"
+                  className="font-mono text-primary hover:underline"
                 >
                   {c.jobCard}
                 </Link>
@@ -213,22 +240,37 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
               )
             }
           />
-          <Meta label="Claim Date" value={fmtDateTime(c.claimDate)} />
-          <Meta label="Claim Amount" value={fmtMoney(c.claimAmount)} />
-          <Meta
-            label="Approved Amount"
+          <Field
+            icon={Calendar}
+            label="Claim date"
+            value={fmtDateTime(c.claimDate)}
+          />
+          <Field
+            icon={CircleDollarSign}
+            label="Claim amount"
+            value={fmtMoney(c.claimAmount)}
+          />
+          <Field
+            icon={Landmark}
+            label="Approved amount"
             value={c.approvedAmount > 0 ? fmtMoney(c.approvedAmount) : dash}
           />
-          <Meta label="OEM Ref" value={c.oemRef ?? dash} />
+          <Field icon={Hash} label="OEM ref" value={c.oemRef ?? dash} />
           {c.description && (
-            <div className="sm:col-span-2 lg:col-span-4">
-              <Meta label="Description" value={c.description} />
-            </div>
+            <Field
+              icon={FileText}
+              label="Description"
+              value={c.description}
+              className="sm:col-span-2 lg:col-span-4"
+            />
           )}
           {c.remarks && (
-            <div className="sm:col-span-2 lg:col-span-4">
-              <Meta label="Remarks" value={c.remarks} />
-            </div>
+            <Field
+              icon={FileText}
+              label="Remarks"
+              value={c.remarks}
+              className="sm:col-span-2 lg:col-span-4"
+            />
           )}
         </CardContent>
       </Card>
