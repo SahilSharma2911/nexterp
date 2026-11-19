@@ -1,6 +1,6 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
@@ -14,6 +14,19 @@ export type Category = { name: string; value: number };
 const config = {
   value: { label: "Count", color: "var(--primary)" },
 } satisfies ChartConfig;
+
+// A lively, readable palette for category bars (the theme's chart tokens are
+// greyscale, so we colour distributions explicitly).
+export const CHART_PALETTE = [
+  "#6366f1", // indigo
+  "#10b981", // emerald
+  "#f59e0b", // amber
+  "#06b6d4", // cyan
+  "#8b5cf6", // violet
+  "#ec4899", // pink
+  "#14b8a6", // teal
+  "#f43f5e", // rose
+];
 
 // A compact horizontal bar chart of category counts (e.g. units by stage,
 // jobs by status) — the shared "distribution" visual for module analytics.
@@ -75,11 +88,14 @@ export function CategoryBarChart({
                   />
                 }
               />
-              <Bar
-                dataKey="value"
-                fill="var(--color-value)"
-                radius={[0, 6, 6, 0]}
-              />
+              <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                {data.map((_, i) => (
+                  <Cell
+                    key={i}
+                    fill={CHART_PALETTE[i % CHART_PALETTE.length]}
+                  />
+                ))}
+              </Bar>
             </BarChart>
           </ChartContainer>
         )}

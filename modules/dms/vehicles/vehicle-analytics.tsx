@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   Car,
   PackageCheck,
@@ -119,6 +120,20 @@ function RecentActivity({
                 key={e.id}
                 className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm"
               >
+                <span className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
+                  {e.imageUrl ? (
+                    <Image
+                      src={e.imageUrl}
+                      alt={e.model}
+                      fill
+                      sizes="36px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <Car className="size-4 text-muted-foreground" />
+                  )}
+                </span>
                 <StatusBadge status={e.stage} />
                 <Link
                   href={`/dms/vehicles/${e.vehicleId}`}

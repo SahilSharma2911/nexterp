@@ -126,6 +126,7 @@ export type VehicleActivity = {
   vehicleId: string;
   vin: string;
   model: string;
+  imageUrl: string | null;
   stage: VehicleStatus;
   note: string | null;
   byUser: string | null;

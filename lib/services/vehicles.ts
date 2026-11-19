@@ -285,7 +285,9 @@ export async function vehicleAnalytics(): Promise<VehicleAnalytics> {
     prisma.vehicleEvent.findMany({
       orderBy: { at: "desc" },
       take: 8,
-      include: { vehicle: { select: { vin: true, model: true } } },
+      include: {
+        vehicle: { select: { vin: true, model: true, imageUrl: true } },
+      },
     }),
   ]);
 
@@ -320,6 +322,7 @@ export async function vehicleAnalytics(): Promise<VehicleAnalytics> {
       vehicleId: e.vehicleId,
       vin: e.vehicle.vin,
       model: e.vehicle.model,
+      imageUrl: e.vehicle.imageUrl,
       stage: e.stage,
       note: e.note,
       byUser: e.byUser,
