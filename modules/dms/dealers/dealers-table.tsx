@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Plus, Search } from "lucide-react";
-import { useCanWrite } from "@/components/session-context";
+import { Search } from "lucide-react";
 import { useListParams } from "@/hooks/use-list-params";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { columns } from "./columns";
 import { useDealers } from "./queries";
@@ -16,7 +13,6 @@ import type { DealersTableMeta } from "./schema";
 export function DealersTable() {
   const [params, setParams] = useListParams();
   const [search, setSearch] = useState(params.q);
-  const canWrite = useCanWrite("dms");
 
   const { data, isFetching } = useDealers({
     page: params.page,
@@ -62,14 +58,6 @@ export function DealersTable() {
             className="pl-8"
           />
         </div>
-        {canWrite && (
-          <Button asChild>
-            <Link href="/dms/dealers/new">
-              <Plus className="size-4" />
-              New Dealer
-            </Link>
-          </Button>
-        )}
       </div>
 
       <DataTable

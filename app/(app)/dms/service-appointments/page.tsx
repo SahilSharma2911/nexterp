@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import { NewButton } from "@/components/new-button";
 import { AppointmentsTable } from "@/modules/dms/service-appointments/appointments-table";
 import { AppointmentAnalytics } from "@/modules/dms/service-appointments/appointment-analytics";
 
@@ -12,6 +13,13 @@ export default function ServiceAppointmentsPage() {
       <PageHeader
         title="Service Appointments"
         subtitle="Workshop bookings"
+        actions={
+          <NewButton
+            href="/dms/service-appointments/new"
+            label="New Appointment"
+            area="dms"
+          />
+        }
       />
       <div className="space-y-6">
         <AppointmentAnalytics />

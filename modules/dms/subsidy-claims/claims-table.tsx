@@ -1,15 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Plus, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { parseAsString, useQueryState } from "nuqs";
 import { useListParams } from "@/hooks/use-list-params";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useCanWrite } from "@/components/session-context";
 import {
   Select,
   SelectContent,
@@ -42,7 +39,6 @@ export function SubsidyClaimsTable() {
       .withOptions({ history: "push", clearOnDefault: true }),
   );
   const [search, setSearch] = useState(params.q);
-  const canWrite = useCanWrite("dms");
 
   const { data, isFetching } = useSubsidyClaims({
     page: params.page,
@@ -109,14 +105,6 @@ export function SubsidyClaimsTable() {
             </SelectContent>
           </Select>
         </div>
-        {canWrite && (
-          <Button asChild>
-            <Link href="/dms/subsidy-claims/new">
-              <Plus className="size-4" />
-              New Subsidy Claim
-            </Link>
-          </Button>
-        )}
       </div>
 
       <DataTable

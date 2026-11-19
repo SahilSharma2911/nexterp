@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import { NewButton } from "@/components/new-button";
 import { VehiclesTable } from "@/modules/dms/vehicles/vehicles-table";
 import { VehicleAnalytics } from "@/modules/dms/vehicles/vehicle-analytics";
 
@@ -12,6 +13,9 @@ export default function VehiclesPage() {
       <PageHeader
         title="Vehicles"
         subtitle="EV units — VIN, battery & motor lifecycle"
+        actions={
+          <NewButton href="/dms/vehicles/new" label="New Vehicle" area="dms" />
+        }
       />
       <div className="space-y-6">
         <VehicleAnalytics />
