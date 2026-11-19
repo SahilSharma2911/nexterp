@@ -22,11 +22,13 @@ export function CategoryBarChart({
   data,
   emptyMessage = "No data yet.",
   height = 200,
+  valueFormatter,
 }: {
   title: string;
   data: Category[];
   emptyMessage?: string;
   height?: number;
+  valueFormatter?: (v: number) => string;
 }) {
   const hasData = data.some((d) => d.value > 0);
   return (
@@ -64,7 +66,11 @@ export function CategoryBarChart({
                 content={
                   <ChartTooltipContent
                     formatter={(value) => (
-                      <span className="font-medium tabular-nums">{value}</span>
+                      <span className="font-medium tabular-nums">
+                        {valueFormatter
+                          ? valueFormatter(Number(value))
+                          : value}
+                      </span>
                     )}
                   />
                 }

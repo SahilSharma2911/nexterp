@@ -128,3 +128,11 @@ export type ItemsTableMeta = {
   sort: string;
   onSort: (field: string) => void;
 };
+
+export type ItemAnalytics = {
+  total: number;
+  stockItems: number;
+  lowStock: number; // on-hand below reorder level
+  stockValue: number; // total valuation across all bins
+  byGroup: { name: string; value: number }[];
+};

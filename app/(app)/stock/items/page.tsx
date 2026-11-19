@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/page-header";
 import { ItemsTable } from "@/features/items/items-table";
+import { ItemAnalytics } from "@/features/items/item-analytics";
 
 export const metadata = { title: "Items · nexterp" };
 
@@ -12,7 +13,10 @@ export default function ItemsPage() {
         title="Items"
         subtitle="Product and material master"
       />
-      <ItemsTable />
+      <div className="space-y-6">
+        <ItemAnalytics />
+        <ItemsTable />
+      </div>
     </>
   );
 }

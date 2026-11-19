@@ -1,7 +1,52 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
-import type { Item, ItemFormValues, ItemListItem } from "@/features/items/schema";
+import type {
+  Item,
+  ItemAnalytics,
+  ItemFormValues,
+  ItemListItem,
+} from "@/features/items/schema";
+
+// Management insights for the Items list header.
+export async function itemAnalytics(): Promise<ItemAnalytics> {
+  const [total, stockItems, grouped, stockVal, reorderItems, binSums] =
+    await Promise.all([
+      prisma.item.count(),
+      prisma.item.count({ where: { isStockItem: true, disabled: false } }),
+      prisma.item.groupBy({
+        by: ["itemGroup"],
+        _count: true,
+        where: { disabled: false },
+      }),
+      prisma.bin.aggregate({ _sum: { stockValue: true } }),
+      prisma.item.findMany({
+        where: { reorderLevel: { gt: 0 }, disabled: false },
+        select: { id: true, reorderLevel: true },
+      }),
+      prisma.bin.groupBy({ by: ["itemId"], _sum: { actualQty: true } }),
+    ]);
+
+  const onHand = new Map(
+    binSums.map((b) => [b.itemId, b._sum.actualQty ?? 0]),
+  );
+  const lowStock = reorderItems.filter(
+    (it) => (onHand.get(it.id) ?? 0) < it.reorderLevel,
+  ).length;
+
+  const byGroup = grouped
+    .map((g) => ({ name: g.itemGroup ?? "Ungrouped", value: g._count }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+
+  return {
+    total,
+    stockItems,
+    lowStock,
+    stockValue: Number(stockVal._sum.stockValue ?? 0),
+    byGroup,
+  };
+}
 
 // Business logic for the Item master. Pure functions reused by the route
 // handlers (and anything else) — no next/cache, no HTTP concerns here.

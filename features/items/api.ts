@@ -2,6 +2,7 @@ import { api } from "@/lib/axios";
 import type { ListResponse } from "@/lib/api-list";
 import type {
   Item,
+  ItemAnalytics,
   ItemFormValues,
   ItemListItem,
   ItemOption,
@@ -23,6 +24,11 @@ export async function fetchItems(params: ItemsQuery) {
 
 export async function fetchItemOptions() {
   const { data } = await api.get<ItemOption[]>("/items/options");
+  return data;
+}
+
+export async function fetchItemAnalytics() {
+  const { data } = await api.get<ItemAnalytics>("/items/analytics");
   return data;
 }
 

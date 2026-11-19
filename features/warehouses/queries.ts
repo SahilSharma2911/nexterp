@@ -34,6 +34,14 @@ export function useWarehouseOptions() {
   });
 }
 
+export function useWarehouseAnalytics() {
+  return useQuery({
+    queryKey: [...warehouseKeys.all, "analytics"] as const,
+    queryFn: () => warehousesApi.fetchWarehouseAnalytics(),
+    staleTime: 60_000,
+  });
+}
+
 export function useWarehouse(id?: string) {
   return useQuery({
     queryKey: warehouseKeys.detail(id ?? ""),

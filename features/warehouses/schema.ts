@@ -68,3 +68,10 @@ export type WarehousesTableMeta = {
   sort: string;
   onSort: (field: string) => void;
 };
+
+export type WarehouseAnalytics = {
+  total: number;
+  itemsStocked: number; // distinct items with on-hand qty
+  stockValue: number; // total valuation across warehouses
+  byWarehouse: { name: string; value: number }[];
+};

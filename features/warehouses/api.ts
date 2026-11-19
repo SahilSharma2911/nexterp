@@ -2,6 +2,7 @@ import { api } from "@/lib/axios";
 import type { ListQuery, ListResponse } from "@/lib/api-list";
 import type {
   Warehouse,
+  WarehouseAnalytics,
   WarehouseFormValues,
   WarehouseOption,
 } from "./schema";
@@ -15,6 +16,11 @@ export async function fetchWarehouses(params: ListQuery) {
 
 export async function fetchWarehouseOptions() {
   const { data } = await api.get<WarehouseOption[]>("/warehouses/options");
+  return data;
+}
+
+export async function fetchWarehouseAnalytics() {
+  const { data } = await api.get<WarehouseAnalytics>("/warehouses/analytics");
   return data;
 }
 

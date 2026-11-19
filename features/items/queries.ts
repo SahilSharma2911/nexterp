@@ -33,6 +33,14 @@ export function useItemOptions() {
   });
 }
 
+export function useItemAnalytics() {
+  return useQuery({
+    queryKey: [...itemKeys.all, "analytics"] as const,
+    queryFn: () => itemsApi.fetchItemAnalytics(),
+    staleTime: 60_000,
+  });
+}
+
 export function useItem(id?: string) {
   return useQuery({
     queryKey: itemKeys.detail(id ?? ""),

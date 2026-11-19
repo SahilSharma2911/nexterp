@@ -3,10 +3,38 @@ import { prisma } from "@/lib/prisma";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import type {
   Warehouse,
+  WarehouseAnalytics,
   WarehouseFormValues,
 } from "@/features/warehouses/schema";
 
 const SORTABLE = ["warehouseName", "warehouseType", "createdAt"] as const;
+
+// Management insights for the Warehouses list header.
+export async function warehouseAnalytics(): Promise<WarehouseAnalytics> {
+  const [total, stockVal, byWh, stockedItems, whRows] = await Promise.all([
+    prisma.warehouse.count(),
+    prisma.bin.aggregate({ _sum: { stockValue: true } }),
+    prisma.bin.groupBy({ by: ["warehouseId"], _sum: { stockValue: true } }),
+    prisma.bin.groupBy({ by: ["itemId"], where: { actualQty: { gt: 0 } } }),
+    prisma.warehouse.findMany({ select: { id: true, warehouseName: true } }),
+  ]);
+  const nameOf = new Map(whRows.map((w) => [w.id, w.warehouseName]));
+  const byWarehouse = byWh
+    .map((b) => ({
+      name: nameOf.get(b.warehouseId) ?? "—",
+      value: Number(b._sum.stockValue ?? 0),
+    }))
+    .filter((w) => w.value !== 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+
+  return {
+    total,
+    itemsStocked: stockedItems.length,
+    stockValue: Number(stockVal._sum.stockValue ?? 0),
+    byWarehouse,
+  };
+}
 
 type Row = Prisma.WarehouseGetPayload<object>;
 
