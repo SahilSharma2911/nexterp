@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -8,6 +9,7 @@ import {
   BookOpenCheck,
   Boxes,
   Calculator,
+  ChevronDown,
   ClipboardCheck,
   Factory,
   FileText,
@@ -171,6 +173,31 @@ export function SidebarNav({
     return area === null || canSeeNav(role, area);
   });
 
+  // Explicit open/closed overrides per section (expanded mode). A section with
+  // no override defaults to open when it contains the active route.
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+
+  function NavLink({ item }: { item: NavItem }) {
+    const active = isActive(pathname, item.href);
+    const Icon = item.icon;
+    return (
+      <Link
+        href={item.href}
+        onClick={onNavigate}
+        aria-current={active ? "page" : undefined}
+        className={cn(
+          "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
+          active
+            ? "bg-primary/10 font-medium text-primary"
+            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+        )}
+      >
+        <Icon className="size-4 shrink-0" />
+        {item.label}
+      </Link>
+    );
+  }
+
   return (
     <div className="flex h-full flex-col">
       <Link
@@ -191,68 +218,98 @@ export function SidebarNav({
         )}
       </Link>
 
-      <nav className={cn("min-h-0 flex-1 overflow-y-auto py-4", collapsed ? "px-2" : "px-3")}>
-        {groups.map((group, gi) => (
-          <div key={group.heading} className="mb-5">
-            {collapsed ? (
-              gi > 0 && (
-                <div className="mx-1 mb-2 border-t border-sidebar-border/60" />
-              )
-            ) : (
-              <p className="px-3 pb-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground/70 uppercase">
-                {group.heading}
-              </p>
-            )}
-            <div className="space-y-0.5">
-              {group.items.map((item) => {
-                const active = isActive(pathname, item.href);
-                const Icon = item.icon;
-                const className = cn(
-                  "flex items-center rounded-md text-sm transition-colors",
-                  collapsed ? "justify-center p-2.5" : "gap-2.5 px-3 py-2",
-                  active
-                    ? "bg-primary/10 font-medium text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                );
-                const content = (
-                  <>
-                    <Icon className="size-4 shrink-0" />
-                    {!collapsed && item.label}
-                  </>
-                );
-
-                if (collapsed) {
-                  return (
-                    <Tooltip key={item.href}>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href={item.href}
-                          onClick={onNavigate}
-                          aria-current={active ? "page" : undefined}
-                          className={className}
-                        >
-                          {content}
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">{item.label}</TooltipContent>
-                    </Tooltip>
-                  );
-                }
+      <nav
+        className={cn(
+          "min-h-0 flex-1 overflow-y-auto py-4",
+          collapsed ? "px-2" : "px-3",
+        )}
+      >
+        {collapsed
+          ? // Rail mode — flat icons with tooltips.
+            groups.map((group, gi) => (
+              <div key={group.heading} className="mb-5">
+                {gi > 0 && (
+                  <div className="mx-1 mb-2 border-t border-sidebar-border/60" />
+                )}
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const active = isActive(pathname, item.href);
+                    const Icon = item.icon;
+                    return (
+                      <Tooltip key={item.href}>
+                        <TooltipTrigger asChild>
+                          <Link
+                            href={item.href}
+                            onClick={onNavigate}
+                            aria-current={active ? "page" : undefined}
+                            className={cn(
+                              "flex items-center justify-center rounded-md p-2.5 text-sm transition-colors",
+                              active
+                                ? "bg-primary/10 font-medium text-primary"
+                                : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                            )}
+                          >
+                            <Icon className="size-4 shrink-0" />
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          {item.label}
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          : // Expanded mode — collapsible dropdown sections.
+            groups.map((group) => {
+              // Single-item groups (Overview, Settings) are direct links.
+              if (group.items.length === 1) {
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={onNavigate}
-                    aria-current={active ? "page" : undefined}
-                    className={className}
-                  >
-                    {content}
-                  </Link>
+                  <div key={group.heading} className="mb-1">
+                    <NavLink item={group.items[0]} />
+                  </div>
                 );
-              })}
-            </div>
-          </div>
-        ))}
+              }
+              const containsActive = group.items.some((i) =>
+                isActive(pathname, i.href),
+              );
+              const isOpen = open[group.heading] ?? containsActive;
+              return (
+                <div key={group.heading} className="mb-0.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpen((o) => ({ ...o, [group.heading]: !isOpen }))
+                    }
+                    aria-expanded={isOpen}
+                    className="flex w-full items-center justify-between rounded-md px-3 py-2 text-[11px] font-semibold tracking-wider text-muted-foreground/70 uppercase transition-colors hover:text-foreground"
+                  >
+                    <span>{group.heading}</span>
+                    <ChevronDown
+                      className={cn(
+                        "size-3.5 transition-transform duration-200",
+                        isOpen ? "rotate-180" : "rotate-0",
+                      )}
+                    />
+                  </button>
+                  <div
+                    className={cn(
+                      "grid transition-all duration-200",
+                      isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                    )}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="space-y-0.5 pt-0.5 pb-1">
+                        {group.items.map((item) => (
+                          <NavLink key={item.href} item={item} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
       </nav>
 
       {onToggleCollapse && (
