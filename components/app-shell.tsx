@@ -128,7 +128,7 @@ export function AppShell({
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-3 py-4 lg:px-6 lg:py-5">
+        <main className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">
           <SessionProvider user={user}>{children}</SessionProvider>
         </main>
       </div>

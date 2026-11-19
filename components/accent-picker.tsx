@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export const ACCENTS = [
+  { key: "clay", label: "Clay", swatch: "oklch(0.58 0.125 40)" },
   { key: "neutral", label: "Neutral", swatch: "oklch(0.35 0 0)" },
   { key: "blue", label: "Blue", swatch: "oklch(0.55 0.2 255)" },
   { key: "violet", label: "Violet", swatch: "oklch(0.54 0.24 293)" },
@@ -21,7 +22,7 @@ export const ACCENTS = [
   { key: "amber", label: "Amber", swatch: "oklch(0.77 0.16 75)" },
 ] as const;
 
-const DEFAULT_ACCENT = "blue";
+const DEFAULT_ACCENT = "clay";
 
 function applyAccent(key: string) {
   const el = document.documentElement;
