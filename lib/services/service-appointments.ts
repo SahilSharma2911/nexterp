@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import type {
+  AppointmentAnalytics,
   AppointmentDetail,
   AppointmentFormValues,
   AppointmentListItem,
@@ -95,6 +96,29 @@ export async function listServiceAppointments(
     total,
     page: p.page,
     limit: p.limit,
+  };
+}
+
+// Management insights for the Appointments list header.
+export async function serviceAppointmentAnalytics(): Promise<AppointmentAnalytics> {
+  const [grouped, hv] = await Promise.all([
+    prisma.serviceAppointment.groupBy({ by: ["status"], _count: true }),
+    prisma.serviceAppointment.count({
+      where: { status: "BOOKED", isHV: true },
+    }),
+  ]);
+  const countFor = (s: "BOOKED" | "CONVERTED" | "CANCELLED") =>
+    grouped.find((g) => g.status === s)?._count ?? 0;
+  return {
+    booked: countFor("BOOKED"),
+    converted: countFor("CONVERTED"),
+    cancelled: countFor("CANCELLED"),
+    hv,
+    byStatus: [
+      { name: "Booked", value: countFor("BOOKED") },
+      { name: "Converted", value: countFor("CONVERTED") },
+      { name: "Cancelled", value: countFor("CANCELLED") },
+    ],
   };
 }
 

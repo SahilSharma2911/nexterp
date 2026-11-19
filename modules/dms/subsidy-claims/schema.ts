@@ -88,3 +88,12 @@ export type SubsidyClaimsTableMeta = {
   sort: string;
   onSort: (field: string) => void;
 };
+
+export type SubsidyClaimAnalytics = {
+  open: number; // draft + submitted
+  approved: number;
+  disbursed: number;
+  claimedValue: number; // total claimed (active)
+  disbursedValue: number; // total paid out
+  byStatus: { name: string; value: number }[];
+};

@@ -75,3 +75,12 @@ export type ClaimsTableMeta = {
   sort: string;
   onSort: (field: string) => void;
 };
+
+export type ClaimAnalytics = {
+  open: number; // draft + submitted (in the OEM pipeline)
+  approved: number;
+  settled: number;
+  claimedValue: number; // total claimed (active claims)
+  approvedValue: number; // total approved by OEM
+  byStatus: { name: string; value: number }[];
+};

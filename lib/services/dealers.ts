@@ -1,7 +1,11 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
-import type { Dealer, DealerFormValues } from "@/modules/dms/dealers/schema";
+import type {
+  Dealer,
+  DealerAnalytics,
+  DealerFormValues,
+} from "@/modules/dms/dealers/schema";
 
 const SORTABLE = ["code", "name", "city", "createdAt"] as const;
 
@@ -75,6 +79,31 @@ export async function listDealers(
   ]);
 
   return { rows: rows.map(toItem), total, page: p.page, limit: p.limit };
+}
+
+// Management insights for the Dealers list header.
+export async function dealerAnalytics(): Promise<DealerAnalytics> {
+  const [total, active, withCounts] = await Promise.all([
+    prisma.dealer.count(),
+    prisma.dealer.count({ where: { disabled: false } }),
+    prisma.dealer.findMany({
+      select: { name: true, _count: { select: { vehicles: true } } },
+      orderBy: { vehicles: { _count: "desc" } },
+      take: 6,
+    }),
+  ]);
+  const vehiclesAssigned = await prisma.vehicle.count({
+    where: { dealerId: { not: null } },
+  });
+  return {
+    total,
+    active,
+    vehiclesAssigned,
+    byDealer: withCounts.map((d) => ({
+      name: d.name,
+      value: d._count.vehicles,
+    })),
+  };
 }
 
 export async function dealerOptions() {

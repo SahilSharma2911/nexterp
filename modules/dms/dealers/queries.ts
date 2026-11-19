@@ -42,6 +42,14 @@ export function useDealer(id?: string) {
   });
 }
 
+export function useDealerAnalytics() {
+  return useQuery({
+    queryKey: [...dealerKeys.all, "analytics"] as const,
+    queryFn: () => dealersApi.fetchDealerAnalytics(),
+    staleTime: 60_000,
+  });
+}
+
 export function useCreateDealer() {
   const qc = useQueryClient();
   return useMutation({

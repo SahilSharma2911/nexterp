@@ -1,13 +1,44 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
-import type {
-  SubsidyClaimDetail,
-  SubsidyClaimFormValues,
-  SubsidyClaimListItem,
+import {
+  SUBSIDY_CLAIM_STATUSES,
+  SUBSIDY_CLAIM_STATUS_LABELS,
+  type SubsidyClaimAnalytics,
+  type SubsidyClaimDetail,
+  type SubsidyClaimFormValues,
+  type SubsidyClaimListItem,
 } from "@/modules/dms/subsidy-claims/schema";
 
 const SORTABLE = ["name", "customerName", "claimAmount", "status"] as const;
+
+// Management insights for the Subsidy Claims list header.
+export async function subsidyClaimAnalytics(): Promise<SubsidyClaimAnalytics> {
+  const [grouped, claimed, disbursed] = await Promise.all([
+    prisma.subsidyClaim.groupBy({ by: ["status"], _count: true }),
+    prisma.subsidyClaim.aggregate({
+      _sum: { claimAmount: true },
+      where: { status: { notIn: ["CANCELLED", "REJECTED"] } },
+    }),
+    prisma.subsidyClaim.aggregate({
+      _sum: { claimAmount: true },
+      where: { status: "DISBURSED" },
+    }),
+  ]);
+  const countFor = (s: string) =>
+    grouped.find((g) => g.status === s)?._count ?? 0;
+  return {
+    open: countFor("DRAFT") + countFor("SUBMITTED"),
+    approved: countFor("APPROVED"),
+    disbursed: countFor("DISBURSED"),
+    claimedValue: Number(claimed._sum.claimAmount ?? 0),
+    disbursedValue: Number(disbursed._sum.claimAmount ?? 0),
+    byStatus: SUBSIDY_CLAIM_STATUSES.map((s) => ({
+      name: SUBSIDY_CLAIM_STATUS_LABELS[s],
+      value: countFor(s),
+    })),
+  };
+}
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 const INCLUDE = {

@@ -68,3 +68,10 @@ export type DealersTableMeta = {
   sort: string;
   onSort: (field: string) => void;
 };
+
+export type DealerAnalytics = {
+  total: number;
+  active: number;
+  vehiclesAssigned: number;
+  byDealer: { name: string; value: number }[]; // top dealers by vehicle count
+};

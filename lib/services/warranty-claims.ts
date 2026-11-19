@@ -3,13 +3,44 @@ import { prisma } from "@/lib/prisma";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import { evaluateEligibility } from "@/lib/services/warranty-eligibility";
 import { COMPONENT_LABELS } from "@/modules/dms/warranties/schema";
-import type {
-  ClaimDetail,
-  ClaimFormValues,
-  ClaimListItem,
+import {
+  CLAIM_STATUSES,
+  CLAIM_STATUS_LABELS,
+  type ClaimAnalytics,
+  type ClaimDetail,
+  type ClaimFormValues,
+  type ClaimListItem,
 } from "@/modules/dms/warranty-claims/schema";
 
 const SORTABLE = ["name", "claimDate", "claimAmount", "status"] as const;
+
+// Management insights for the Warranty Claims list header.
+export async function warrantyClaimAnalytics(): Promise<ClaimAnalytics> {
+  const [grouped, claimed, approved] = await Promise.all([
+    prisma.warrantyClaim.groupBy({ by: ["status"], _count: true }),
+    prisma.warrantyClaim.aggregate({
+      _sum: { claimAmount: true },
+      where: { status: { notIn: ["CANCELLED", "REJECTED"] } },
+    }),
+    prisma.warrantyClaim.aggregate({
+      _sum: { approvedAmount: true },
+      where: { status: { in: ["APPROVED", "SETTLED"] } },
+    }),
+  ]);
+  const countFor = (s: string) =>
+    grouped.find((g) => g.status === s)?._count ?? 0;
+  return {
+    open: countFor("DRAFT") + countFor("SUBMITTED"),
+    approved: countFor("APPROVED"),
+    settled: countFor("SETTLED"),
+    claimedValue: Number(claimed._sum.claimAmount ?? 0),
+    approvedValue: Number(approved._sum.approvedAmount ?? 0),
+    byStatus: CLAIM_STATUSES.map((s) => ({
+      name: CLAIM_STATUS_LABELS[s],
+      value: countFor(s),
+    })),
+  };
+}
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 async function jobCardName(id: string | null) {

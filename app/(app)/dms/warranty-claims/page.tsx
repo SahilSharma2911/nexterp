@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/page-header";
 import { ClaimsTable } from "@/modules/dms/warranty-claims/claims-table";
+import { ClaimAnalytics } from "@/modules/dms/warranty-claims/claim-analytics";
 
 export const metadata = { title: "Warranty Claims · nexterp" };
 
@@ -12,7 +13,10 @@ export default function WarrantyClaimsPage() {
         title="Warranty Claims"
         subtitle="OEM claims with eligibility checks"
       />
-      <ClaimsTable />
+      <div className="space-y-6">
+        <ClaimAnalytics />
+        <ClaimsTable />
+      </div>
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { api } from "@/lib/axios";
 import type { ListQuery, ListResponse } from "@/lib/api-list";
 import type {
+  JobCardAnalytics,
   JobCardDetail,
   JobCardFormValues,
   JobCardListItem,
@@ -18,6 +19,11 @@ export async function fetchJobCards(params: JobCardsQuery) {
 
 export async function fetchJobCard(id: string) {
   const { data } = await api.get<JobCardDetail>(`/job-cards/${id}`);
+  return data;
+}
+
+export async function fetchJobCardAnalytics() {
+  const { data } = await api.get<JobCardAnalytics>("/job-cards/analytics");
   return data;
 }
 

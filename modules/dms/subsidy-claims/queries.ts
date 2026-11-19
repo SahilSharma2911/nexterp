@@ -34,6 +34,14 @@ export function useSubsidyClaim(id?: string) {
   });
 }
 
+export function useSubsidyClaimAnalytics() {
+  return useQuery({
+    queryKey: [...subsidyClaimKeys.all, "analytics"] as const,
+    queryFn: () => claimsApi.fetchClaimAnalytics(),
+    staleTime: 60_000,
+  });
+}
+
 export function useCreateSubsidyClaim() {
   const qc = useQueryClient();
   return useMutation({

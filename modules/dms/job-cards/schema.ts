@@ -133,3 +133,13 @@ export type JobCardsTableMeta = {
   sort: string;
   onSort: (field: string) => void;
 };
+
+export type JobCardAnalytics = {
+  open: number;
+  completed: number;
+  cancelled: number;
+  revenue: number; // billed on completed jobs
+  partsValue: number;
+  laborValue: number;
+  byStatus: { name: string; value: number }[];
+};

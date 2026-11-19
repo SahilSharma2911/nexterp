@@ -1,6 +1,7 @@
 import { api } from "@/lib/axios";
 import type { ListQuery, ListResponse } from "@/lib/api-list";
 import type {
+  AppointmentAnalytics,
   AppointmentDetail,
   AppointmentFormValues,
   AppointmentListItem,
@@ -19,6 +20,13 @@ export async function fetchAppointments(params: AppointmentsQuery) {
 export async function fetchAppointment(id: string) {
   const { data } = await api.get<AppointmentDetail>(
     `/service-appointments/${id}`,
+  );
+  return data;
+}
+
+export async function fetchAppointmentAnalytics() {
+  const { data } = await api.get<AppointmentAnalytics>(
+    "/service-appointments/analytics",
   );
   return data;
 }

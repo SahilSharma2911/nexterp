@@ -4,6 +4,7 @@ import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import { postStockLedger } from "@/lib/stock-ledger";
 import { postGL, getAccountId, reverseGL } from "@/lib/gl";
 import type {
+  JobCardAnalytics,
   JobCardDetail,
   JobCardFormValues,
   JobCardListItem,
@@ -255,6 +256,32 @@ export async function deleteJobCard(id: string): Promise<void> {
   if (existing.status !== "OPEN")
     throw new Error("Only open job cards can be deleted");
   await prisma.jobCard.delete({ where: { id } });
+}
+
+// Management insights for the Job Cards list header.
+export async function jobCardAnalytics(): Promise<JobCardAnalytics> {
+  const [grouped, done] = await Promise.all([
+    prisma.jobCard.groupBy({ by: ["status"], _count: true }),
+    prisma.jobCard.aggregate({
+      _sum: { total: true, partsTotal: true, laborTotal: true },
+      where: { status: "COMPLETED" },
+    }),
+  ]);
+  const countFor = (s: "OPEN" | "COMPLETED" | "CANCELLED") =>
+    grouped.find((g) => g.status === s)?._count ?? 0;
+  return {
+    open: countFor("OPEN"),
+    completed: countFor("COMPLETED"),
+    cancelled: countFor("CANCELLED"),
+    revenue: Number(done._sum.total ?? 0),
+    partsValue: Number(done._sum.partsTotal ?? 0),
+    laborValue: Number(done._sum.laborTotal ?? 0),
+    byStatus: [
+      { name: "Open", value: countFor("OPEN") },
+      { name: "Completed", value: countFor("COMPLETED") },
+      { name: "Cancelled", value: countFor("CANCELLED") },
+    ],
+  };
 }
 
 // Complete: issue parts through the CORE stock ledger and post service revenue

@@ -1,6 +1,7 @@
 import { api } from "@/lib/axios";
 import type { ListQuery, ListResponse } from "@/lib/api-list";
 import type {
+  SubsidyClaimAnalytics,
   SubsidyClaimDetail,
   SubsidyClaimFormValues,
   SubsidyClaimListItem,
@@ -18,6 +19,13 @@ export async function fetchClaims(params: SubsidyClaimsQuery) {
 
 export async function fetchClaim(id: string) {
   const { data } = await api.get<SubsidyClaimDetail>(`/subsidy-claims/${id}`);
+  return data;
+}
+
+export async function fetchClaimAnalytics() {
+  const { data } = await api.get<SubsidyClaimAnalytics>(
+    "/subsidy-claims/analytics",
+  );
   return data;
 }
 

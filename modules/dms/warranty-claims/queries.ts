@@ -34,6 +34,14 @@ export function useClaim(id?: string) {
   });
 }
 
+export function useClaimAnalytics() {
+  return useQuery({
+    queryKey: [...claimKeys.all, "analytics"] as const,
+    queryFn: () => claimsApi.fetchClaimAnalytics(),
+    staleTime: 60_000,
+  });
+}
+
 export function useCreateClaim() {
   const qc = useQueryClient();
   return useMutation({

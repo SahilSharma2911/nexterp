@@ -1,6 +1,11 @@
 import { api } from "@/lib/axios";
 import type { ListQuery, ListResponse } from "@/lib/api-list";
-import type { ClaimDetail, ClaimFormValues, ClaimListItem } from "./schema";
+import type {
+  ClaimAnalytics,
+  ClaimDetail,
+  ClaimFormValues,
+  ClaimListItem,
+} from "./schema";
 
 export type ClaimsQuery = ListQuery & { status: string };
 
@@ -14,6 +19,11 @@ export async function fetchClaims(params: ClaimsQuery) {
 
 export async function fetchClaim(id: string) {
   const { data } = await api.get<ClaimDetail>(`/warranty-claims/${id}`);
+  return data;
+}
+
+export async function fetchClaimAnalytics() {
+  const { data } = await api.get<ClaimAnalytics>("/warranty-claims/analytics");
   return data;
 }
 

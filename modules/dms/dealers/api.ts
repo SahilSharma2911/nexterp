@@ -1,6 +1,11 @@
 import { api } from "@/lib/axios";
 import type { ListQuery, ListResponse } from "@/lib/api-list";
-import type { Dealer, DealerFormValues, DealerOption } from "./schema";
+import type {
+  Dealer,
+  DealerAnalytics,
+  DealerFormValues,
+  DealerOption,
+} from "./schema";
 
 export async function fetchDealers(params: ListQuery) {
   const { data } = await api.get<ListResponse<Dealer>>("/dealers", { params });
@@ -9,6 +14,11 @@ export async function fetchDealers(params: ListQuery) {
 
 export async function fetchDealerOptions() {
   const { data } = await api.get<DealerOption[]>("/dealers/options");
+  return data;
+}
+
+export async function fetchDealerAnalytics() {
+  const { data } = await api.get<DealerAnalytics>("/dealers/analytics");
   return data;
 }
 

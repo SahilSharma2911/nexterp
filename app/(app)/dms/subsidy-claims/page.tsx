@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/page-header";
 import { SubsidyClaimsTable } from "@/modules/dms/subsidy-claims/claims-table";
+import { SubsidyClaimAnalytics } from "@/modules/dms/subsidy-claims/subsidy-claim-analytics";
 
 export const metadata = { title: "Subsidy Claims · nexterp" };
 
@@ -12,7 +13,10 @@ export default function SubsidyClaimsPage() {
         title="Subsidy Claims"
         subtitle="EV incentive claims with KYC & e-vouchers"
       />
-      <SubsidyClaimsTable />
+      <div className="space-y-6">
+        <SubsidyClaimAnalytics />
+        <SubsidyClaimsTable />
+      </div>
     </>
   );
 }

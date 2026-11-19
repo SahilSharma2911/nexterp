@@ -34,6 +34,14 @@ export function useJobCard(id?: string) {
   });
 }
 
+export function useJobCardAnalytics() {
+  return useQuery({
+    queryKey: [...jobCardKeys.all, "analytics"] as const,
+    queryFn: () => jobsApi.fetchJobCardAnalytics(),
+    staleTime: 60_000,
+  });
+}
+
 export function useCreateJobCard() {
   const qc = useQueryClient();
   return useMutation({

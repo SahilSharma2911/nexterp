@@ -34,6 +34,14 @@ export function useVehicleOptions() {
   });
 }
 
+export function useVehicleAnalytics() {
+  return useQuery({
+    queryKey: [...vehicleKeys.all, "analytics"] as const,
+    queryFn: () => vehiclesApi.fetchVehicleAnalytics(),
+    staleTime: 60_000,
+  });
+}
+
 export function useVehicle(id?: string) {
   return useQuery({
     queryKey: vehicleKeys.detail(id ?? ""),

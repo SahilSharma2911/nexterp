@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/page-header";
 import { VehiclesTable } from "@/modules/dms/vehicles/vehicles-table";
+import { VehicleAnalytics } from "@/modules/dms/vehicles/vehicle-analytics";
 
 export const metadata = { title: "Vehicles · nexterp" };
 
@@ -12,7 +13,10 @@ export default function VehiclesPage() {
         title="Vehicles"
         subtitle="EV units — VIN, battery & motor lifecycle"
       />
-      <VehiclesTable />
+      <div className="space-y-6">
+        <VehicleAnalytics />
+        <VehiclesTable />
+      </div>
     </>
   );
 }

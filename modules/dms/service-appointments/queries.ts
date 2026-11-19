@@ -34,6 +34,14 @@ export function useAppointment(id?: string) {
   });
 }
 
+export function useAppointmentAnalytics() {
+  return useQuery({
+    queryKey: [...appointmentKeys.all, "analytics"] as const,
+    queryFn: () => apptApi.fetchAppointmentAnalytics(),
+    staleTime: 60_000,
+  });
+}
+
 export function useCreateAppointment() {
   const qc = useQueryClient();
   return useMutation({

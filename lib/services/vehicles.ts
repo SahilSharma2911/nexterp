@@ -3,10 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import { warrantyExpiry } from "@/lib/services/warranty-eligibility";
 import { COMPONENT_LABELS } from "@/modules/dms/warranties/schema";
-import type {
-  Vehicle,
-  VehicleFormValues,
-  VehicleRelated,
+import {
+  VEHICLE_STATUSES,
+  VEHICLE_STATUS_LABELS,
+  type Vehicle,
+  type VehicleAnalytics,
+  type VehicleFormValues,
+  type VehicleRelated,
 } from "@/modules/dms/vehicles/schema";
 
 const SORTABLE = ["vin", "model", "status", "batterySoH", "createdAt"] as const;
@@ -234,4 +237,47 @@ export async function deleteVehicle(id: string): Promise<void> {
       "Can't delete — this vehicle has job cards, warranties or subsidy claims. Reassign or remove them first.",
     );
   await prisma.vehicle.delete({ where: { id } });
+}
+
+// Management insights for the Vehicles list header.
+export async function vehicleAnalytics(): Promise<VehicleAnalytics> {
+  const [grouped, inv, del, soh] = await Promise.all([
+    prisma.vehicle.groupBy({ by: ["status"], _count: true }),
+    prisma.vehicle.aggregate({
+      _sum: { purchaseRate: true },
+      where: { status: { not: "DELIVERED" } },
+    }),
+    prisma.vehicle.aggregate({
+      _sum: { sellingRate: true },
+      where: { status: "DELIVERED" },
+    }),
+    prisma.vehicle.aggregate({ _avg: { batterySoH: true } }),
+  ]);
+
+  const countFor = (s: VehicleStatus) =>
+    grouped.find((g) => g.status === s)?._count ?? 0;
+  const total = grouped.reduce((n, g) => n + g._count, 0);
+  const delivered = countFor("DELIVERED");
+  const inStock = countFor("IN_STOCK");
+  const pipelineStages: VehicleStatus[] = [
+    "ALLOCATED",
+    "IN_TRANSIT",
+    "AT_DEALER",
+    "PDI_DONE",
+  ];
+  const inPipeline = pipelineStages.reduce((n, s) => n + countFor(s), 0);
+
+  return {
+    total,
+    inStock,
+    inPipeline,
+    delivered,
+    inventoryValue: Number(inv._sum.purchaseRate ?? 0),
+    deliveredValue: Number(del._sum.sellingRate ?? 0),
+    avgSoH: soh._avg.batterySoH != null ? Number(soh._avg.batterySoH) : null,
+    byStage: VEHICLE_STATUSES.map((s) => ({
+      name: VEHICLE_STATUS_LABELS[s],
+      value: countFor(s),
+    })),
+  };
 }

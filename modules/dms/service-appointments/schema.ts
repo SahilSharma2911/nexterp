@@ -76,3 +76,11 @@ export type AppointmentsTableMeta = {
   sort: string;
   onSort: (field: string) => void;
 };
+
+export type AppointmentAnalytics = {
+  booked: number;
+  converted: number;
+  cancelled: number;
+  hv: number; // booked HV jobs awaiting work
+  byStatus: { name: string; value: number }[];
+};

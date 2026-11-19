@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/page-header";
 import { JobCardsTable } from "@/modules/dms/job-cards/job-cards-table";
+import { JobCardAnalytics } from "@/modules/dms/job-cards/job-card-analytics";
 
 export const metadata = { title: "Job Cards · nexterp" };
 
@@ -12,7 +13,10 @@ export default function JobCardsPage() {
         title="Job Cards"
         subtitle="Workshop — parts & labour against a vehicle"
       />
-      <JobCardsTable />
+      <div className="space-y-6">
+        <JobCardAnalytics />
+        <JobCardsTable />
+      </div>
     </>
   );
 }

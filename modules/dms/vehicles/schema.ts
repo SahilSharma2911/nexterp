@@ -120,3 +120,14 @@ export type VehiclesTableMeta = {
   sort: string;
   onSort: (field: string) => void;
 };
+
+export type VehicleAnalytics = {
+  total: number;
+  inStock: number;
+  inPipeline: number; // allocated → PDI (on the way to a customer)
+  delivered: number;
+  inventoryValue: number; // cost of unsold units
+  deliveredValue: number; // sale value of delivered units
+  avgSoH: number | null;
+  byStage: { name: string; value: number }[];
+};
