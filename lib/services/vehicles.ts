@@ -126,14 +126,34 @@ export async function vehicleOptions() {
   });
 }
 
+// Free-form key/value specs — keep only rows with a label, in entry order.
+function specCreate(v: VehicleFormValues) {
+  return v.specifications
+    .filter((s) => s.label.trim())
+    .map((s, i) => ({
+      label: s.label.trim(),
+      value: s.value.trim(),
+      sortOrder: i,
+    }));
+}
+
 export async function getVehicleById(id: string): Promise<Vehicle | null> {
   const r = await prisma.vehicle.findUnique({
     where: { id },
-    include: WITH_DEALER,
+    include: {
+      ...WITH_DEALER,
+      specifications: { orderBy: { sortOrder: "asc" } },
+    },
   });
   if (!r) return null;
   const wh = await warehouseNames([r.warehouseId]);
-  return toItem(r, wh);
+  return {
+    ...toItem(r, wh),
+    specifications: r.specifications.map((s) => ({
+      label: s.label,
+      value: s.value,
+    })),
+  };
 }
 
 export async function createVehicle(
@@ -143,7 +163,7 @@ export async function createVehicle(
   const dupe = await prisma.vehicle.findUnique({ where: { vin } });
   if (dupe) throw new Error(`A vehicle with VIN "${vin}" already exists`);
   const r = await prisma.vehicle.create({
-    data: toData(values),
+    data: { ...toData(values), specifications: { create: specCreate(values) } },
     include: WITH_DEALER,
   });
   const wh = await warehouseNames([r.warehouseId]);
@@ -161,10 +181,16 @@ export async function updateVehicle(
     const dupe = await prisma.vehicle.findUnique({ where: { vin } });
     if (dupe) throw new Error(`A vehicle with VIN "${vin}" already exists`);
   }
-  const r = await prisma.vehicle.update({
-    where: { id },
-    data: toData(values),
-    include: WITH_DEALER,
+  const r = await prisma.$transaction(async (tx) => {
+    await tx.vehicleSpecification.deleteMany({ where: { vehicleId: id } });
+    return tx.vehicle.update({
+      where: { id },
+      data: {
+        ...toData(values),
+        specifications: { create: specCreate(values) },
+      },
+      include: WITH_DEALER,
+    });
   });
   const wh = await warehouseNames([r.warehouseId]);
   return toItem(r, wh);

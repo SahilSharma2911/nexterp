@@ -11,6 +11,7 @@ import {
   Car,
   Cpu,
   Gauge,
+  ListChecks,
   MapPin,
   Palette,
   Pencil,
@@ -235,6 +236,29 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
               <Field icon={Palette} label="Colour" value={v.color ?? dash} />
             </CardContent>
           </Card>
+
+          {v.specifications && v.specifications.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ListChecks className="size-4 text-muted-foreground" />
+                  Specifications
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                {v.specifications.map((s, i) => (
+                  <div key={i} className="min-w-0">
+                    <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                      {s.label}
+                    </p>
+                    <p className="mt-0.5 text-sm font-medium">
+                      {s.value || dash}
+                    </p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Sidebar */}

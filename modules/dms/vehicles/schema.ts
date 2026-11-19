@@ -22,6 +22,11 @@ export const VEHICLE_STATUS_LABELS: Record<VehicleStatus, string> = {
   IN_SERVICE: "In Service",
 };
 
+export const vehicleSpecSchema = z.object({
+  label: z.string().trim(),
+  value: z.string().trim(),
+});
+
 export const vehicleFormSchema = z.object({
   vin: z.string().trim().min(1, "VIN is required"),
   model: z.string().trim().min(1, "Model is required"),
@@ -43,9 +48,11 @@ export const vehicleFormSchema = z.object({
   dealerId: z.string().optional().nullable(),
   imageUrl: z.string().optional().nullable(),
   remarks: z.string().trim().optional(),
+  specifications: z.array(vehicleSpecSchema),
 });
 
 export type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
+export type VehicleSpec = { label: string; value: string };
 
 export const emptyVehicle: VehicleFormValues = {
   vin: "",
@@ -63,6 +70,7 @@ export const emptyVehicle: VehicleFormValues = {
   dealerId: "",
   imageUrl: null,
   remarks: "",
+  specifications: [],
 };
 
 export type Vehicle = {
@@ -84,6 +92,7 @@ export type Vehicle = {
   dealer: string | null;
   imageUrl: string | null;
   remarks: string | null;
+  specifications?: VehicleSpec[]; // populated on the detail view only
 };
 
 export type VehicleOption = {

@@ -2,8 +2,9 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Plus, Trash2 } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -55,6 +56,10 @@ export function VehicleForm({ vehicleId }: { vehicleId?: string }) {
     resolver: zodResolver(vehicleFormSchema),
     defaultValues: emptyVehicle,
   });
+  const specs = useFieldArray({
+    control: form.control,
+    name: "specifications",
+  });
 
   useEffect(() => {
     if (isEdit && existing) {
@@ -74,6 +79,7 @@ export function VehicleForm({ vehicleId }: { vehicleId?: string }) {
         dealerId: existing.dealerId ?? "",
         imageUrl: existing.imageUrl ?? null,
         remarks: existing.remarks ?? "",
+        specifications: existing.specifications ?? [],
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -352,6 +358,67 @@ export function VehicleForm({ vehicleId }: { vehicleId?: string }) {
                 </FormItem>
               )}
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm">Specifications</CardTitle>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => specs.append({ label: "", value: "" })}
+            >
+              <Plus className="size-4" />
+              Add specification
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {specs.fields.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No specifications. Add extra details like Tyre size, Charger
+                type, Insurance, RTO, Warranty pack…
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {specs.fields.map((row, i) => (
+                  <div key={row.id} className="flex items-start gap-2">
+                    <FormField
+                      control={form.control}
+                      name={`specifications.${i}.label`}
+                      render={({ field }) => (
+                        <FormItem className="w-1/3">
+                          <FormControl>
+                            <Input placeholder="Label (e.g. Tyre size)" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`specifications.${i}.value`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormControl>
+                            <Input placeholder="Value (e.g. 215/55 R17)" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-9"
+                      onClick={() => specs.remove(i)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
