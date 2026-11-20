@@ -125,6 +125,9 @@ export type JobCardDetail = {
   qcNote: string | null;
   appointmentId: string | null;
   appointmentName: string | null;
+  createdAt: string;
+  completedAt: string | null;
+  cancelledAt: string | null;
   parts: JobCardPart[];
   labor: JobCardLabor[];
 };

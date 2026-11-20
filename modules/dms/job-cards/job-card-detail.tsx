@@ -4,7 +4,25 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, ClipboardCheck, Pencil, Trash2, Wrench } from "lucide-react";
+import {
+  Activity,
+  BatteryCharging,
+  Car,
+  CheckCircle2,
+  ClipboardCheck,
+  Clock,
+  Cpu,
+  FileText,
+  Gauge,
+  Package,
+  Palette,
+  Pencil,
+  Plus,
+  Timer,
+  Trash2,
+  Wrench,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,8 +51,11 @@ import {
 } from "@/components/ui/dialog";
 import { DetailHeader } from "@/components/detail/detail-shell";
 import { useCanWrite } from "@/components/session-context";
+import { cn } from "@/lib/utils";
 import { fmtMoney, fmtQty, fmtRate, fmtDateTime } from "@/lib/format";
+import { useVehicle } from "@/modules/dms/vehicles/queries";
 import { JobStatusBadge } from "./columns";
+import type { JobCardDetail as JobCard } from "./schema";
 import {
   useCancelJobCard,
   useCompleteJobCard,
@@ -53,6 +75,16 @@ function Meta({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+function fmtDuration(ms: number) {
+  const m = Math.max(0, Math.round(ms / 60000));
+  const d = Math.floor(m / 1440);
+  const h = Math.floor((m % 1440) / 60);
+  const min = m % 60;
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${min}m`;
+  return `${min}m`;
+}
+
 export function JobCardDetail({ jobId }: { jobId: string }) {
   const router = useRouter();
   const canWrite = useCanWrite("dms");
@@ -69,13 +101,13 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
   if (isLoading || !j) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-9 w-64" />
-        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-24 w-full rounded-xl" />
+        <Skeleton className="h-9 w-96" />
+        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     );
   }
 
-  const dash = <span className="text-muted-foreground">—</span>;
   const isOpen = j.status === "OPEN";
   const isCompleted = j.status === "COMPLETED";
 
@@ -151,187 +183,61 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
         }
       />
 
-      <Card>
-        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Meta
-            label="Vehicle"
-            value={
-              <Link
-                href={`/dms/vehicles/${j.vehicleId}`}
-                className="font-mono text-xs text-primary hover:underline"
-              >
-                {j.vehicle}
-              </Link>
-            }
-          />
-          <Meta label="Parts Warehouse" value={j.warehouse ?? dash} />
-          <Meta
-            label="Technician"
-            value={j.technicianName ?? j.technician ?? dash}
-          />
-          <Meta label="Service Bay" value={j.bayName ?? dash} />
-          <Meta label="Odometer" value={j.odometer != null ? `${j.odometer} km` : dash} />
-          <Meta label="Service Date" value={fmtDateTime(j.serviceDate)} />
-          <Meta
-            label="Work type"
-            value={j.isHV ? "High-voltage" : "Standard"}
-          />
-          {j.appointmentId && j.appointmentName && (
-            <Meta
-              label="From appointment"
-              value={
-                <Link
-                  href={`/dms/service-appointments/${j.appointmentId}`}
-                  className="text-primary hover:underline"
-                >
-                  {j.appointmentName}
-                </Link>
-              }
-            />
-          )}
-          <Meta
-            label="Quality check"
-            value={
-              j.qcAt ? (
-                <span className="text-emerald-600 dark:text-emerald-400">
-                  ✓ {j.qcBy} · {fmtDateTime(j.qcAt)}
-                </span>
-              ) : (
-                <span className="text-muted-foreground">Not done</span>
-              )
-            }
-          />
-          {j.complaint && (
-            <div className="sm:col-span-2 lg:col-span-4">
-              <Meta label="Complaint" value={j.complaint} />
-            </div>
-          )}
-          {j.qcNote && (
-            <div className="sm:col-span-2 lg:col-span-4">
-              <Meta label="QC note" value={j.qcNote} />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="details">
+        <TabsList className="max-w-full">
+          <TabsTrigger value="details">
+            <FileText /> Job detail
+          </TabsTrigger>
+          <TabsTrigger value="progress">
+            <Activity /> Progress
+          </TabsTrigger>
+          <TabsTrigger value="parts">
+            <Package /> Parts
+          </TabsTrigger>
+          <TabsTrigger value="labour">
+            <Timer /> Labour
+          </TabsTrigger>
+          <TabsTrigger value="quality">
+            <ClipboardCheck /> Quality
+          </TabsTrigger>
+          <TabsTrigger value="notes">
+            <FileText /> Notes
+          </TabsTrigger>
+          <TabsTrigger value="vehicle">
+            <Car /> Vehicle health
+          </TabsTrigger>
+        </TabsList>
 
-      {j.parts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Parts</CardTitle>
-          </CardHeader>
-          <CardContent className="overflow-x-auto p-0">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-y text-left text-xs text-muted-foreground">
-                  <th className="p-3 font-medium">Part</th>
-                  <th className="p-3 text-right font-medium">Qty</th>
-                  <th className="p-3 text-right font-medium">Rate</th>
-                  <th className="p-3 text-right font-medium">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {j.parts.map((p) => (
-                  <tr key={p.id} className="border-b last:border-0">
-                    <td className="p-3">
-                      <Link
-                        href={`/stock/items/${p.itemId}`}
-                        className="font-mono text-xs text-primary hover:underline"
-                      >
-                        {p.itemCode}
-                      </Link>
-                      <span className="ml-2 text-muted-foreground">{p.itemName}</span>
-                    </td>
-                    <td className="p-3 text-right tabular-nums">{fmtQty(p.qty)}</td>
-                    <td className="p-3 text-right tabular-nums">{fmtRate(p.rate)}</td>
-                    <td className="p-3 text-right tabular-nums">{fmtMoney(p.amount)}</td>
-                  </tr>
-                ))}
-                <tr className="border-t">
-                  <td className="p-3 text-right text-xs font-semibold uppercase text-muted-foreground" colSpan={3}>
-                    Parts total
-                  </td>
-                  <td className="p-3 text-right font-semibold tabular-nums">
-                    {fmtMoney(j.partsTotal)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
-      )}
-
-      {j.labor.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Labour</CardTitle>
-          </CardHeader>
-          <CardContent className="overflow-x-auto p-0">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-y text-left text-xs text-muted-foreground">
-                  <th className="p-3 font-medium">Work</th>
-                  <th className="p-3 text-right font-medium">Hours</th>
-                  <th className="p-3 text-right font-medium">Rate</th>
-                  <th className="p-3 text-right font-medium">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {j.labor.map((l) => (
-                  <tr key={l.id} className="border-b last:border-0">
-                    <td className="p-3">{l.description}</td>
-                    <td className="p-3 text-right tabular-nums">{fmtQty(l.hours)}</td>
-                    <td className="p-3 text-right tabular-nums">{fmtMoney(l.rate)}</td>
-                    <td className="p-3 text-right tabular-nums">{fmtMoney(l.amount)}</td>
-                  </tr>
-                ))}
-                <tr className="border-t">
-                  <td className="p-3 text-right text-xs font-semibold uppercase text-muted-foreground" colSpan={3}>
-                    Labour total
-                  </td>
-                  <td className="p-3 text-right font-semibold tabular-nums">
-                    {fmtMoney(j.laborTotal)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
-      )}
-
-      {j.photos.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Photos</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-3">
-            {j.photos.map((p, i) => (
-              <a
-                key={`${p}-${i}`}
-                href={p}
-                target="_blank"
-                rel="noreferrer"
-                className="relative size-28 overflow-hidden rounded-lg border bg-muted"
-              >
-                <Image
-                  src={p}
-                  alt={`Photo ${i + 1}`}
-                  fill
-                  sizes="112px"
-                  className="object-cover"
-                  unoptimized
-                />
-              </a>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="flex justify-end">
-        <div className="flex w-64 justify-between border-t pt-3 text-base font-semibold">
-          <span>Total</span>
-          <span className="tabular-nums">{fmtMoney(j.total)}</span>
-        </div>
-      </div>
+        <TabsContent value="details">
+          <DetailsTab j={j} />
+        </TabsContent>
+        <TabsContent value="progress">
+          <ProgressTab j={j} />
+        </TabsContent>
+        <TabsContent value="parts">
+          <PartsTab j={j} />
+        </TabsContent>
+        <TabsContent value="labour">
+          <LabourTab j={j} />
+        </TabsContent>
+        <TabsContent value="quality">
+          <QualityTab
+            j={j}
+            canWrite={canWrite && isOpen}
+            onRecord={() => {
+              setQcBy(j.qcBy ?? "");
+              setQcNote(j.qcNote ?? "");
+              setQcOpen(true);
+            }}
+          />
+        </TabsContent>
+        <TabsContent value="notes">
+          <NotesTab j={j} />
+        </TabsContent>
+        <TabsContent value="vehicle">
+          <VehicleHealth vehicleId={j.vehicleId} />
+        </TabsContent>
+      </Tabs>
 
       <AlertDialog
         open={confirm !== null}
@@ -407,10 +313,7 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
             <Button
               disabled={qc.isPending || !qcBy.trim()}
               onClick={() =>
-                qc.mutate(
-                  { qcBy, qcNote },
-                  { onSuccess: () => setQcOpen(false) },
-                )
+                qc.mutate({ qcBy, qcNote }, { onSuccess: () => setQcOpen(false) })
               }
             >
               {qc.isPending ? "Saving…" : "Record QC"}
@@ -418,6 +321,487 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+const dash = <span className="text-muted-foreground">—</span>;
+
+function DetailsTab({ j }: { j: JobCard }) {
+  return (
+    <Card>
+      <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Meta
+          label="Vehicle"
+          value={
+            <Link
+              href={`/dms/vehicles/${j.vehicleId}`}
+              className="font-mono text-xs text-primary hover:underline"
+            >
+              {j.vehicle}
+            </Link>
+          }
+        />
+        <Meta label="Parts warehouse" value={j.warehouse ?? dash} />
+        <Meta
+          label="Technician"
+          value={j.technicianName ?? j.technician ?? dash}
+        />
+        <Meta label="Service bay" value={j.bayName ?? dash} />
+        <Meta
+          label="Odometer"
+          value={j.odometer != null ? `${j.odometer} km` : dash}
+        />
+        <Meta label="Service date" value={fmtDateTime(j.serviceDate)} />
+        <Meta label="Work type" value={j.isHV ? "High-voltage" : "Standard"} />
+        {j.appointmentId && j.appointmentName ? (
+          <Meta
+            label="From appointment"
+            value={
+              <Link
+                href={`/dms/service-appointments/${j.appointmentId}`}
+                className="text-primary hover:underline"
+              >
+                {j.appointmentName}
+              </Link>
+            }
+          />
+        ) : (
+          <Meta label="From appointment" value={dash} />
+        )}
+        {j.complaint && (
+          <div className="sm:col-span-2 lg:col-span-4">
+            <Meta label="Complaint" value={j.complaint} />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ProgressTab({ j }: { j: JobCard }) {
+  const steps = ["Opened", "Quality check", "Completed"];
+  let current = 0;
+  if (j.qcAt) current = 1;
+  if (j.status === "COMPLETED") current = 2;
+  const cancelled = j.status === "CANCELLED";
+
+  const events = [
+    { label: "Job card opened", at: j.createdAt, icon: Plus },
+    j.qcAt
+      ? { label: `Quality check${j.qcBy ? ` · ${j.qcBy}` : ""}`, at: j.qcAt, icon: ClipboardCheck }
+      : null,
+    j.completedAt
+      ? { label: "Completed — parts issued & billed", at: j.completedAt, icon: CheckCircle2 }
+      : null,
+    j.cancelledAt
+      ? { label: "Cancelled — stock & ledger reversed", at: j.cancelledAt, icon: X }
+      : null,
+  ]
+    .filter((e): e is { label: string; at: string; icon: typeof Plus } => !!e)
+    .sort((a, b) => +new Date(a.at) - +new Date(b.at));
+
+  const estHours = j.labor.reduce((s, l) => s + l.hours, 0);
+  const endIso = j.completedAt ?? j.cancelledAt;
+  const open = !endIso;
+  const turnaround = endIso
+    ? fmtDuration(+new Date(endIso) - +new Date(j.createdAt))
+    : null;
+
+  return (
+    <div className="space-y-4">
+      {/* Job progress stepper */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="size-4 text-muted-foreground" />
+            Job progress
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {cancelled ? (
+            <Badge variant="destructive">Cancelled</Badge>
+          ) : (
+            <ol className="flex flex-wrap items-center gap-1 text-xs">
+              {steps.map((s, i) => (
+                <li key={s} className="flex items-center gap-1">
+                  <span
+                    className={cn(
+                      "rounded px-2 py-1 font-medium",
+                      i === current
+                        ? "bg-primary text-primary-foreground"
+                        : i < current
+                          ? "bg-primary/10 text-primary"
+                          : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {s}
+                  </span>
+                  {i < steps.length - 1 && (
+                    <span className="text-muted-foreground">→</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Time tracking */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="size-4 text-muted-foreground" />
+            Time tracking
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-3">
+          <Meta label="Estimated labour" value={`${fmtQty(estHours)} h`} />
+          <Meta
+            label={open ? "Opened" : "Turnaround"}
+            value={open ? fmtDateTime(j.createdAt) : turnaround}
+          />
+          <Meta
+            label="Status"
+            value={open ? "In workshop" : j.status === "COMPLETED" ? "Delivered" : "Cancelled"}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Activity timeline */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="size-4 text-muted-foreground" />
+            Activity timeline
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ol className="relative space-y-4 border-l pl-6">
+            {events.map((e, i) => {
+              const Icon = e.icon;
+              return (
+                <li key={i} className="relative">
+                  <span className="absolute -left-[31px] flex size-6 items-center justify-center rounded-full border bg-background text-muted-foreground">
+                    <Icon className="size-3.5" />
+                  </span>
+                  <p className="text-sm font-medium">{e.label}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {fmtDateTime(e.at)}
+                  </p>
+                </li>
+              );
+            })}
+          </ol>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function PartsTab({ j }: { j: JobCard }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Package className="size-4 text-muted-foreground" />
+          Parts consumption
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="overflow-x-auto p-0">
+        {j.parts.length === 0 ? (
+          <p className="px-6 pb-5 text-sm text-muted-foreground">
+            No parts on this job.
+          </p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-y text-left text-xs text-muted-foreground">
+                <th className="p-3 font-medium">Part</th>
+                <th className="p-3 text-right font-medium">Qty</th>
+                <th className="p-3 text-right font-medium">Rate</th>
+                <th className="p-3 text-right font-medium">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {j.parts.map((p) => (
+                <tr key={p.id} className="border-b last:border-0">
+                  <td className="p-3">
+                    <Link
+                      href={`/stock/items/${p.itemId}`}
+                      className="font-mono text-xs text-primary hover:underline"
+                    >
+                      {p.itemCode}
+                    </Link>
+                    <span className="ml-2 text-muted-foreground">
+                      {p.itemName}
+                    </span>
+                  </td>
+                  <td className="p-3 text-right tabular-nums">{fmtQty(p.qty)}</td>
+                  <td className="p-3 text-right tabular-nums">{fmtRate(p.rate)}</td>
+                  <td className="p-3 text-right tabular-nums">{fmtMoney(p.amount)}</td>
+                </tr>
+              ))}
+              <tr className="border-t">
+                <td
+                  className="p-3 text-right text-xs font-semibold text-muted-foreground uppercase"
+                  colSpan={3}
+                >
+                  Parts total
+                </td>
+                <td className="p-3 text-right font-semibold tabular-nums">
+                  {fmtMoney(j.partsTotal)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function LabourTab({ j }: { j: JobCard }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Timer className="size-4 text-muted-foreground" />
+          Labour
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="overflow-x-auto p-0">
+        {j.labor.length === 0 ? (
+          <p className="px-6 pb-5 text-sm text-muted-foreground">
+            No labour lines.
+          </p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-y text-left text-xs text-muted-foreground">
+                <th className="p-3 font-medium">Work</th>
+                <th className="p-3 text-right font-medium">Hours</th>
+                <th className="p-3 text-right font-medium">Rate</th>
+                <th className="p-3 text-right font-medium">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {j.labor.map((l) => (
+                <tr key={l.id} className="border-b last:border-0">
+                  <td className="p-3">{l.description}</td>
+                  <td className="p-3 text-right tabular-nums">{fmtQty(l.hours)}</td>
+                  <td className="p-3 text-right tabular-nums">{fmtMoney(l.rate)}</td>
+                  <td className="p-3 text-right tabular-nums">{fmtMoney(l.amount)}</td>
+                </tr>
+              ))}
+              <tr className="border-t">
+                <td
+                  className="p-3 text-right text-xs font-semibold text-muted-foreground uppercase"
+                  colSpan={3}
+                >
+                  Labour total
+                </td>
+                <td className="p-3 text-right font-semibold tabular-nums">
+                  {fmtMoney(j.laborTotal)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function QualityTab({
+  j,
+  canWrite,
+  onRecord,
+}: {
+  j: JobCard;
+  canWrite: boolean;
+  onRecord: () => void;
+}) {
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardTitle className="flex items-center gap-2">
+          <ClipboardCheck className="size-4 text-muted-foreground" />
+          Quality check
+        </CardTitle>
+        {canWrite && (
+          <Button variant="outline" size="sm" onClick={onRecord}>
+            <ClipboardCheck className="size-4" />
+            {j.qcAt ? "Update QC" : "Record QC"}
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {j.qcAt ? (
+          <div className="flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300">
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+            <span>
+              <span className="font-semibold">Signed off</span> by {j.qcBy} ·{" "}
+              {fmtDateTime(j.qcAt)}
+            </span>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Quality check not recorded yet.
+          </p>
+        )}
+        {j.qcNote && <Meta label="QC note" value={j.qcNote} />}
+      </CardContent>
+    </Card>
+  );
+}
+
+function NotesTab({ j }: { j: JobCard }) {
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="size-4 text-muted-foreground" />
+            Notes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {j.remarks ? (
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">
+              {j.remarks}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">No notes.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="size-4 text-muted-foreground" />
+            Attachments ({j.photos.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {j.photos.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No attachments.</p>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              {j.photos.map((p, i) => (
+                <a
+                  key={`${p}-${i}`}
+                  href={p}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="relative size-28 overflow-hidden rounded-lg border bg-muted"
+                >
+                  <Image
+                    src={p}
+                    alt={`Attachment ${i + 1}`}
+                    fill
+                    sizes="112px"
+                    className="object-cover"
+                    unoptimized
+                  />
+                </a>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function sohClass(soh: number) {
+  if (soh >= 80) return "text-emerald-600 dark:text-emerald-400";
+  if (soh >= 60) return "text-amber-600 dark:text-amber-400";
+  return "text-red-600 dark:text-red-400";
+}
+
+function VehicleHealth({ vehicleId }: { vehicleId: string }) {
+  const { data: v, isLoading } = useVehicle(vehicleId);
+
+  if (isLoading)
+    return <Skeleton className="h-48 w-full rounded-xl" />;
+  if (!v) return null;
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Car className="size-4 text-muted-foreground" />
+            Vehicle health overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="sm:col-span-2 lg:col-span-1 flex flex-col items-center justify-center rounded-lg border bg-muted/30 p-4">
+            <BatteryCharging className="size-6 text-primary" />
+            <p
+              className={cn(
+                "mt-1 text-3xl font-semibold tabular-nums",
+                v.batterySoH != null ? sohClass(v.batterySoH) : "",
+              )}
+            >
+              {v.batterySoH != null ? `${v.batterySoH}%` : "—"}
+            </p>
+            <p className="text-xs text-muted-foreground">Battery SoH</p>
+          </div>
+          <Meta label="Motor serial" value={v.motorSerial ?? dash} />
+          <Meta label="Battery serial" value={v.batterySerial ?? dash} />
+          <Meta
+            label="Model"
+            value={[v.model, v.variant].filter(Boolean).join(" · ")}
+          />
+          <Meta
+            label="Colour"
+            value={
+              v.color ? (
+                <span className="flex items-center gap-1.5">
+                  <Palette className="size-3.5 text-muted-foreground" />
+                  {v.color}
+                </span>
+              ) : (
+                dash
+              )
+            }
+          />
+          <Meta
+            label="Odometer basis"
+            value={
+              <span className="flex items-center gap-1.5">
+                <Gauge className="size-3.5 text-muted-foreground" />
+                {v.model}
+              </span>
+            }
+          />
+          <Meta
+            label="Powertrain"
+            value={
+              <span className="flex items-center gap-1.5">
+                <Cpu className="size-3.5 text-muted-foreground" />
+                Electric
+              </span>
+            }
+          />
+        </CardContent>
+      </Card>
+
+      {v.specifications && v.specifications.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Specifications</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            {v.specifications.map((s, i) => (
+              <Meta key={i} label={s.label} value={s.value || dash} />
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

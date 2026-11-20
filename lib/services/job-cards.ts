@@ -161,6 +161,9 @@ export async function getJobCard(id: string): Promise<JobCardDetail | null> {
     qcNote: r.qcNote,
     appointmentId: r.appointment?.id ?? null,
     appointmentName: r.appointment?.name ?? null,
+    createdAt: r.createdAt.toISOString(),
+    completedAt: r.completedAt ? r.completedAt.toISOString() : null,
+    cancelledAt: r.cancelledAt ? r.cancelledAt.toISOString() : null,
     parts: r.parts.map((p) => ({
       id: p.id,
       itemId: p.itemId,
