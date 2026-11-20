@@ -11,11 +11,13 @@ import {
   Activity,
   Hourglass,
   ArrowRight,
+  Workflow,
 } from "lucide-react";
 import { StatCards, type StatItem } from "@/components/analytics/stat-cards";
 import { CategoryBarChart } from "@/components/analytics/category-bar-chart";
 import { TrendChart } from "@/components/analytics/trend-chart";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -133,9 +135,19 @@ function FifoAging({
             />
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Allocate the oldest matching unit first — the top one is next in line.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            Allocate the oldest matching unit first — the top one is next in
+            line.
+          </p>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dms/allocation">
+              <Workflow className="size-4" />
+              FIFO allocation
+              <ArrowRight className="size-3.5" />
+            </Link>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         {loading ? (
