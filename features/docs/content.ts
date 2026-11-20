@@ -773,8 +773,12 @@ export function getDoc(slug: string) {
   return DOCS.find((d) => d.slug === slug) ?? null;
 }
 
+// Doc areas hidden from the Docs listing for now (kept in sync with the
+// sidebar — Accounts isn't needed yet). The pages still exist by direct URL.
+const HIDDEN_DOC_AREAS = new Set<string>(["Accounts"]);
+
 export function docsByArea() {
-  return AREAS.map((area) => ({
+  return AREAS.filter((area) => !HIDDEN_DOC_AREAS.has(area)).map((area) => ({
     area,
     docs: DOCS.filter((d) => d.area === area),
   }));

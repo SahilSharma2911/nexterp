@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { fmtQty, fmtMoney } from "@/lib/format";
 import { DashboardCharts } from "./dashboard-charts";
 import { useDashboard } from "./queries";
+import { DealershipOverview } from "./dealership-overview";
 
 type Tone = "default" | "positive" | "negative";
 
@@ -503,6 +504,10 @@ export function DashboardView() {
                 )}
               </tbody>
             </Panel>
+          </div>
+
+          <div className="mt-6">
+            <DealershipOverview />
           </div>
         </>
       )}

@@ -50,19 +50,11 @@ export default function DocsHome() {
             <Link href="/docs/delivery-note" className="text-primary hover:underline">Delivery Note</Link>{" "}
             (stock goes down).
           </li>
-          <li>
-            <span className="font-medium text-foreground">5. Money</span> —{" "}
-            <Link href="/docs/sales-invoice" className="text-primary hover:underline">Invoices</Link>{" "}
-            then{" "}
-            <Link href="/docs/payment-entry" className="text-primary hover:underline">Payments</Link>.
-          </li>
         </ol>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           Anything that moves stock writes to the{" "}
-          <Link href="/docs/stock-ledger" className="text-primary hover:underline">Stock Ledger</Link>;
-          anything involving money writes to the{" "}
-          <Link href="/docs/general-ledger" className="text-primary hover:underline">General Ledger</Link>.
-          The balance and trial-balance reports just summarise those.
+          <Link href="/docs/stock-ledger" className="text-primary hover:underline">Stock Ledger</Link>,
+          and the balance reports just summarise it.
         </p>
       </section>
 
