@@ -22,94 +22,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { fmtQty, fmtMoney } from "@/lib/format";
+import { StatCards, type StatItem } from "@/components/analytics/stat-cards";
 import { DashboardCharts } from "./dashboard-charts";
 import { useDashboard } from "./queries";
 import { DealershipOverview } from "./dealership-overview";
-
-type Tone = "default" | "positive" | "negative";
-
-const toneClass = (tone?: Tone) =>
-  tone === "negative"
-    ? "text-red-600 dark:text-red-400"
-    : tone === "positive"
-      ? "text-emerald-600 dark:text-emerald-400"
-      : "text-foreground";
-
-function Kpi({
-  label,
-  value,
-  href,
-  icon: Icon,
-  tone,
-  sub,
-}: {
-  label: string;
-  value: string;
-  href: string;
-  icon: React.ElementType;
-  tone?: Tone;
-  sub?: string;
-}) {
-  return (
-    <Link href={href}>
-      <Card className="transition-colors hover:border-primary/40">
-        <CardContent className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              {label}
-            </p>
-            <p
-              className={cn(
-                "mt-1 truncate text-2xl font-semibold tabular-nums",
-                toneClass(tone),
-              )}
-            >
-              {value}
-            </p>
-            {sub && (
-              <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>
-            )}
-          </div>
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Icon className="size-5" />
-          </span>
-        </CardContent>
-      </Card>
-    </Link>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  href,
-  icon: Icon,
-  tone,
-}: {
-  label: string;
-  value: string;
-  href: string;
-  icon: React.ElementType;
-  tone?: Tone;
-}) {
-  return (
-    <Link href={href}>
-      <Card className="transition-colors hover:border-primary/40">
-        <CardContent className="flex items-center gap-3">
-          <span className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-            <Icon className="size-4" />
-          </span>
-          <div>
-            <p className={cn("text-xl font-semibold tabular-nums", toneClass(tone))}>
-              {value}
-            </p>
-            <p className="text-xs text-muted-foreground">{label}</p>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
-  );
-}
 
 function Th({ children, right }: { children?: React.ReactNode; right?: boolean }) {
   return (
@@ -182,98 +98,109 @@ export function DashboardView() {
         <DashboardSkeleton />
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Kpi
-              label="Stock Value"
-              value={fmtMoney(d.kpis.stockValue)}
-              href="/stock/balance"
-              icon={Boxes}
-            />
-            <Kpi
-              label="Receivables"
-              value={fmtMoney(d.kpis.receivables)}
-              href="/accounts/sales-invoice"
-              icon={ArrowDownLeft}
-              tone={d.kpis.receivables > 0 ? "negative" : "default"}
-            />
-            <Kpi
-              label="Payables"
-              value={fmtMoney(d.kpis.payables)}
-              href="/accounts/purchase-invoice"
-              icon={ArrowUpRight}
-              tone={d.kpis.payables > 0 ? "negative" : "default"}
-            />
-            <Kpi
-              label="Cash + Bank"
-              value={fmtMoney(d.kpis.cashBalance)}
-              href="/accounts/trial-balance"
-              icon={Wallet}
-              tone="positive"
-            />
-          </div>
+          <StatCards
+            items={
+              [
+                {
+                  label: "Stock Value",
+                  value: fmtMoney(d.kpis.stockValue),
+                  href: "/stock/balance",
+                  icon: Boxes,
+                },
+                {
+                  label: "Receivables",
+                  value: fmtMoney(d.kpis.receivables),
+                  href: "/accounts/sales-invoice",
+                  icon: ArrowDownLeft,
+                  tone: d.kpis.receivables > 0 ? "negative" : "default",
+                },
+                {
+                  label: "Payables",
+                  value: fmtMoney(d.kpis.payables),
+                  href: "/accounts/purchase-invoice",
+                  icon: ArrowUpRight,
+                  tone: d.kpis.payables > 0 ? "negative" : "default",
+                },
+                {
+                  label: "Cash + Bank",
+                  value: fmtMoney(d.kpis.cashBalance),
+                  href: "/accounts/trial-balance",
+                  icon: Wallet,
+                  tone: "positive",
+                },
+              ] as StatItem[]
+            }
+          />
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Kpi
-              label="Sales · this month"
-              value={fmtMoney(d.kpis.monthSales)}
-              href="/accounts/sales-invoice"
-              icon={TrendingUp}
-              tone="positive"
-            />
-            <Kpi
-              label="Purchases · this month"
-              value={fmtMoney(d.kpis.monthPurchases)}
-              href="/accounts/purchase-invoice"
-              icon={TrendingDown}
-            />
-            <Kpi
-              label="Overdue Receivables"
-              value={fmtMoney(d.kpis.overdueAmount)}
-              href="/accounts/sales-invoice?status=SUBMITTED"
-              icon={CalendarClock}
-              tone={d.kpis.overdueAmount > 0 ? "negative" : "default"}
-              sub={
-                d.kpis.overdueCount > 0
-                  ? `${d.kpis.overdueCount} invoice${d.kpis.overdueCount === 1 ? "" : "s"} past due`
-                  : "Nothing overdue"
-              }
-            />
-            <Kpi
-              label="Low Stock"
-              value={String(d.counts.lowStockCount)}
-              href="/stock/balance"
-              icon={AlertTriangle}
-              tone={d.counts.lowStockCount > 0 ? "negative" : "default"}
-              sub="below reorder level"
-            />
-          </div>
+          <StatCards
+            className="mt-4"
+            items={
+              [
+                {
+                  label: "Sales · this month",
+                  value: fmtMoney(d.kpis.monthSales),
+                  href: "/accounts/sales-invoice",
+                  icon: TrendingUp,
+                  tone: "positive",
+                },
+                {
+                  label: "Purchases · this month",
+                  value: fmtMoney(d.kpis.monthPurchases),
+                  href: "/accounts/purchase-invoice",
+                  icon: TrendingDown,
+                },
+                {
+                  label: "Overdue Receivables",
+                  value: fmtMoney(d.kpis.overdueAmount),
+                  href: "/accounts/sales-invoice?status=SUBMITTED",
+                  icon: CalendarClock,
+                  tone: d.kpis.overdueAmount > 0 ? "negative" : "default",
+                  sub:
+                    d.kpis.overdueCount > 0
+                      ? `${d.kpis.overdueCount} invoice${d.kpis.overdueCount === 1 ? "" : "s"} past due`
+                      : "Nothing overdue",
+                },
+                {
+                  label: "Low Stock",
+                  value: d.counts.lowStockCount,
+                  href: "/stock/balance",
+                  icon: AlertTriangle,
+                  tone: d.counts.lowStockCount > 0 ? "negative" : "default",
+                  sub: "below reorder level",
+                },
+              ] as StatItem[]
+            }
+          />
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat
-              label="Items"
-              value={String(d.counts.itemCount)}
-              href="/stock/items"
-              icon={Package}
-            />
-            <Stat
-              label="Open Sales Orders"
-              value={String(d.counts.openSO)}
-              href="/selling/sales-order"
-              icon={ShoppingBag}
-            />
-            <Stat
-              label="Open Purchase Orders"
-              value={String(d.counts.openPO)}
-              href="/buying/purchase-order"
-              icon={ShoppingCart}
-            />
-            <Stat
-              label="Work Orders in Progress"
-              value={String(d.counts.openWO)}
-              href="/manufacturing/work-order"
-              icon={Factory}
-            />
-          </div>
+          <StatCards
+            className="mt-4"
+            items={[
+              {
+                label: "Items",
+                value: d.counts.itemCount,
+                href: "/stock/items",
+                icon: Package,
+              },
+              {
+                label: "Open Sales Orders",
+                value: d.counts.openSO,
+                href: "/selling/sales-order",
+                icon: ShoppingBag,
+              },
+              {
+                label: "Open Purchase Orders",
+                value: d.counts.openPO,
+                href: "/buying/purchase-order",
+                icon: ShoppingCart,
+              },
+              {
+                label: "Work Orders in Progress",
+                value: d.counts.openWO,
+                href: "/manufacturing/work-order",
+                icon: Factory,
+              },
+            ]}
+          />
 
           <DashboardCharts
             trend={d.monthlyTrend}
