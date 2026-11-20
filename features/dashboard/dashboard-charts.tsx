@@ -6,6 +6,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Line,
   LineChart,
   XAxis,
@@ -20,6 +21,7 @@ import {
   ChartLegendContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { CHART_PALETTE } from "@/components/analytics/category-bar-chart";
 import { fmtMoney } from "@/lib/format";
 import type { CashPoint, MonthlyPoint, WarehouseValue } from "./schema";
 
@@ -32,16 +34,16 @@ function compactMoney(v: number) {
 }
 
 const trendConfig = {
-  sales: { label: "Sales", color: "var(--primary)" },
-  purchases: { label: "Purchases", color: "var(--chart-3)" },
+  sales: { label: "Sales", color: "#10b981" }, // emerald
+  purchases: { label: "Purchases", color: "#f59e0b" }, // amber
 } satisfies ChartConfig;
 
 const cashConfig = {
-  balance: { label: "Cash + Bank", color: "var(--primary)" },
+  balance: { label: "Cash + Bank", color: "#6366f1" }, // indigo
 } satisfies ChartConfig;
 
 const warehouseConfig = {
-  value: { label: "Stock Value", color: "var(--primary)" },
+  value: { label: "Stock Value", color: "#06b6d4" }, // cyan
 } satisfies ChartConfig;
 
 export function DashboardCharts({
@@ -232,11 +234,14 @@ export function DashboardCharts({
                     />
                   }
                 />
-                <Bar
-                  dataKey="value"
-                  fill="var(--color-value)"
-                  radius={[6, 6, 0, 0]}
-                />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {stockByWarehouse.map((_, i) => (
+                    <Cell
+                      key={i}
+                      fill={CHART_PALETTE[i % CHART_PALETTE.length]}
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             </ChartContainer>
           )}
