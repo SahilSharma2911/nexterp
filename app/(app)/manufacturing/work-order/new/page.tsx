@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { WorkOrderForm } from "@/features/work-order/work-order-form";
 
-export const metadata = { title: "New Work Order · nexterp" };
+export const metadata = { title: "New Work Order · Seeka Motor" };
 
 export default async function NewWorkOrderPage(props: {
   searchParams: Promise<{ bom?: string }>;

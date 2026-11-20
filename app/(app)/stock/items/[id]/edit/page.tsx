@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { ItemForm } from "@/features/items/item-form";
 
-export const metadata = { title: "Edit Item · nexterp" };
+export const metadata = { title: "Edit Item · Seeka Motor" };
 
 export default async function EditItemPage(props: {
   params: Promise<{ id: string }>;

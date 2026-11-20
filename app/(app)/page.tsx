@@ -1,6 +1,6 @@
 import { DashboardView } from "@/features/dashboard/dashboard-view";
 
-export const metadata = { title: "Dashboard · nexterp" };
+export const metadata = { title: "Dashboard · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

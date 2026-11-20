@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { SubsidyClaimForm } from "@/modules/dms/subsidy-claims/claim-form";
 
-export const metadata = { title: "Edit Subsidy Claim · nexterp" };
+export const metadata = { title: "Edit Subsidy Claim · Seeka Motor" };
 
 export default async function EditSubsidyClaimPage({
   params,

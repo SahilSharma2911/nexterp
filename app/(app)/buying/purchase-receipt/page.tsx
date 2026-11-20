@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { PurchaseReceiptsTable } from "@/features/purchase-receipt/purchase-receipts-table";
 
-export const metadata = { title: "Purchase Receipts · nexterp" };
+export const metadata = { title: "Purchase Receipts · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

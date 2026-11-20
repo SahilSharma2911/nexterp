@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { SuppliersTable } from "@/features/suppliers/suppliers-table";
 
-export const metadata = { title: "Suppliers · nexterp" };
+export const metadata = { title: "Suppliers · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { StockEntriesTable } from "@/features/stock-entry/stock-entries-table";
 
-export const metadata = { title: "Stock Entry · nexterp" };
+export const metadata = { title: "Stock Entry · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

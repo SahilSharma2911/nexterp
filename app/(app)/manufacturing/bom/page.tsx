@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { BomsTable } from "@/features/bom/boms-table";
 
-export const metadata = { title: "BOM · nexterp" };
+export const metadata = { title: "BOM · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { WarrantyForm } from "@/modules/dms/warranties/warranty-form";
 
-export const metadata = { title: "New Warranty · nexterp" };
+export const metadata = { title: "New Warranty · Seeka Motor" };
 
 export default function NewWarrantyPage() {
   return (

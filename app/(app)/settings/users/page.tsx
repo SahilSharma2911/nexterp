@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { UsersTable } from "@/features/users/users-table";
 
-export const metadata = { title: "Users · nexterp" };
+export const metadata = { title: "Users · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

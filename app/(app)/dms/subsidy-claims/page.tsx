@@ -3,7 +3,7 @@ import { NewButton } from "@/components/new-button";
 import { SubsidyClaimsTable } from "@/modules/dms/subsidy-claims/claims-table";
 import { SubsidyClaimAnalytics } from "@/modules/dms/subsidy-claims/subsidy-claim-analytics";
 
-export const metadata = { title: "Subsidy Claims · nexterp" };
+export const metadata = { title: "Subsidy Claims · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

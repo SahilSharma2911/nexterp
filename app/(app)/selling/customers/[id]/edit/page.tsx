@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { CustomerForm } from "@/features/customers/customer-form";
 
-export const metadata = { title: "Edit Customer · nexterp" };
+export const metadata = { title: "Edit Customer · Seeka Motor" };
 
 export default async function EditCustomerPage(props: {
   params: Promise<{ id: string }>;

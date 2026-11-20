@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { JobCardForm } from "@/modules/dms/job-cards/job-card-form";
 
-export const metadata = { title: "Edit Job Card · nexterp" };
+export const metadata = { title: "Edit Job Card · Seeka Motor" };
 
 export default async function EditJobCardPage({
   params,

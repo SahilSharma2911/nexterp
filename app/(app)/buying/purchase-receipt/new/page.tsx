@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { PurchaseReceiptForm } from "@/features/purchase-receipt/purchase-receipt-form";
 
-export const metadata = { title: "New Purchase Receipt · nexterp" };
+export const metadata = { title: "New Purchase Receipt · Seeka Motor" };
 
 export default async function NewPurchaseReceiptPage(props: {
   searchParams: Promise<{ po?: string }>;

@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { VehicleForm } from "@/modules/dms/vehicles/vehicle-form";
 
-export const metadata = { title: "Add Vehicle · nexterp" };
+export const metadata = { title: "Add Vehicle · Seeka Motor" };
 
 export default function NewVehiclePage() {
   return (

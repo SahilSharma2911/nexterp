@@ -1,6 +1,6 @@
 import { WarehouseDetail } from "@/features/warehouses/warehouse-detail";
 
-export const metadata = { title: "Warehouse · nexterp" };
+export const metadata = { title: "Warehouse · Seeka Motor" };
 
 export default async function WarehouseDetailPage(props: {
   params: Promise<{ id: string }>;

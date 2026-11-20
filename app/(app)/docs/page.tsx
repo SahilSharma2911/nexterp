@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { docsByArea } from "@/features/docs/content";
 
-export const metadata = { title: "Docs · nexterp" };
+export const metadata = { title: "Docs · Seeka Motor" };
 
 export default function DocsHome() {
   const groups = docsByArea();
@@ -11,7 +11,7 @@ export default function DocsHome() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Documentation</h1>
         <p className="mt-2 text-muted-foreground">
-          What each part of nexterp does, in plain English, and how it all fits
+          What each part of Seeka Motor does, in plain English, and how it all fits
           together.
         </p>
       </header>
@@ -19,7 +19,7 @@ export default function DocsHome() {
       <section>
         <h2 className="text-base font-semibold">How it all fits together</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          nexterp runs your business as a chain of connected documents. A
+          Seeka Motor runs your business as a chain of connected documents. A
           typical loop looks like this:
         </p>
         <ol className="mt-3 space-y-1.5 text-sm text-muted-foreground">

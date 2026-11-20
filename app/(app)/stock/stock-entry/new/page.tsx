@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { StockEntryForm } from "@/features/stock-entry/stock-entry-form";
 
-export const metadata = { title: "New Stock Entry · nexterp" };
+export const metadata = { title: "New Stock Entry · Seeka Motor" };
 
 export default function NewStockEntryPage() {
   return (

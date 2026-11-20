@@ -3,7 +3,7 @@ import { NewButton } from "@/components/new-button";
 import { ItemsTable } from "@/features/items/items-table";
 import { ItemAnalytics } from "@/features/items/item-analytics";
 
-export const metadata = { title: "Items · nexterp" };
+export const metadata = { title: "Items · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

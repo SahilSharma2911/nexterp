@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { SalesInvoicesTable } from "@/features/sales-invoice/sales-invoices-table";
 
-export const metadata = { title: "Sales Invoices · nexterp" };
+export const metadata = { title: "Sales Invoices · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

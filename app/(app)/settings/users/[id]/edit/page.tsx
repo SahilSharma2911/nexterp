@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { UserForm } from "@/features/users/user-form";
 
-export const metadata = { title: "Edit User · nexterp" };
+export const metadata = { title: "Edit User · Seeka Motor" };
 
 export default async function EditUserPage({
   params,

@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { DeliveryNoteForm } from "@/features/delivery-note/delivery-note-form";
 
-export const metadata = { title: "Edit Delivery Note · nexterp" };
+export const metadata = { title: "Edit Delivery Note · Seeka Motor" };
 
 export default async function EditDeliveryNotePage(props: {
   params: Promise<{ id: string }>;

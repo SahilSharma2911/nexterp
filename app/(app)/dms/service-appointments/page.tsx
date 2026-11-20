@@ -3,7 +3,7 @@ import { NewButton } from "@/components/new-button";
 import { AppointmentsTable } from "@/modules/dms/service-appointments/appointments-table";
 import { AppointmentAnalytics } from "@/modules/dms/service-appointments/appointment-analytics";
 
-export const metadata = { title: "Service Appointments · nexterp" };
+export const metadata = { title: "Service Appointments · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

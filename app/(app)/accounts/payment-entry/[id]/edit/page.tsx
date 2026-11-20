@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { PaymentEntryForm } from "@/features/payment-entry/payment-entry-form";
 
-export const metadata = { title: "Edit Payment Entry · nexterp" };
+export const metadata = { title: "Edit Payment Entry · Seeka Motor" };
 
 export default async function EditPaymentEntryPage({
   params,

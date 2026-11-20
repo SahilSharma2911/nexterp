@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { DocsNav } from "@/features/docs/docs-nav";
 
-export const metadata = { title: "Docs · nexterp" };
+export const metadata = { title: "Docs · Seeka Motor" };
 
 export default function DocsLayout({
   children,

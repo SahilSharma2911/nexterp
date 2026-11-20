@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { PurchaseOrderForm } from "@/features/purchase-order/purchase-order-form";
 
-export const metadata = { title: "Edit Purchase Order · nexterp" };
+export const metadata = { title: "Edit Purchase Order · Seeka Motor" };
 
 export default async function EditPurchaseOrderPage(props: {
   params: Promise<{ id: string }>;

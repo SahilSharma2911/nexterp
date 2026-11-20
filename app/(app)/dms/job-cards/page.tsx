@@ -3,7 +3,7 @@ import { NewButton } from "@/components/new-button";
 import { JobCardsTable } from "@/modules/dms/job-cards/job-cards-table";
 import { JobCardAnalytics } from "@/modules/dms/job-cards/job-card-analytics";
 
-export const metadata = { title: "Job Cards · nexterp" };
+export const metadata = { title: "Job Cards · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

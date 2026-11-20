@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { SalesOrderForm } from "@/features/sales-order/sales-order-form";
 
-export const metadata = { title: "New Sales Order · nexterp" };
+export const metadata = { title: "New Sales Order · Seeka Motor" };
 
 export default function NewSalesOrderPage() {
   return (

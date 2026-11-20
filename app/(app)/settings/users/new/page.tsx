@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { UserForm } from "@/features/users/user-form";
 
-export const metadata = { title: "New User · nexterp" };
+export const metadata = { title: "New User · Seeka Motor" };
 
 export default function NewUserPage() {
   return (

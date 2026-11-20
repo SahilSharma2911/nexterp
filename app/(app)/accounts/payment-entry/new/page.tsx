@@ -4,7 +4,7 @@ import type { PaymentPrefill } from "@/features/payment-entry/schema";
 import { getSalesInvoice } from "@/lib/services/sales-invoice";
 import { getPurchaseInvoice } from "@/lib/services/purchase-invoice";
 
-export const metadata = { title: "New Payment Entry · nexterp" };
+export const metadata = { title: "New Payment Entry · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

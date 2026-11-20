@@ -1,6 +1,6 @@
 import { ItemDetail } from "@/features/items/item-detail";
 
-export const metadata = { title: "Item · nexterp" };
+export const metadata = { title: "Item · Seeka Motor" };
 
 export default async function ItemDetailPage(props: {
   params: Promise<{ id: string }>;

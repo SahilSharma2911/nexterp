@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { DealerForm } from "@/modules/dms/dealers/dealer-form";
 
-export const metadata = { title: "Edit Dealer · nexterp" };
+export const metadata = { title: "Edit Dealer · Seeka Motor" };
 
 export default async function EditDealerPage({
   params,

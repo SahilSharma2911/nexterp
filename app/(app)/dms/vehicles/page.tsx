@@ -3,7 +3,7 @@ import { NewButton } from "@/components/new-button";
 import { VehiclesTable } from "@/modules/dms/vehicles/vehicles-table";
 import { VehicleAnalytics } from "@/modules/dms/vehicles/vehicle-analytics";
 
-export const metadata = { title: "Vehicles · nexterp" };
+export const metadata = { title: "Vehicles · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { ClaimForm } from "@/modules/dms/warranty-claims/claim-form";
 
-export const metadata = { title: "New Warranty Claim · nexterp" };
+export const metadata = { title: "New Warranty Claim · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

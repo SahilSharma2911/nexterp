@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { TechnicianForm } from "@/modules/dms/technicians/technician-form";
 
-export const metadata = { title: "New Technician · nexterp" };
+export const metadata = { title: "New Technician · Seeka Motor" };
 
 export default function NewTechnicianPage() {
   return (

@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { WarehouseForm } from "@/features/warehouses/warehouse-form";
 
-export const metadata = { title: "Edit Warehouse · nexterp" };
+export const metadata = { title: "Edit Warehouse · Seeka Motor" };
 
 export default async function EditWarehousePage(props: {
   params: Promise<{ id: string }>;

@@ -13,7 +13,7 @@ export async function generateMetadata(props: {
 }) {
   const { slug } = await props.params;
   const doc = getDoc(slug);
-  return { title: doc ? `${doc.title} · Docs · nexterp` : "Docs · nexterp" };
+  return { title: doc ? `${doc.title} · Docs · Seeka Motor` : "Docs · Seeka Motor" };
 }
 
 export default async function DocPage(props: {

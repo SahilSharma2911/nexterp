@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { SchemesTable } from "@/modules/dms/subsidy-schemes/schemes-table";
 
-export const metadata = { title: "Subsidy Schemes · nexterp" };
+export const metadata = { title: "Subsidy Schemes · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

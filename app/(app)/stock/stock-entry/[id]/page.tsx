@@ -1,6 +1,6 @@
 import { StockEntryDetail } from "@/features/stock-entry/stock-entry-detail";
 
-export const metadata = { title: "Stock Entry · nexterp" };
+export const metadata = { title: "Stock Entry · Seeka Motor" };
 
 export default async function StockEntryDetailPage(props: {
   params: Promise<{ id: string }>;

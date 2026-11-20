@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { WarrantiesTable } from "@/modules/dms/warranties/warranties-table";
 
-export const metadata = { title: "Warranties · nexterp" };
+export const metadata = { title: "Warranties · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

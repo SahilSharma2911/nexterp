@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { ItemForm } from "@/features/items/item-form";
 
-export const metadata = { title: "New Item · nexterp" };
+export const metadata = { title: "New Item · Seeka Motor" };
 
 export default function NewItemPage() {
   return (

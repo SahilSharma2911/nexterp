@@ -1,6 +1,6 @@
 import { ReconciliationDetail } from "@/features/stock-reconciliation/reconciliation-detail";
 
-export const metadata = { title: "Stock Reconciliation · nexterp" };
+export const metadata = { title: "Stock Reconciliation · Seeka Motor" };
 
 export default async function ReconciliationDetailPage(props: {
   params: Promise<{ id: string }>;

@@ -3,7 +3,7 @@ import { NewButton } from "@/components/new-button";
 import { DealersTable } from "@/modules/dms/dealers/dealers-table";
 import { DealerAnalytics } from "@/modules/dms/dealers/dealer-analytics";
 
-export const metadata = { title: "Dealers · nexterp" };
+export const metadata = { title: "Dealers · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

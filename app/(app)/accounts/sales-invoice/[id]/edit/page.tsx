@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { SalesInvoiceForm } from "@/features/sales-invoice/sales-invoice-form";
 
-export const metadata = { title: "Edit Sales Invoice · nexterp" };
+export const metadata = { title: "Edit Sales Invoice · Seeka Motor" };
 
 export default async function EditSalesInvoicePage({
   params,

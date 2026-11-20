@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { TechniciansTable } from "@/modules/dms/technicians/technicians-table";
 
-export const metadata = { title: "Technicians · nexterp" };
+export const metadata = { title: "Technicians · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

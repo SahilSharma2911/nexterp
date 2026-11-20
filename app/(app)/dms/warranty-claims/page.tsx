@@ -3,7 +3,7 @@ import { NewButton } from "@/components/new-button";
 import { ClaimsTable } from "@/modules/dms/warranty-claims/claims-table";
 import { ClaimAnalytics } from "@/modules/dms/warranty-claims/claim-analytics";
 
-export const metadata = { title: "Warranty Claims · nexterp" };
+export const metadata = { title: "Warranty Claims · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

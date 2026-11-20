@@ -3,7 +3,7 @@ import { NewButton } from "@/components/new-button";
 import { WarehousesTable } from "@/features/warehouses/warehouses-table";
 import { WarehouseAnalytics } from "@/features/warehouses/warehouse-analytics";
 
-export const metadata = { title: "Warehouses · nexterp" };
+export const metadata = { title: "Warehouses · Seeka Motor" };
 
 export const dynamic = "force-dynamic";
 

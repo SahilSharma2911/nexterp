@@ -49,7 +49,7 @@ function LoginForm() {
             <Boxes className="size-5" />
           </span>
           <div>
-            <h1 className="text-lg font-semibold tracking-tight">nexterp</h1>
+            <h1 className="text-lg font-semibold tracking-tight">Seeka Motor</h1>
             <p className="text-sm text-muted-foreground">Sign in to continue</p>
           </div>
         </div>

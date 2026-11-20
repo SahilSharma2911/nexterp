@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "nexterp",
+  title: "Seeka Motor",
   description: "A generic ERP (ERPNext-modeled) on Next.js",
 };
 

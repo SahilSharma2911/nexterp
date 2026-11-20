@@ -110,7 +110,7 @@ export function AppShell({
             <span className="sr-only">Open menu</span>
           </Button>
           <span className="text-sm font-semibold tracking-tight lg:hidden">
-            nexterp
+            Seeka Motor
           </span>
 
           <Breadcrumbs className="hidden lg:flex" />

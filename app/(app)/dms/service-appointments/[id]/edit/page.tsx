@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { AppointmentForm } from "@/modules/dms/service-appointments/appointment-form";
 
-export const metadata = { title: "Edit Appointment · nexterp" };
+export const metadata = { title: "Edit Appointment · Seeka Motor" };
 
 export default async function EditAppointmentPage({
   params,

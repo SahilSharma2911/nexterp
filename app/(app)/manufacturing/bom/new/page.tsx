@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { BomForm } from "@/features/bom/bom-form";
 
-export const metadata = { title: "New BOM · nexterp" };
+export const metadata = { title: "New BOM · Seeka Motor" };
 
 export default function NewBomPage() {
   return (

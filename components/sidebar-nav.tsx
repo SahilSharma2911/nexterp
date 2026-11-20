@@ -220,7 +220,7 @@ export function SidebarNav({
         </span>
         {!collapsed && (
           <span className="text-[15px] font-semibold tracking-tight">
-            nexterp
+            Seeka Motor
           </span>
         )}
       </Link>

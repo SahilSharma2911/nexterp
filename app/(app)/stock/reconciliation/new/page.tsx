@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { ReconciliationForm } from "@/features/stock-reconciliation/reconciliation-form";
 
-export const metadata = { title: "New Reconciliation · nexterp" };
+export const metadata = { title: "New Reconciliation · Seeka Motor" };
 
 export default function NewReconciliationPage() {
   return (

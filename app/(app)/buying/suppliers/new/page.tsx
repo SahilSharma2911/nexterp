@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { SupplierForm } from "@/features/suppliers/supplier-form";
 
-export const metadata = { title: "New Supplier · nexterp" };
+export const metadata = { title: "New Supplier · Seeka Motor" };
 
 export default function NewSupplierPage() {
   return (

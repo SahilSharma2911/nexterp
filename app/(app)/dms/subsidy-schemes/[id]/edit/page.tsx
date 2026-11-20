@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { SchemeForm } from "@/modules/dms/subsidy-schemes/scheme-form";
 
-export const metadata = { title: "Edit Scheme · nexterp" };
+export const metadata = { title: "Edit Scheme · Seeka Motor" };
 
 export default async function EditSchemePage({
   params,

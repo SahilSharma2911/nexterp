@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { AccountForm } from "@/features/chart-of-accounts/account-form";
 
-export const metadata = { title: "Edit Account · nexterp" };
+export const metadata = { title: "Edit Account · Seeka Motor" };
 
 export default async function EditAccountPage({
   params,
