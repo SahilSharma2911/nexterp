@@ -36,6 +36,7 @@ import { useCanWrite } from "@/components/session-context";
 import { cn } from "@/lib/utils";
 import { fmtDateTime } from "@/lib/format";
 import { useDealerOptions } from "@/modules/dms/dealers/queries";
+import { FifoAgingCard } from "@/modules/dms/vehicles/fifo-aging-card";
 import {
   ALLOCATION_STATUS_LABELS,
   PRIORITY_LABELS,
@@ -116,6 +117,7 @@ export function AllocationWorkspace() {
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <RequestsCard canWrite={canWrite} />
+          <FifoAgingCard showAllocationLink={false} />
           <ActivityCard />
         </div>
         <RulesCard canWrite={canWrite} />
