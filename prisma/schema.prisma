@@ -950,7 +950,48 @@ model Dealer {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  vehicles Vehicle[]
+  vehicles           Vehicle[]
+  allocationRequests AllocationRequest[]
+}
+
+// DMS · Allocation — a dealer's demand for vehicles, fulfilled by the FIFO
+// allocation engine (oldest matching stock first).
+model AllocationRequest {
+  id           String           @id @default(uuid()) @db.Uuid
+  name         String           @unique // ALLOC-2026-00001
+  dealerId     String           @db.Uuid
+  model        String
+  variant      String?
+  qty          Int
+  qtyAllocated Int              @default(0)
+  priority     Int              @default(2) // 1 high · 2 normal · 3 low
+  status       AllocationStatus @default(PENDING)
+  note         String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  dealer Dealer @relation(fields: [dealerId], references: [id])
+
+  @@index([status])
+  @@index([dealerId])
+}
+
+enum AllocationStatus {
+  PENDING
+  PARTIAL
+  FULFILLED
+  CANCELLED
+}
+
+// DMS · Allocation — the single, editable FIFO rule set the engine applies.
+model AllocationRule {
+  id           String   @id @default(uuid()) @db.Uuid
+  oldestFirst  Boolean  @default(true) // FIFO: allocate oldest stock first
+  matchModel   Boolean  @default(true) // only allocate a matching model
+  matchVariant Boolean  @default(false) // also match the variant
+  maxAgeDays   Int? // flag stock sitting longer than this
+  singleton    Boolean  @unique @default(true) // enforce one row
+  updatedAt    DateTime @updatedAt
 }
 
 // DMS vertical — workshop Job Card. Reuses the CORE engines on completion:

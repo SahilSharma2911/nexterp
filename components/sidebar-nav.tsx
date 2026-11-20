@@ -40,6 +40,7 @@ import {
   ShieldCheck,
   FileWarning,
   UserCog,
+  Workflow,
   Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -131,6 +132,7 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/dms/vehicles", label: "Vehicles", icon: Car },
       { href: "/dms/dealers", label: "Dealers", icon: Building2 },
+      { href: "/dms/allocation", label: "Allocation", icon: Workflow },
       { href: "/dms/service-appointments", label: "Appointments", icon: CalendarClock },
       { href: "/dms/job-cards", label: "Job Cards", icon: Wrench },
       { href: "/dms/technicians", label: "Technicians", icon: HardHat },

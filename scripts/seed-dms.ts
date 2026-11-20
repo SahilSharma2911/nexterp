@@ -312,6 +312,28 @@ async function main() {
   });
   await startServiceAppointment(converted.id);
 
+  // Allocation demand for the FIFO engine (matchable Volt City + a short one).
+  await prisma.allocationRequest.create({
+    data: {
+      name: "ALLOC-" + today.slice(0, 4) + "-00001",
+      dealerId: dealers[0].id,
+      model: "Volt City",
+      qty: 2,
+      priority: 1,
+      note: "Festive demand",
+    },
+  });
+  await prisma.allocationRequest.create({
+    data: {
+      name: "ALLOC-" + today.slice(0, 4) + "-00002",
+      dealerId: dealers[1].id,
+      model: "Volt Prime",
+      variant: "Performance",
+      qty: 1,
+      priority: 2,
+    },
+  });
+
   const byStage = await prisma.vehicle.groupBy({ by: ["status"], _count: true });
   console.log(`Seeded ${vehicles.length} vehicles, ${dealers.length} dealers.`);
   console.log("By stage:", JSON.stringify(byStage.map((s) => ({ [s.status]: s._count }))));

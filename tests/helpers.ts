@@ -11,6 +11,8 @@ export async function resetDb() {
   await prisma.jobCard.deleteMany(); // cascades parts + labor
   await prisma.technician.deleteMany();
   await prisma.serviceBay.deleteMany();
+  await prisma.allocationRequest.deleteMany(); // FK to dealer
+  await prisma.allocationRule.deleteMany();
   await prisma.vehicle.deleteMany();
   await prisma.dealer.deleteMany();
   await prisma.gLEntry.deleteMany();
