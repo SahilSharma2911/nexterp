@@ -148,6 +148,12 @@ const NAV: NavGroup[] = [
   },
 ];
 
+// Nav sections hidden from the sidebar for now (manager's call — not needed
+// yet). The pages/routes still exist and GL postings from deliveries & job
+// cards keep flowing; this only removes the menu group. Remove a heading from
+// this set to show it again.
+const HIDDEN_HEADINGS = new Set<string>(["Accounts"]);
+
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
@@ -166,6 +172,7 @@ export function SidebarNav({
 }) {
   const pathname = usePathname();
   const groups = NAV.filter((g) => {
+    if (HIDDEN_HEADINGS.has(g.heading)) return false;
     const mod = HEADING_MODULE[g.heading];
     if (mod && !isModuleEnabled(mod)) return false;
     if (g.heading === "Settings") return isAdmin(role);
