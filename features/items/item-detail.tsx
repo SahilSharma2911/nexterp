@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Boxes, Pencil, Sparkles, Trash2 } from "lucide-react";
+import { Boxes, Pencil, ScanLine, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Barcode } from "@/components/barcode";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -124,6 +125,20 @@ export function ItemDetail({ itemId }: { itemId: string }) {
           )}
         </CardContent>
       </Card>
+
+      {it.barcode && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <ScanLine className="size-4 text-muted-foreground" />
+              Barcode
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Barcode value={it.barcode} height={64} />
+          </CardContent>
+        </Card>
+      )}
 
       {it.specifications.length > 0 && (
         <Card>

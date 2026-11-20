@@ -27,6 +27,15 @@ export async function fetchItemOptions() {
   return data;
 }
 
+// Resolve a scanned/typed barcode (or item code) to an item. Returns null if
+// nothing matches.
+export async function fetchItemByBarcode(code: string) {
+  const { data } = await api.get<ItemOption | null>("/items/by-barcode", {
+    params: { code },
+  });
+  return data;
+}
+
 export async function fetchItemAnalytics() {
   const { data } = await api.get<ItemAnalytics>("/items/analytics");
   return data;

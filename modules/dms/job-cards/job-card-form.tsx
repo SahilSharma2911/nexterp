@@ -25,6 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MultiImageUpload } from "@/components/multi-image-upload";
+import { BarcodeScan } from "@/components/barcode-scan";
 import { fmtMoney } from "@/lib/format";
 import { useItemOptions } from "@/features/items/queries";
 import { useWarehouseOptions } from "@/features/warehouses/queries";
@@ -320,17 +321,30 @@ export function JobCardForm({
 
         {/* Parts */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-medium">Parts</h2>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => parts.append({ ...emptyJobCardPart })}
-            >
-              <Plus className="size-4" />
-              Add part
-            </Button>
+            <div className="flex items-center gap-2">
+              <BarcodeScan
+                className="w-60"
+                placeholder="Scan part barcode…"
+                onItem={(it) =>
+                  parts.append({
+                    itemId: it.id,
+                    qty: 1,
+                    rate: it.valuationRate,
+                  })
+                }
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => parts.append({ ...emptyJobCardPart })}
+              >
+                <Plus className="size-4" />
+                Add part
+              </Button>
+            </div>
           </div>
           <Card>
             <CardContent className="overflow-x-auto p-0">

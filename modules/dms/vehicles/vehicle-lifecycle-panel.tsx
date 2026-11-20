@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarcodeScan } from "@/components/barcode-scan";
 import { useCanWrite } from "@/components/session-context";
 import { cn } from "@/lib/utils";
 import { fmtDateTime } from "@/lib/format";
@@ -220,7 +221,18 @@ export function VehicleLifecyclePanel({ vehicleId }: { vehicleId: string }) {
               )}
             </ul>
             {canWrite && stage !== "DELIVERED" && (
-              <div className="flex flex-wrap items-end gap-2 border-t p-3">
+              <div className="space-y-2 border-t p-3">
+                <BarcodeScan
+                  placeholder="Scan accessory barcode…"
+                  onItem={(it) =>
+                    addAcc.mutate({
+                      itemId: it.id,
+                      qty: 1,
+                      rate: it.valuationRate,
+                    })
+                  }
+                />
+                <div className="flex flex-wrap items-end gap-2">
                 <div className="min-w-[160px] flex-1">
                   <Label className="text-xs">Accessory</Label>
                   <Select
@@ -283,6 +295,7 @@ export function VehicleLifecyclePanel({ vehicleId }: { vehicleId: string }) {
                   <Plus className="size-4" />
                   Add
                 </Button>
+                </div>
               </div>
             )}
           </div>

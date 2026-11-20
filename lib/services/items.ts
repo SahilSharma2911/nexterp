@@ -181,6 +181,7 @@ export async function listItems(
           { itemName: { contains: p.search, mode: "insensitive" } },
           { itemGroup: { contains: p.search, mode: "insensitive" } },
           { brand: { contains: p.search, mode: "insensitive" } },
+          { barcode: { contains: p.search, mode: "insensitive" } },
         ],
       }
     : {};
@@ -209,6 +210,7 @@ export async function itemOptions() {
       itemName: true,
       stockUom: true,
       valuationRate: true,
+      barcode: true,
     },
   });
   return rows.map((r) => ({
@@ -217,7 +219,38 @@ export async function itemOptions() {
     itemName: r.itemName,
     stockUom: r.stockUom,
     valuationRate: Number(r.valuationRate),
+    barcode: r.barcode,
   }));
+}
+
+// Barcode (or item-code) lookup — powers the scan-to-add flows across the app.
+export async function itemByBarcode(code: string) {
+  const c = code.trim();
+  if (!c) return null;
+  const r = await prisma.item.findFirst({
+    where: {
+      disabled: false,
+      OR: [{ barcode: c }, { itemCode: { equals: c, mode: "insensitive" } }],
+    },
+    select: {
+      id: true,
+      itemCode: true,
+      itemName: true,
+      stockUom: true,
+      valuationRate: true,
+      barcode: true,
+    },
+  });
+  return r
+    ? {
+        id: r.id,
+        itemCode: r.itemCode,
+        itemName: r.itemName,
+        stockUom: r.stockUom,
+        valuationRate: Number(r.valuationRate),
+        barcode: r.barcode,
+      }
+    : null;
 }
 
 export async function getItemById(id: string): Promise<Item | null> {
