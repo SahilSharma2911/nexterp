@@ -268,16 +268,8 @@ export function SidebarNav({
                 </div>
               </div>
             ))
-          : // Expanded mode — collapsible dropdown sections.
+          : // Expanded mode — every section is a collapsible dropdown.
             groups.map((group) => {
-              // Single-item groups (Overview, Settings) are direct links.
-              if (group.items.length === 1) {
-                return (
-                  <div key={group.heading} className="mb-1">
-                    <NavLink item={group.items[0]} />
-                  </div>
-                );
-              }
               const containsActive = group.items.some((i) =>
                 isActive(pathname, i.href),
               );
