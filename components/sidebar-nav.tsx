@@ -7,7 +7,6 @@ import {
   ArrowLeftRight,
   BookOpen,
   BookOpenCheck,
-  Boxes,
   Calculator,
   ChevronDown,
   ClipboardCheck,
@@ -216,7 +215,7 @@ export function SidebarNav({
         )}
       >
         <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Boxes className="size-4" />
+          <Car className="size-4" />
         </span>
         {!collapsed && (
           <span className="text-[15px] font-semibold tracking-tight">

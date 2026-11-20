@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Boxes } from "lucide-react";
+import { Car } from "lucide-react";
 import { api } from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +46,7 @@ function LoginForm() {
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-2 text-center">
           <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Boxes className="size-5" />
+            <Car className="size-5" />
           </span>
           <div>
             <h1 className="text-lg font-semibold tracking-tight">Seeka Motor</h1>
