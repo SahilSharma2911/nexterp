@@ -23,6 +23,7 @@ import { PageHeader } from "@/components/page-header";
 import { useCanWrite } from "@/components/session-context";
 import { fmtMoney } from "@/lib/format";
 import { ItemBatches } from "@/features/batches/item-batches";
+import { ItemSerials } from "@/features/serials/item-serials";
 import { useDeleteItem, useGenerateVariants, useItem } from "./queries";
 
 function Meta({ label, value }: { label: string; value: React.ReactNode }) {
@@ -212,6 +213,7 @@ export function ItemDetail({ itemId }: { itemId: string }) {
       )}
 
       {it.hasBatchNo && <ItemBatches itemId={it.id} />}
+      {it.hasSerialNo && <ItemSerials itemId={it.id} />}
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>

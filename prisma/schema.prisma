@@ -76,6 +76,7 @@ model Item {
   updatedAt DateTime @updatedAt
 
   batches         Batch[]
+  serials         SerialNo[]
   ledgerEntries   StockLedgerEntry[]
   bins            Bin[]
   stockEntryItems StockEntryDetail[]
@@ -122,6 +123,34 @@ model Batch {
   @@unique([itemId, batchNo])
   @@index([itemId])
   @@index([expiryDate])
+}
+
+enum SerialStatus {
+  IN_STOCK
+  DELIVERED
+  SCRAPPED
+}
+
+// Stock · serial-number tracking. One record per individual unit of a
+// serialised item (Item.hasSerialNo) — each with its own identity + barcode,
+// tracked through a simple in-stock → delivered / scrapped lifecycle.
+model SerialNo {
+  id          String       @id @default(uuid()) @db.Uuid
+  serialNo    String
+  itemId      String       @db.Uuid
+  warehouseId String?      @db.Uuid
+  barcode     String?
+  status      SerialStatus @default(IN_STOCK)
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  item      Item       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  warehouse Warehouse? @relation(fields: [warehouseId], references: [id])
+
+  @@unique([itemId, serialNo])
+  @@index([itemId])
+  @@index([status])
 }
 
 // Generic key/value spec for an item (e.g. Material: Steel, Weight: 2 kg).
@@ -171,6 +200,7 @@ model Warehouse {
 
   ledgerEntries    StockLedgerEntry[]
   batches          Batch[]
+  serials          SerialNo[]
   bins             Bin[]
   stockEntriesFrom StockEntry[]              @relation("SEFrom")
   stockEntriesTo   StockEntry[]              @relation("SETo")
