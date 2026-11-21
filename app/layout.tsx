@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Providers } from "@/components/providers";
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-manrope",
   display: "swap",
 });
 
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 // Set the saved accent before paint to avoid a flash of the wrong colour.
-const accentScript = `try{var a=localStorage.getItem('accent')||'clay';if(a&&a!=='neutral')document.documentElement.setAttribute('data-accent',a);}catch(e){}`;
+const accentScript = `try{var a=localStorage.getItem('accent')||'blue';if(a&&a!=='neutral')document.documentElement.setAttribute('data-accent',a);}catch(e){}`;
 
 export default function RootLayout({
   children,
@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full antialiased", inter.variable, "font-sans")}
+      className={cn("h-full antialiased", manrope.variable, "font-sans")}
       suppressHydrationWarning
     >
       <head>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ItemThumb } from "@/components/item-art";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -590,14 +591,17 @@ function PartsTab({ j, className }: { j: JobCard; className?: string }) {
               {j.parts.map((p) => (
                 <tr key={p.id} className="border-b last:border-0">
                   <td className="p-3">
-                    <Link
-                      href={`/stock/items/${p.itemId}`}
-                      className="font-mono text-xs text-primary hover:underline"
-                    >
-                      {p.itemCode}
-                    </Link>
-                    <span className="ml-2 text-muted-foreground">
-                      {p.itemName}
+                    <span className="flex items-center gap-2.5">
+                      <ItemThumb name={p.itemName} className="size-8" />
+                      <span>
+                        <span className="block font-medium">{p.itemName}</span>
+                        <Link
+                          href={`/stock/items/${p.itemId}`}
+                          className="font-mono text-[11px] text-primary hover:underline"
+                        >
+                          {p.itemCode}
+                        </Link>
+                      </span>
                     </span>
                   </td>
                   <td className="p-3 text-right tabular-nums">{fmtQty(p.qty)}</td>

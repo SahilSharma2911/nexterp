@@ -112,6 +112,7 @@ export type ItemListItem = {
   disabled: boolean;
   hasVariants: boolean;
   isVariant: boolean;
+  imageUrl: string | null;
 };
 
 // Lightweight option for item pickers in documents.

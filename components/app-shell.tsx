@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { BookOpen, Menu, PanelLeft, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,6 +10,7 @@ import type { SessionUser } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { QuickSearch } from "@/components/quick-search";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AccentPicker } from "@/components/accent-picker";
 import { UserMenu } from "@/components/user-menu";
@@ -48,7 +50,7 @@ export function AppShell({
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-30 hidden border-r bg-sidebar text-sidebar-foreground transition-[width] duration-200 lg:block",
+          "fixed inset-y-0 left-0 z-30 hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 lg:block",
           collapsed ? "w-16" : "w-64",
         )}
       >
@@ -88,7 +90,7 @@ export function AppShell({
         )}
       >
         {/* Header */}
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:px-6">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-card/85 px-4 backdrop-blur supports-[backdrop-filter]:bg-card/70 lg:px-6">
           {/* Collapse toggle (desktop) */}
           <Button
             variant="ghost"
@@ -109,11 +111,16 @@ export function AppShell({
             <Menu className="size-4" />
             <span className="sr-only">Open menu</span>
           </Button>
-          <span className="text-sm font-semibold tracking-tight lg:hidden">
-            Seeka Motor
-          </span>
+          <Image
+            src="/brand/seeka-logo.png"
+            alt="Seeka Motors"
+            width={600}
+            height={307}
+            className="h-9 w-auto lg:hidden"
+            priority
+          />
 
-          <Breadcrumbs className="hidden lg:flex" />
+          <QuickSearch role={user.role} className="hidden md:block" />
 
           <div className="ml-auto flex items-center gap-1">
             <Button asChild variant="ghost" size="sm" className="hidden gap-1.5 sm:flex">
@@ -128,7 +135,8 @@ export function AppShell({
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">
+        <main className="mx-auto max-w-7xl px-4 py-5 lg:px-8 lg:py-6">
+          <Breadcrumbs className="mb-4 hidden lg:flex" />
           <SessionProvider user={user}>{children}</SessionProvider>
         </main>
       </div>

@@ -85,6 +85,7 @@ function toListItem(r: Prisma.ItemGetPayload<object>): ItemListItem {
     disabled: r.disabled,
     hasVariants: r.hasVariants,
     isVariant: r.variantOfId != null,
+    imageUrl: r.imageUrl,
   };
 }
 

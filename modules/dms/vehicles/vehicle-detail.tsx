@@ -3,12 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { VehicleArt } from "@/components/vehicle-art";
 import { useRouter } from "next/navigation";
 import {
   BatteryCharging,
   Building2,
   Calendar,
-  Car,
   Cpu,
   Gauge,
   ListChecks,
@@ -157,7 +157,7 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
       {/* Compact header: image + identity + inline metrics */}
       <Card>
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-lg border bg-muted sm:h-20 sm:w-32">
+          <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-lg border bg-gradient-to-b from-blue-50/70 to-slate-100 sm:h-20 sm:w-32 dark:from-slate-800 dark:to-slate-900">
             {v.imageUrl ? (
               <Image
                 src={v.imageUrl}
@@ -168,8 +168,8 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
                 unoptimized
               />
             ) : (
-              <span className="flex h-full items-center justify-center text-muted-foreground">
-                <Car className="size-7" />
+              <span className="flex h-full items-center justify-center px-2">
+                <VehicleArt model={v.model} color={v.color} className="max-h-full" />
               </span>
             )}
           </div>

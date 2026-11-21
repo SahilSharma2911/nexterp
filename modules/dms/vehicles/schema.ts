@@ -22,6 +22,17 @@ export const VEHICLE_STATUS_LABELS: Record<VehicleStatus, string> = {
   IN_SERVICE: "In Service",
 };
 
+// One colour per lifecycle stage, shared by every vehicle chart.
+export const VEHICLE_STATUS_COLORS: Record<VehicleStatus, string> = {
+  IN_STOCK: "#10b981",
+  ALLOCATED: "#f59e0b",
+  IN_TRANSIT: "#f97316",
+  AT_DEALER: "#8b5cf6",
+  PDI_DONE: "#06b6d4",
+  DELIVERED: "#2563eb",
+  IN_SERVICE: "#ec4899",
+};
+
 export const vehicleSpecSchema = z.object({
   label: z.string().trim(),
   value: z.string().trim(),

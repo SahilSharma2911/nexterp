@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarcodeScan } from "@/components/barcode-scan";
+import { ItemThumb } from "@/components/item-art";
 import { useCanWrite } from "@/components/session-context";
 import { cn } from "@/lib/utils";
 import { fmtDateTime } from "@/lib/format";
@@ -192,9 +193,12 @@ export function VehicleLifecyclePanel({ vehicleId }: { vehicleId: string }) {
                   key={a.id}
                   className="flex items-center justify-between gap-2 px-3 py-2"
                 >
-                  <span>
-                    <span className="font-mono text-xs">{a.itemCode}</span>{" "}
-                    <span className="text-muted-foreground">{a.itemName}</span>
+                  <span className="flex items-center gap-2.5">
+                    <ItemThumb name={a.itemName} className="size-8" />
+                    <span>
+                      <span className="block font-medium">{a.itemName}</span>
+                      <span className="font-mono text-[11px] text-muted-foreground">{a.itemCode}</span>
+                    </span>
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="tabular-nums text-muted-foreground">
