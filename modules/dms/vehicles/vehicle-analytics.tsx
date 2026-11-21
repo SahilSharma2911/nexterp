@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import { VehicleThumb } from "@/components/vehicle-art";
 import {
   Car,
   PackageCheck,
@@ -13,11 +13,19 @@ import {
 import { StatCards, type StatItem } from "@/components/analytics/stat-cards";
 import { CategoryBarChart } from "@/components/analytics/category-bar-chart";
 import { TrendChart } from "@/components/analytics/trend-chart";
+import { RadialGauge } from "@/components/analytics/radial-gauge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
 import { StatusBadge } from "./columns";
-import type { VehicleActivity } from "./schema";
+import {
+  VEHICLE_STATUSES,
+  VEHICLE_STATUS_COLORS,
+  type VehicleActivity,
+} from "./schema";
+
+// byStage arrives in VEHICLE_STATUSES order.
+const STAGE_COLORS = VEHICLE_STATUSES.map((s) => VEHICLE_STATUS_COLORS[s]);
 import { useVehicleAnalytics } from "./queries";
 import { FifoAgingCard } from "./fifo-aging-card";
 
@@ -65,20 +73,21 @@ export function VehicleAnalytics() {
         <CategoryBarChart
           title="Units by lifecycle stage"
           data={data?.byStage ?? []}
+          colors={STAGE_COLORS}
           emptyMessage="No vehicles yet."
         />
-        <Card className="h-full">
-          <CardHeader>
-            <CardTitle className="text-sm">Fleet battery health</CardTitle>
+        <Card className="h-full gap-3">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-sm font-bold">
+              <BatteryCharging className="size-4 text-emerald-500" />
+              Fleet battery health
+            </CardTitle>
           </CardHeader>
-          <CardContent className="flex h-[200px] flex-col items-center justify-center gap-1">
-            <BatteryCharging className="size-7 text-primary" />
-            <p className="text-4xl font-semibold tabular-nums">
-              {data?.avgSoH != null ? `${data.avgSoH.toFixed(1)}%` : "—"}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              average battery State of Health
-            </p>
+          <CardContent className="flex min-h-[200px] flex-1 items-center justify-center">
+            <RadialGauge
+              value={data?.avgSoH ?? null}
+              caption="average battery State of Health"
+            />
           </CardContent>
         </Card>
       </div>
@@ -123,20 +132,7 @@ function RecentActivity({
                 key={e.id}
                 className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm"
               >
-                <span className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
-                  {e.imageUrl ? (
-                    <Image
-                      src={e.imageUrl}
-                      alt={e.model}
-                      fill
-                      sizes="36px"
-                      className="object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <Car className="size-4 text-muted-foreground" />
-                  )}
-                </span>
+                <VehicleThumb imageUrl={e.imageUrl} model={e.model} className="size-9" />
                 <StatusBadge status={e.stage} />
                 <Link
                   href={`/dms/vehicles/${e.vehicleId}`}

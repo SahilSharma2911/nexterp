@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Car } from "lucide-react";
+import Image from "next/image";
 import { api } from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,12 +45,17 @@ function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-2 text-center">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Car className="size-5" />
-          </span>
+          <Image
+            src="/brand/seeka-logo.png"
+            alt="Seeka Motors"
+            width={600}
+            height={307}
+            priority
+            className="h-24 w-auto drop-shadow-sm"
+          />
           <div>
-            <h1 className="text-lg font-semibold tracking-tight">Seeka Motor</h1>
-            <p className="text-sm text-muted-foreground">Sign in to continue</p>
+            <h1 className="sr-only">Seeka Motor</h1>
+            <p className="text-sm text-muted-foreground">Sign in to your dealer network</p>
           </div>
         </div>
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   ArrowLeftRight,
@@ -76,7 +77,7 @@ const HEADING_MODULE: Record<string, ModuleId | null> = {
   Settings: null,
 };
 
-type NavItem = { href: string; label: string; icon: React.ElementType };
+export type NavItem = { href: string; label: string; icon: React.ElementType };
 type NavGroup = { heading: string; items: NavItem[] };
 
 const NAV: NavGroup[] = [
@@ -164,6 +165,18 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
+// Nav groups this role is allowed to see (also feeds the header quick search).
+export function visibleNavGroups(role: Role): NavGroup[] {
+  return NAV.filter((g) => {
+    if (HIDDEN_HEADINGS.has(g.heading)) return false;
+    const mod = HEADING_MODULE[g.heading];
+    if (mod && !isModuleEnabled(mod)) return false;
+    if (g.heading === "Settings") return isAdmin(role);
+    const area = HEADING_AREA[g.heading];
+    return area === null || canSeeNav(role, area);
+  });
+}
+
 export function SidebarNav({
   role,
   collapsed = false,
@@ -176,14 +189,7 @@ export function SidebarNav({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-  const groups = NAV.filter((g) => {
-    if (HIDDEN_HEADINGS.has(g.heading)) return false;
-    const mod = HEADING_MODULE[g.heading];
-    if (mod && !isModuleEnabled(mod)) return false;
-    if (g.heading === "Settings") return isAdmin(role);
-    const area = HEADING_AREA[g.heading];
-    return area === null || canSeeNav(role, area);
-  });
+  const groups = visibleNavGroups(role);
 
   // Explicit open/closed overrides per section (expanded mode). A section with
   // no override defaults to open when it contains the active route.
@@ -198,13 +204,13 @@ export function SidebarNav({
         onClick={onNavigate}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
+          "relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13.5px] transition-colors",
           active
-            ? "bg-primary/10 font-medium text-primary"
-            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            ? "bg-primary/[0.08] font-semibold text-primary before:absolute before:top-1.5 before:bottom-1.5 before:-left-3 before:w-[3px] before:rounded-r-full before:bg-primary"
+            : "font-medium text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground",
         )}
       >
-        <Icon className="size-4 shrink-0" />
+        <Icon className={cn("size-[18px] shrink-0", active ? "text-primary" : "text-muted-foreground")} />
         {item.label}
       </Link>
     );
@@ -216,23 +222,41 @@ export function SidebarNav({
         href="/"
         onClick={onNavigate}
         className={cn(
-          "flex h-14 items-center border-b border-sidebar-border",
-          collapsed ? "justify-center px-0" : "gap-2 px-5",
+          "flex h-16 items-center",
+          collapsed ? "justify-center px-0" : "gap-2.5 px-5",
         )}
       >
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Car className="size-4" />
-        </span>
-        {!collapsed && (
-          <span className="text-[15px] font-semibold tracking-tight">
-            Seeka Motor
-          </span>
+        {collapsed ? (
+          <Image
+            src="/brand/seeka-mark.png"
+            alt="Seeka Motors"
+            width={36}
+            height={36}
+            className="size-9"
+            priority
+          />
+        ) : (
+          <>
+            <Image
+              src="/brand/seeka-logo.png"
+              alt="Seeka Motors"
+              width={600}
+              height={307}
+              className="h-11 w-auto"
+              priority
+            />
+            <span className="border-l border-sidebar-border pl-2.5 text-[10.5px] leading-tight font-semibold tracking-wide text-muted-foreground">
+              EV Dealer
+              <br />
+              Network
+            </span>
+          </>
         )}
       </Link>
 
       <nav
         className={cn(
-          "min-h-0 flex-1 overflow-y-auto py-4",
+          "min-h-0 flex-1 overflow-y-auto py-2",
           collapsed ? "px-2" : "px-3",
         )}
       >
@@ -255,9 +279,9 @@ export function SidebarNav({
                             onClick={onNavigate}
                             aria-current={active ? "page" : undefined}
                             className={cn(
-                              "flex items-center justify-center rounded-md p-2.5 text-sm transition-colors",
+                              "flex items-center justify-center rounded-lg p-2.5 text-sm transition-colors",
                               active
-                                ? "bg-primary/10 font-medium text-primary"
+                                ? "bg-primary/[0.08] font-medium text-primary"
                                 : "text-muted-foreground hover:bg-accent hover:text-foreground",
                             )}
                           >
@@ -287,7 +311,7 @@ export function SidebarNav({
                       setOpen((o) => ({ ...o, [group.heading]: !isOpen }))
                     }
                     aria-expanded={isOpen}
-                    className="flex w-full items-center justify-between rounded-md px-3 py-2 text-[11px] font-semibold tracking-wider text-muted-foreground/70 uppercase transition-colors hover:text-foreground"
+                    className="mt-2 flex w-full items-center justify-between rounded-md px-3 py-1.5 text-[10.5px] font-bold tracking-[0.12em] text-muted-foreground/60 uppercase transition-colors hover:text-foreground"
                   >
                     <span>{group.heading}</span>
                     <ChevronDown

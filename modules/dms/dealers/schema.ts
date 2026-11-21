@@ -133,4 +133,13 @@ export type DealerAnalytics = {
   topByValue: { name: string; value: number }[]; // top dealers by ₹ delivered
   deliveriesByMonth: { name: string; value: number }[];
   leaderboard: DealerLeaderRow[];
+  locations: DealerLocation[]; // active dealers, for the network map
+};
+
+export type DealerLocation = {
+  id: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+  vehicles: number;
 };

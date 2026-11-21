@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { sortableHeader } from "@/components/data-table/sortable-header";
 import { fmtMoney } from "@/lib/format";
+import { ItemThumb } from "@/components/item-art";
 import { CellAction } from "./cell-action";
 import type { ItemListItem } from "./schema";
 
@@ -25,8 +26,14 @@ export const columns: ColumnDef<ItemListItem>[] = [
     accessorKey: "itemName",
     header: sortableHeader<ItemListItem>("itemName", "Name"),
     cell: ({ row }) => (
-      <span className="flex items-center gap-2">
-        {row.original.itemName}
+      <span className="flex items-center gap-2.5">
+        <ItemThumb
+          imageUrl={row.original.imageUrl}
+          name={row.original.itemName}
+          group={row.original.itemGroup}
+          className="size-9"
+        />
+        <span className="font-medium">{row.original.itemName}</span>
         {row.original.hasVariants && (
           <Badge variant="outline" className="text-[10px]">
             Template

@@ -3,10 +3,7 @@
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
   Line,
   LineChart,
   XAxis,
@@ -21,7 +18,7 @@ import {
   ChartLegendContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { CHART_PALETTE } from "@/components/analytics/category-bar-chart";
+import { CategoryBarChart } from "@/components/analytics/category-bar-chart";
 import { fmtMoney } from "@/lib/format";
 import type { CashPoint, MonthlyPoint, WarehouseValue } from "./schema";
 
@@ -42,10 +39,6 @@ const cashConfig = {
   balance: { label: "Cash + Bank", color: "#6366f1" }, // indigo
 } satisfies ChartConfig;
 
-const warehouseConfig = {
-  value: { label: "Stock Value", color: "#06b6d4" }, // cyan
-} satisfies ChartConfig;
-
 export function DashboardCharts({
   trend,
   cashTrend,
@@ -59,7 +52,7 @@ export function DashboardCharts({
     <div className="mt-6 grid gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">
+          <CardTitle className="text-sm font-bold">
             Sales vs Purchases · last 6 months
           </CardTitle>
         </CardHeader>
@@ -92,7 +85,7 @@ export function DashboardCharts({
                   />
                 </linearGradient>
               </defs>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <CartesianGrid vertical={false} strokeDasharray="4 4" strokeOpacity={0.6} />
               <XAxis
                 dataKey="month"
                 tickLine={false}
@@ -128,14 +121,18 @@ export function DashboardCharts({
                 type="monotone"
                 stroke="var(--color-sales)"
                 fill="url(#fillSales)"
-                strokeWidth={2}
+                strokeWidth={2.5}
+                dot={{ r: 3, fill: "var(--card)", strokeWidth: 2 }}
+                activeDot={{ r: 5 }}
               />
               <Area
                 dataKey="purchases"
                 type="monotone"
                 stroke="var(--color-purchases)"
                 fill="url(#fillPurchases)"
-                strokeWidth={2}
+                strokeWidth={2.5}
+                dot={{ r: 3, fill: "var(--card)", strokeWidth: 2 }}
+                activeDot={{ r: 5 }}
               />
               <ChartLegend content={<ChartLegendContent />} />
             </AreaChart>
@@ -145,12 +142,12 @@ export function DashboardCharts({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Cash + Bank balance · last 6 months</CardTitle>
+          <CardTitle className="text-sm font-bold">Cash + Bank balance · last 6 months</CardTitle>
         </CardHeader>
         <CardContent>
           <ChartContainer config={cashConfig} className="h-[260px] w-full">
             <LineChart data={cashTrend} margin={{ left: 4, right: 8, top: 8 }}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <CartesianGrid vertical={false} strokeDasharray="4 4" strokeOpacity={0.6} />
               <XAxis
                 dataKey="month"
                 tickLine={false}
@@ -180,8 +177,8 @@ export function DashboardCharts({
                 dataKey="balance"
                 type="monotone"
                 stroke="var(--color-balance)"
-                strokeWidth={2}
-                dot={{ r: 3 }}
+                strokeWidth={2.5}
+                dot={{ r: 3, fill: "var(--card)", strokeWidth: 2 }}
                 activeDot={{ r: 5 }}
               />
             </LineChart>
@@ -189,64 +186,14 @@ export function DashboardCharts({
         </CardContent>
       </Card>
 
-      <Card className="lg:col-span-2">
-        <CardHeader>
-          <CardTitle className="text-sm">Stock value by warehouse</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {stockByWarehouse.length === 0 ? (
-            <div className="flex h-[260px] items-center justify-center text-sm text-muted-foreground">
-              No stock yet.
-            </div>
-          ) : (
-            <ChartContainer
-              config={warehouseConfig}
-              className="h-[260px] w-full"
-            >
-              <BarChart
-                data={stockByWarehouse}
-                margin={{ left: 4, right: 8, top: 8 }}
-              >
-                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="warehouse"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  fontSize={12}
-                  interval={0}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  width={48}
-                  fontSize={12}
-                  tickFormatter={(v) => compactMoney(Number(v))}
-                />
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      formatter={(value) => (
-                        <span className="font-medium tabular-nums">
-                          {fmtMoney(Number(value))}
-                        </span>
-                      )}
-                    />
-                  }
-                />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                  {stockByWarehouse.map((_, i) => (
-                    <Cell
-                      key={i}
-                      fill={CHART_PALETTE[i % CHART_PALETTE.length]}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ChartContainer>
-          )}
-        </CardContent>
-      </Card>
+      <div className="lg:col-span-2">
+        <CategoryBarChart
+          title="Stock value by warehouse"
+          data={stockByWarehouse.map((w) => ({ name: w.warehouse, value: w.value }))}
+          valueFormatter={compactMoney}
+          emptyMessage="No stock yet."
+        />
+      </div>
     </div>
   );
 }

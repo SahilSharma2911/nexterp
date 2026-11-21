@@ -11,6 +11,7 @@ const UUID =
 // "stock-entry" -> "Stock Entry", a uuid -> "Detail".
 function labelFor(segment: string) {
   if (UUID.test(segment)) return "Detail";
+  if (segment === "dms") return "Dealership";
   return segment.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 

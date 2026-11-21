@@ -225,6 +225,15 @@ export async function dealerAnalytics(): Promise<DealerAnalytics> {
     topByValue,
     deliveriesByMonth: deliveriesByMonth(deliveredRows),
     leaderboard: leaderboardSorted,
+    locations: dealers
+      .filter((d) => !d.disabled)
+      .map((d) => ({
+        id: d.id,
+        name: d.name,
+        city: d.city,
+        state: d.state,
+        vehicles: d.vehicles.length,
+      })),
   };
 }
 
