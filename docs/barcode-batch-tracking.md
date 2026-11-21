@@ -1,10 +1,11 @@
-# Barcode, Vehicle Lifecycle & Batch Tracking
+# Barcode, Vehicle Lifecycle, Batch & Serial Tracking
 
 _Seeka Motor — Service & Stock traceability_
 
-This note explains two capabilities added to the system and how they fit the
-dealership: **scanning a vehicle to move it through its lifecycle**, and
-**tracking items by batch/lot with expiry dates**. Both are built on one simple
+This note explains the traceability capabilities added to the system and how they
+fit the dealership: **scanning a vehicle to move it through its lifecycle**, and
+**tracking items by batch/lot (with expiry) or by serial number** — received,
+issued and reversed through the real stock flows. All of it is built on one simple
 idea — a barcode answers _"which exact thing is this?"_
 
 ---
@@ -111,52 +112,80 @@ individually-warrantied parts.
   supplier — and **"Receive into warehouse"**, which posts the quantity into stock
   as a real receipt attributed to that lot.
 - **Batch detail:** everything above plus a **printable barcode** for the lot.
+- **Labels:** print a sheet of batch barcode labels (Batches → Labels).
 - An item's own page shows all its batches with live on-hand and a "New batch"
   shortcut.
 
-### Batches are real stock now (not just a list)
+### Where to use serials
 
-Batch tracking is wired into actual inventory:
+**Stock → Serial Numbers** (page in the sidebar).
 
-- **Receiving a lot** (New Batch with a warehouse) posts a genuine stock receipt —
-  the units become on-hand, attributed to that batch. **On-hand is always read
-  live from the stock ledger** (received − issued), so it can never drift.
-- **Issuing via a job card** consumes batch-tracked parts **FEFO
-  (first-expiry-first-out)** — the nearest-expiry lot is drained first,
-  automatically, across multiple lots if needed.
-- **Cancelling a job** credits the exact same lots back.
-- Valuation is unaffected — it stays moving-average at the item level; batches add
-  *quantity traceability* on top.
+- **Scan a serial:** scan a barcode or serial number to pull up the exact unit.
+- **Top cards:** total units, in-stock, delivered, scrapped.
+- **Table:** every unit with its item, warehouse and status (In stock · Delivered
+  · Scrapped); filter by status.
+- **New Serial / detail:** register a unit, set its status, and print its barcode.
+- An item's own page lists its serials (when serial-tracked).
+
+### Batches & serials are real stock now (not just lists)
+
+Both are wired into actual inventory movements — valuation is untouched (still
+moving-average at the item level); batches and serials add *identity + quantity
+traceability* on top.
+
+**Batches (FEFO — first-expiry-first-out):**
+- **Receiving** a lot — via **New Batch** (with a warehouse) *or* a **Stock Entry
+  / Purchase Receipt** line (enter the batch no + expiry) — posts a real receipt
+  attributed to that lot. On-hand is read **live from the ledger**, so it can
+  never drift.
+- **Issuing** a batch-tracked item — **Job Card**, **Delivery Note**, or **Stock
+  Entry** (issue / transfer / manufacture) — consumes the **nearest-expiry lot
+  first**, automatically, across multiple lots if needed. A material transfer
+  moves each lot intact into the destination warehouse.
+- **Cancelling** credits the exact same lots back.
 - A lot that has stock movements can't be deleted (ledger integrity).
+
+**Serials (one record per physical unit):**
+- **Receiving** a serialised item on a **Stock Entry / Purchase Receipt** line —
+  paste the serial numbers (one per line). The count is validated against the
+  quantity, duplicates are rejected, and the units are registered **In stock**.
+- **Issuing** a serialised item — **Job Card**, **Delivery Note**, or **Stock
+  Entry issue** — auto-picks the **oldest in-stock units**, marks them
+  **Delivered**, and remembers the voucher.
+- **Cancelling** an issue returns those exact units to stock; cancelling a
+  receipt removes the units it created.
 
 ---
 
 ## 4. What is live now vs. next
 
 **Live now**
-- Vehicle scan-to-advance on the Vehicles page (reuses the existing lifecycle).
-- Batch registry with **real stock**: receive a lot into a warehouse, live
-  on-hand from the ledger, expiry dashboard, per-batch barcodes, scan lookup,
-  item-level batch view.
-- **FEFO issue** on job cards: batch-tracked parts are consumed earliest-expiry
-  first; job cancellation restores the exact lots.
+- Vehicle scan-to-advance on the Vehicles page.
+- **Batch tracking** as real inventory: receive via the Batches page *or* Stock
+  Entry / Purchase Receipt lines; live on-hand from the ledger; expiry dashboard;
+  per-batch barcodes + printable label sheets; scan lookup; item-level view.
+- **FEFO issue** across **every issue flow** — job cards, delivery notes, and
+  stock entries (issue / transfer / manufacture); cancels restore the exact lots.
+- **Serial tracking** as real inventory: a serial registry with scan lookup;
+  capture-on-receipt (paste list, validated) on Stock Entry / Purchase Receipt;
+  auto-consume-on-issue (oldest first → Delivered) on job cards, delivery notes
+  and stock entries; cancels restore.
 
 **Sensible next steps (not yet done)**
-- Extend batch attribution + FEFO to the **generic stock flows** (Stock Entry,
-  Delivery Note, Purchase Receipt) so every warehouse movement is lot-aware, not
-  just job cards.
-- A **serial-number registry** for serialised items (one record per physical
-  unit), with capture on receipt and consumption on issue.
-- **Barcode label sheets** — printable label pages for batch, item and VIN codes.
+- **Serial movement on transfers / manufacture** — serials aren't yet moved
+  between warehouses on a stock transfer, nor consumed as manufacture inputs
+  (batches already are).
+- **Item & VIN label sheets** — printable label pages beyond batches.
+- **Work Orders** aren't yet batch/serial-aware.
 
-These are deliberate follow-ups: today's build makes batches real inventory for
-the service (job-card) flow without disturbing the rest of the working stock
-ledger. The same FEFO engine is reused as each flow is brought in.
+The same FEFO / serial engines (`lib/batch-stock.ts`, `lib/serial-stock.ts`) are
+reused everywhere, so bringing in a remaining flow is a small, consistent change.
 
 ---
 
 ## 5. One-line summary for the team
 
-> **Scan a car → it advances its lifecycle. Scan or look up a batch → you know the
-> lot and its expiry.** Same idea, different level of "how exact" — product, lot,
-> unit, or vehicle.
+> **Scan a car → it advances its lifecycle. Scan a batch or serial → you know the
+> exact lot (and its expiry) or the exact unit.** Receiving records them, issuing
+> consumes them FEFO/oldest-first, and cancelling puts them back — same idea at
+> every level: product, lot, unit, or vehicle.
