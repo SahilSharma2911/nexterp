@@ -59,8 +59,8 @@ const HEADING_AREA: Record<string, Area | null> = {
   Overview: null,
   Stock: "stock",
   Manufacturing: "manufacturing",
-  // Trade spans buying + selling — gated per item, so leave the group open.
-  Trade: null,
+  // Stock Trade spans buying + selling — gated per item, so leave it open.
+  "Stock Trade": null,
   Accounts: "accounts",
   Dealership: "dms",
 };
@@ -70,7 +70,7 @@ const HEADING_MODULE: Record<string, ModuleId | null> = {
   Overview: null,
   Stock: "erp",
   Manufacturing: "erp",
-  Trade: "erp",
+  "Stock Trade": "erp",
   Accounts: "erp",
   Dealership: "dms",
   Settings: null,
@@ -111,7 +111,7 @@ const NAV: NavGroup[] = [
     ],
   },
   {
-    heading: "Trade",
+    heading: "Stock Trade",
     items: [
       { href: "/buying/suppliers", label: "Suppliers", icon: Truck, area: "buying" },
       { href: "/buying/purchase-order", label: "Purchase Order", icon: ShoppingCart, area: "buying" },
