@@ -12,7 +12,6 @@ import { SidebarNav } from "@/components/sidebar-nav";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { QuickSearch } from "@/components/quick-search";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { AccentPicker } from "@/components/accent-picker";
 import { UserMenu } from "@/components/user-menu";
 import { SessionProvider } from "@/components/session-context";
 
@@ -129,7 +128,6 @@ export function AppShell({
                 Docs
               </Link>
             </Button>
-            <AccentPicker />
             <ThemeToggle />
             <UserMenu name={user.name} role={user.role} />
           </div>

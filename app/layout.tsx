@@ -15,8 +15,8 @@ export const metadata: Metadata = {
   description: "A generic ERP (ERPNext-modeled) on Next.js",
 };
 
-// Set the saved accent before paint to avoid a flash of the wrong colour.
-const accentScript = `try{var a=localStorage.getItem('accent')||'blue';if(a)document.documentElement.setAttribute('data-accent',a);}catch(e){}`;
+// Single brand theme: lock the accent to blue (picker is hidden).
+const accentScript = `try{document.documentElement.setAttribute('data-accent','blue');}catch(e){}`;
 
 export default function RootLayout({
   children,
