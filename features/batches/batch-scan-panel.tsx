@@ -13,6 +13,23 @@ import { fetchBatchByBarcode } from "./api";
 import { ExpiryBadge, fmtDate } from "./columns";
 import type { Batch } from "./schema";
 
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+        {label}
+      </p>
+      <p className="mt-0.5 truncate font-medium">{children}</p>
+    </div>
+  );
+}
+
 // Scan a batch barcode (or lot number) to pull up the exact lot and its expiry.
 export function BatchScanPanel() {
   const [code, setCode] = useState("");
@@ -87,30 +104,35 @@ export function BatchScanPanel() {
         )}
 
         {batch && (
-          <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-muted/30 p-3">
-            <Boxes className="size-5 text-muted-foreground" />
-            <div className="min-w-0">
+          <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Boxes className="size-5 text-muted-foreground" />
               <Link
                 href={`/stock/batches/${batch.id}`}
-                className="font-mono text-sm font-medium text-primary hover:underline"
+                className="font-mono text-base font-semibold text-primary hover:underline"
               >
                 {batch.batchNo}
               </Link>
-              <p className="text-xs text-muted-foreground">
-                <span className="font-mono">{batch.itemCode}</span>{" "}
-                {batch.itemName} · {fmtQty(batch.onHand)} on hand
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>Exp {fmtDate(batch.expiryDate)}</span>
               <ExpiryBadge status={batch.expiry} days={batch.daysToExpiry} />
+              <Button asChild size="sm" className="ml-auto">
+                <Link href={`/stock/batches/${batch.id}`}>
+                  Open batch
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
             </div>
-            <Button asChild size="sm" className="ml-auto">
-              <Link href={`/stock/batches/${batch.id}`}>
-                Open batch
-                <ArrowRight className="size-4" />
-              </Link>
-            </Button>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
+              <Field label="Item">
+                <span className="font-mono text-xs">{batch.itemCode}</span>{" "}
+                {batch.itemName}
+              </Field>
+              <Field label="On hand">{fmtQty(batch.onHand)}</Field>
+              <Field label="Received">{fmtQty(batch.qty)}</Field>
+              <Field label="Warehouse">{batch.warehouseName ?? "—"}</Field>
+              <Field label="Expiry">{fmtDate(batch.expiryDate)}</Field>
+              <Field label="Manufactured">{fmtDate(batch.mfgDate)}</Field>
+              <Field label="Supplier">{batch.supplier ?? "—"}</Field>
+            </div>
           </div>
         )}
       </CardContent>
