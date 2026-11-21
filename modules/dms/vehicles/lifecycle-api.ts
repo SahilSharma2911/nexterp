@@ -5,10 +5,18 @@ import type {
   PdiValues,
   VehicleAccessoryValues,
   VehicleLifecycle,
+  VehicleScanResult,
 } from "./lifecycle-schema";
 
 export async function fetchLifecycle(id: string) {
   const { data } = await api.get<VehicleLifecycle>(`/vehicles/${id}/timeline`);
+  return data;
+}
+
+export async function fetchVehicleByVin(code: string) {
+  const { data } = await api.get<VehicleScanResult | null>("/vehicles/by-vin", {
+    params: { code },
+  });
   return data;
 }
 

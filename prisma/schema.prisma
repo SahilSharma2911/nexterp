@@ -75,6 +75,7 @@ model Item {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  batches         Batch[]
   ledgerEntries   StockLedgerEntry[]
   bins            Bin[]
   stockEntryItems StockEntryDetail[]
@@ -94,6 +95,30 @@ model Item {
   @@index([itemGroup])
   @@index([disabled])
   @@index([variantOfId])
+}
+
+// Stock · batch/lot tracking. A Batch is a GROUP of identical units of an item
+// that were produced/received together — sharing one lot number, one expiry
+// and one scannable barcode. Enabled per item via Item.hasBatchNo. (Serialised
+// items — Item.hasSerialNo — instead get one identity per individual unit.)
+model Batch {
+  id         String    @id @default(uuid()) @db.Uuid
+  batchNo    String // lot number, e.g. B-2026-07
+  itemId     String    @db.Uuid
+  barcode    String? // scannable code for the whole lot
+  mfgDate    DateTime?
+  expiryDate DateTime? // shelf-life cutoff (the point of batch tracking)
+  qty        Float     @default(0) // units received into this batch
+  supplier   String?
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, batchNo])
+  @@index([itemId])
+  @@index([expiryDate])
 }
 
 // Generic key/value spec for an item (e.g. Material: Steel, Weight: 2 kg).

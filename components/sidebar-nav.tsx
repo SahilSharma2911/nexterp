@@ -7,6 +7,7 @@ import {
   ArrowLeftRight,
   BookOpen,
   BookOpenCheck,
+  Boxes,
   Calculator,
   ChevronDown,
   ClipboardCheck,
@@ -86,6 +87,7 @@ const NAV: NavGroup[] = [
     heading: "Stock",
     items: [
       { href: "/stock/items", label: "Items", icon: Package },
+      { href: "/stock/batches", label: "Batches", icon: Boxes },
       { href: "/stock/warehouses", label: "Warehouses", icon: Warehouse },
       { href: "/stock/stock-entry", label: "Stock Entry", icon: ArrowLeftRight },
       { href: "/stock/reconciliation", label: "Reconciliation", icon: ClipboardCheck },

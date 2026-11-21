@@ -9,7 +9,38 @@ import type {
   DeliverValues,
   PdiValues,
   VehicleLifecycle,
+  VehicleScanResult,
 } from "@/modules/dms/vehicles/lifecycle-schema";
+
+// Resolve a scanned VIN (or barcode) to a vehicle summary for the scan station.
+export async function vehicleByVin(
+  code: string,
+): Promise<VehicleScanResult | null> {
+  const c = code.trim();
+  if (!c) return null;
+  const v = await prisma.vehicle.findFirst({
+    where: { vin: { equals: c, mode: "insensitive" } },
+    select: {
+      id: true,
+      vin: true,
+      model: true,
+      variant: true,
+      status: true,
+      imageUrl: true,
+      dealer: { select: { name: true } },
+    },
+  });
+  if (!v) return null;
+  return {
+    id: v.id,
+    vin: v.vin,
+    model: v.model,
+    variant: v.variant,
+    status: v.status,
+    dealerName: v.dealer?.name ?? null,
+    imageUrl: v.imageUrl,
+  };
+}
 
 async function requireStage(id: string, stage: VehicleStatus, action: string) {
   const v = await prisma.vehicle.findUnique({

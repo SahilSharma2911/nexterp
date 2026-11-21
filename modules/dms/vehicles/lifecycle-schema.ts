@@ -1,6 +1,17 @@
 import { z } from "zod";
 import type { VehicleStatus } from "./schema";
 
+// Minimal vehicle summary returned by a VIN/barcode scan at a workflow station.
+export type VehicleScanResult = {
+  id: string;
+  vin: string;
+  model: string;
+  variant: string | null;
+  status: VehicleStatus;
+  dealerName: string | null;
+  imageUrl: string | null;
+};
+
 // Forward lifecycle order. Each stage knows the single action that advances it.
 export const LIFECYCLE_ORDER: VehicleStatus[] = [
   "IN_STOCK",
