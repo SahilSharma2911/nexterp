@@ -277,11 +277,12 @@ export async function assignJobCard(
   if (job.status !== "OPEN" && job.status !== "ESTIMATE")
     throw new Error("Only estimates and open job cards can be reassigned");
 
-  if (job.isHV && input.bayId) {
+  if (input.bayId) {
     const bay = await prisma.serviceBay.findUnique({
       where: { id: input.bayId },
     });
-    if (bay && !bay.isHV)
+    if (!bay) throw new Error("Selected service bay no longer exists");
+    if (job.isHV && !bay.isHV)
       throw new Error(
         `Bay "${bay.name}" is not equipped for high-voltage work — pick an HV bay.`,
       );
@@ -292,11 +293,12 @@ export async function assignJobCard(
       where: { id: input.technicianId },
       select: { name: true, isHVCertified: true },
     });
-    if (job.isHV && tech && !tech.isHVCertified)
+    if (!tech) throw new Error("Selected technician no longer exists");
+    if (job.isHV && !tech.isHVCertified)
       throw new Error(
         `Technician "${tech.name}" is not HV-certified — assign a certified technician.`,
       );
-    technicianName = tech?.name ?? null;
+    technicianName = tech.name;
   }
 
   await prisma.jobCard.update({

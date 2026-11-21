@@ -260,6 +260,18 @@ export async function assignServiceAppointment(
   if (!appt) throw new Error("Appointment not found");
   if (appt.status !== "BOOKED")
     throw new Error("Only booked appointments can be reassigned");
+  if (input.bayId) {
+    const bay = await prisma.serviceBay.findUnique({
+      where: { id: input.bayId },
+    });
+    if (!bay) throw new Error("Selected service bay no longer exists");
+  }
+  if (input.technicianId) {
+    const tech = await prisma.technician.findUnique({
+      where: { id: input.technicianId },
+    });
+    if (!tech) throw new Error("Selected technician no longer exists");
+  }
   await prisma.$transaction(async (tx) => {
     await assertHvAssignment(tx, {
       isHV: appt.isHV,
