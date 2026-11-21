@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ScanLine, Hash, ArrowRight } from "lucide-react";
+import { ScanLine, Hash, ArrowRight, Camera } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { BarcodeCameraScanner } from "@/components/barcode-scanner";
 import { fetchSerialByBarcode } from "./api";
 import { SerialStatusBadge } from "./columns";
 import type { Serial } from "./schema";
@@ -15,10 +16,11 @@ import type { Serial } from "./schema";
 export function SerialScanPanel() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const [serial, setSerial] = useState<Serial | null>(null);
 
-  async function lookup() {
-    const c = code.trim();
+  async function lookup(raw?: string) {
+    const c = (raw ?? code).trim();
     if (!c || busy) return;
     setBusy(true);
     try {
@@ -58,10 +60,30 @@ export function SerialScanPanel() {
             placeholder="Scan a serial barcode or number…"
             className="max-w-sm font-mono"
           />
-          <Button variant="outline" onClick={lookup} disabled={busy}>
+          <Button variant="outline" onClick={() => lookup()} disabled={busy}>
             {busy ? "Looking up…" : "Find"}
           </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            title="Scan with camera"
+            onClick={() => setScanOpen(true)}
+          >
+            <Camera className="size-4" />
+          </Button>
         </div>
+
+        {scanOpen && (
+          <BarcodeCameraScanner
+            title="Scan a serial"
+            onClose={() => setScanOpen(false)}
+            onDetected={(c) => {
+              setScanOpen(false);
+              setCode(c);
+              lookup(c);
+            }}
+          />
+        )}
 
         {serial && (
           <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-muted/30 p-3">

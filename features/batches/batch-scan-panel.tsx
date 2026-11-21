@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ScanLine, Boxes, ArrowRight } from "lucide-react";
+import { ScanLine, Boxes, ArrowRight, Camera } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { BarcodeCameraScanner } from "@/components/barcode-scanner";
 import { fmtQty } from "@/lib/format";
 import { fetchBatchByBarcode } from "./api";
 import { ExpiryBadge, fmtDate } from "./columns";
@@ -16,10 +17,11 @@ import type { Batch } from "./schema";
 export function BatchScanPanel() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const [batch, setBatch] = useState<Batch | null>(null);
 
-  async function lookup() {
-    const c = code.trim();
+  async function lookup(raw?: string) {
+    const c = (raw ?? code).trim();
     if (!c || busy) return;
     setBusy(true);
     try {
@@ -59,10 +61,30 @@ export function BatchScanPanel() {
             placeholder="Scan a batch barcode or lot number…"
             className="max-w-sm font-mono"
           />
-          <Button variant="outline" onClick={lookup} disabled={busy}>
+          <Button variant="outline" onClick={() => lookup()} disabled={busy}>
             {busy ? "Looking up…" : "Find"}
           </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            title="Scan with camera"
+            onClick={() => setScanOpen(true)}
+          >
+            <Camera className="size-4" />
+          </Button>
         </div>
+
+        {scanOpen && (
+          <BarcodeCameraScanner
+            title="Scan a batch"
+            onClose={() => setScanOpen(false)}
+            onDetected={(c) => {
+              setScanOpen(false);
+              setCode(c);
+              lookup(c);
+            }}
+          />
+        )}
 
         {batch && (
           <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-muted/30 p-3">

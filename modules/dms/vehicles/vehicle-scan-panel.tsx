@@ -5,10 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ScanLine, Car, ArrowRight, CheckCircle2 } from "lucide-react";
+import { ScanLine, Car, ArrowRight, CheckCircle2, Camera } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { BarcodeCameraScanner } from "@/components/barcode-scanner";
 import { useCanWrite } from "@/components/session-context";
 import { fetchVehicleByVin } from "./lifecycle-api";
 import * as lc from "./lifecycle-api";
@@ -42,6 +43,7 @@ export function VehicleScanPanel() {
   const qc = useQueryClient();
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const [vehicle, setVehicle] = useState<VehicleScanResult | null>(null);
 
   const advance = useMutation({
@@ -67,8 +69,8 @@ export function VehicleScanPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  async function lookup() {
-    const c = code.trim();
+  async function lookup(raw?: string) {
+    const c = (raw ?? code).trim();
     if (!c || busy) return;
     setBusy(true);
     try {
@@ -111,10 +113,30 @@ export function VehicleScanPanel() {
             placeholder="Scan or type a VIN…"
             className="max-w-sm font-mono"
           />
-          <Button variant="outline" onClick={lookup} disabled={busy}>
+          <Button variant="outline" onClick={() => lookup()} disabled={busy}>
             {busy ? "Looking up…" : "Find"}
           </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            title="Scan with camera"
+            onClick={() => setScanOpen(true)}
+          >
+            <Camera className="size-4" />
+          </Button>
         </div>
+
+        {scanOpen && (
+          <BarcodeCameraScanner
+            title="Scan a vehicle VIN"
+            onClose={() => setScanOpen(false)}
+            onDetected={(c) => {
+              setScanOpen(false);
+              setCode(c);
+              lookup(c);
+            }}
+          />
+        )}
 
         {vehicle && next && (
           <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-muted/30 p-3">
