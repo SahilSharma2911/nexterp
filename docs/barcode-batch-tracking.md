@@ -98,17 +98,36 @@ individually-warrantied parts.
 
 ### Where to use batches
 
-**Stock → Batches** (new page in the sidebar).
+**Stock → Batches** (page in the sidebar).
 
-- **Top cards:** total batches, expiring soon, expired, units tracked.
+- **Scan a batch:** scan a barcode or lot number to jump straight to the lot.
+- **Top cards:** total batches, expiring soon, expired, units tracked (live
+  on-hand).
 - **Expiring soon list:** batches within 90 days of expiry — your action list.
-- **Table:** every batch with its item, quantity, expiry date, and a colour-coded
-  shelf-life badge (🟢 Fresh · 🟡 Expiring soon · 🔴 Expired). Filter by status.
-- **New Batch:** record the item, lot number, barcode, mfg/expiry dates, quantity
-  and supplier.
-- **Batch detail:** shows everything plus a **printable barcode** for the lot.
-- An item's own page shows all its batches (when the item is batch-tracked), with
-  a "New batch" shortcut.
+- **Table:** every batch with its item, **On hand** (live) vs **Received**, expiry
+  date, and a colour-coded shelf-life badge (🟢 Fresh · 🟡 Expiring soon ·
+  🔴 Expired). Filter by status.
+- **New Batch:** record the item, lot number, barcode, mfg/expiry dates, quantity,
+  supplier — and **"Receive into warehouse"**, which posts the quantity into stock
+  as a real receipt attributed to that lot.
+- **Batch detail:** everything above plus a **printable barcode** for the lot.
+- An item's own page shows all its batches with live on-hand and a "New batch"
+  shortcut.
+
+### Batches are real stock now (not just a list)
+
+Batch tracking is wired into actual inventory:
+
+- **Receiving a lot** (New Batch with a warehouse) posts a genuine stock receipt —
+  the units become on-hand, attributed to that batch. **On-hand is always read
+  live from the stock ledger** (received − issued), so it can never drift.
+- **Issuing via a job card** consumes batch-tracked parts **FEFO
+  (first-expiry-first-out)** — the nearest-expiry lot is drained first,
+  automatically, across multiple lots if needed.
+- **Cancelling a job** credits the exact same lots back.
+- Valuation is unaffected — it stays moving-average at the item level; batches add
+  *quantity traceability* on top.
+- A lot that has stock movements can't be deleted (ledger integrity).
 
 ---
 
@@ -116,18 +135,23 @@ individually-warrantied parts.
 
 **Live now**
 - Vehicle scan-to-advance on the Vehicles page (reuses the existing lifecycle).
-- Batch registry: create/track batches, expiry status, per-batch barcodes,
-  expiring-soon dashboard, item-level batch view, batch lookup by barcode.
+- Batch registry with **real stock**: receive a lot into a warehouse, live
+  on-hand from the ledger, expiry dashboard, per-batch barcodes, scan lookup,
+  item-level batch view.
+- **FEFO issue** on job cards: batch-tracked parts are consumed earliest-expiry
+  first; job cancellation restores the exact lots.
 
 **Sensible next steps (not yet done)**
-- Enforce batch selection on every stock movement (issue/receive), so quantities
-  are attributed to specific lots automatically (FEFO — first-expiry-first-out).
-- A serial-number registry for serialised items (one record per physical unit).
-- Printing/label sheets for batch and VIN barcodes.
+- Extend batch attribution + FEFO to the **generic stock flows** (Stock Entry,
+  Delivery Note, Purchase Receipt) so every warehouse movement is lot-aware, not
+  just job cards.
+- A **serial-number registry** for serialised items (one record per physical
+  unit), with capture on receipt and consumption on issue.
+- **Barcode label sheets** — printable label pages for batch, item and VIN codes.
 
-These are deliberate follow-ups: the current build adds the **traceability layer**
-(identities, expiry, scanning) without disturbing the existing, working stock
-ledger. Deeper enforcement can be layered on next.
+These are deliberate follow-ups: today's build makes batches real inventory for
+the service (job-card) flow without disturbing the rest of the working stock
+ledger. The same FEFO engine is reused as each flow is brought in.
 
 ---
 

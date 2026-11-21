@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { postStockLedger } from "@/lib/stock-ledger";
+import { postIssueFefo } from "@/lib/batch-stock";
 import { adjustBinReservation } from "@/lib/bin";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import type {
@@ -188,19 +189,30 @@ export async function submitDeliveryNote(id: string) {
   });
   if (!dn) throw new Error("Delivery Note not found");
   if (dn.status !== "DRAFT") throw new Error("Only draft notes can be submitted");
+  const itemFlags = await prisma.item.findMany({
+    where: { id: { in: dn.items.map((i) => i.itemId) } },
+    select: { id: true, hasBatchNo: true },
+  });
+  const batchTracked = new Set(
+    itemFlags.filter((i) => i.hasBatchNo).map((i) => i.id),
+  );
   await prisma.$transaction(async (tx) => {
     let cogs = 0;
     for (const it of dn.items) {
-      const res = await postStockLedger(tx, {
-        itemId: it.itemId,
-        warehouseId: dn.warehouseId,
-        actualQty: -it.qty,
-        voucherType: VT,
-        voucherNo: dn.name,
-        voucherDetailId: it.id,
-        postingAt: dn.postingAt,
-      });
-      cogs += Math.abs(res.stockValueDifference);
+      const res = await postIssueFefo(
+        tx,
+        {
+          itemId: it.itemId,
+          warehouseId: dn.warehouseId,
+          qty: it.qty,
+          voucherType: VT,
+          voucherNo: dn.name,
+          voucherDetailId: it.id,
+          postingAt: dn.postingAt,
+        },
+        batchTracked.has(it.itemId),
+      );
+      cogs += Math.abs(res.valueDiff);
       await tx.deliveryNoteItem.update({
         where: { id: it.id },
         data: { valuationRate: res.valuationRate },
@@ -267,6 +279,7 @@ export async function cancelDeliveryNote(id: string) {
         voucherNo: dn.name,
         voucherDetailId: s.voucherDetailId,
         postingAt: new Date(),
+        batchId: s.batchId,
       });
     }
     await tx.stockLedgerEntry.updateMany({

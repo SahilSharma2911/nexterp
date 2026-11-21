@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { postStockLedger } from "@/lib/stock-ledger";
+import { allocateFefo, postIssueFefo } from "@/lib/batch-stock";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import {
   purposeNeeds,
@@ -203,6 +204,15 @@ export async function submitStockEntry(id: string) {
   const from = entry.fromWarehouseId;
   const to = entry.toWarehouseId;
 
+  // Which of the entry's items are batch-tracked (drives FEFO on issue).
+  const itemFlags = await prisma.item.findMany({
+    where: { id: { in: entry.items.map((i) => i.itemId) } },
+    select: { id: true, hasBatchNo: true },
+  });
+  const batchTracked = new Set(
+    itemFlags.filter((i) => i.hasBatchNo).map((i) => i.id),
+  );
+
   await prisma.$transaction(async (tx) => {
     let incoming = 0;
     let outgoing = 0;
@@ -239,21 +249,25 @@ export async function submitStockEntry(id: string) {
       qty: number,
       detailId: string,
     ) => {
-      const res = await postStockLedger(tx, {
-        itemId,
-        warehouseId,
-        actualQty: -qty,
-        voucherType: VOUCHER_TYPE,
-        voucherNo: entry.name,
-        voucherDetailId: detailId,
-        postingAt,
-      });
-      outgoing += Math.abs(res.stockValueDifference);
+      const res = await postIssueFefo(
+        tx,
+        {
+          itemId,
+          warehouseId,
+          qty,
+          voucherType: VOUCHER_TYPE,
+          voucherNo: entry.name,
+          voucherDetailId: detailId,
+          postingAt,
+        },
+        batchTracked.has(itemId),
+      );
+      outgoing += Math.abs(res.valueDiff);
       await tx.stockEntryDetail.update({
         where: { id: detailId },
         data: {
           valuationRate: res.valuationRate,
-          amount: Math.abs(res.stockValueDifference),
+          amount: Math.abs(res.valueDiff),
         },
       });
     };
@@ -273,38 +287,87 @@ export async function submitStockEntry(id: string) {
         const srcRate = srcBin
           ? Number(srcBin.valuationRate)
           : Number(r.basicRate);
-        await issue(r.itemId, from!, r.qty, r.id);
-        await postStockLedger(tx, {
-          itemId: r.itemId,
-          warehouseId: to!,
-          actualQty: r.qty,
-          incomingRate: srcRate,
-          voucherType: VOUCHER_TYPE,
-          voucherNo: entry.name,
-          voucherDetailId: r.id,
-          postingAt,
-        });
+
+        if (batchTracked.has(r.itemId)) {
+          // FEFO out of the source and move each lot intact into the
+          // destination (same batchId on both legs, so the lot travels).
+          const { alloc, shortfall } = await allocateFefo(
+            tx,
+            r.itemId,
+            from!,
+            r.qty,
+          );
+          const legs: { qty: number; batchId: string | null }[] = [
+            ...alloc.map((a) => ({ qty: a.qty, batchId: a.batchId })),
+            ...(shortfall > 1e-9 ? [{ qty: shortfall, batchId: null }] : []),
+          ];
+          for (const leg of legs) {
+            await postStockLedger(tx, {
+              itemId: r.itemId,
+              warehouseId: from!,
+              actualQty: -leg.qty,
+              voucherType: VOUCHER_TYPE,
+              voucherNo: entry.name,
+              voucherDetailId: r.id,
+              postingAt,
+              batchId: leg.batchId,
+            });
+            await postStockLedger(tx, {
+              itemId: r.itemId,
+              warehouseId: to!,
+              actualQty: leg.qty,
+              incomingRate: srcRate,
+              voucherType: VOUCHER_TYPE,
+              voucherNo: entry.name,
+              voucherDetailId: r.id,
+              postingAt,
+              batchId: leg.batchId,
+            });
+          }
+          const amt = Math.round(srcRate * r.qty * 100) / 100;
+          outgoing += amt;
+          await tx.stockEntryDetail.update({
+            where: { id: r.id },
+            data: { valuationRate: srcRate, amount: amt },
+          });
+        } else {
+          await issue(r.itemId, from!, r.qty, r.id);
+          await postStockLedger(tx, {
+            itemId: r.itemId,
+            warehouseId: to!,
+            actualQty: r.qty,
+            incomingRate: srcRate,
+            voucherType: VOUCHER_TYPE,
+            voucherNo: entry.name,
+            voucherDetailId: r.id,
+            postingAt,
+          });
+        }
       }
     } else {
       // MANUFACTURE / REPACK: consume raw, produce finished.
       let consumed = 0;
       for (const r of entry.items.filter((i) => !i.isFinishedItem)) {
-        const res = await postStockLedger(tx, {
-          itemId: r.itemId,
-          warehouseId: from!,
-          actualQty: -r.qty,
-          voucherType: VOUCHER_TYPE,
-          voucherNo: entry.name,
-          voucherDetailId: r.id,
-          postingAt,
-        });
-        consumed += Math.abs(res.stockValueDifference);
-        outgoing += Math.abs(res.stockValueDifference);
+        const res = await postIssueFefo(
+          tx,
+          {
+            itemId: r.itemId,
+            warehouseId: from!,
+            qty: r.qty,
+            voucherType: VOUCHER_TYPE,
+            voucherNo: entry.name,
+            voucherDetailId: r.id,
+            postingAt,
+          },
+          batchTracked.has(r.itemId),
+        );
+        consumed += Math.abs(res.valueDiff);
+        outgoing += Math.abs(res.valueDiff);
         await tx.stockEntryDetail.update({
           where: { id: r.id },
           data: {
             valuationRate: res.valuationRate,
-            amount: Math.abs(res.stockValueDifference),
+            amount: Math.abs(res.valueDiff),
           },
         });
       }

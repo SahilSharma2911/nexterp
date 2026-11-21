@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { postStockLedger } from "@/lib/stock-ledger";
 
 const round6 = (n: number) => Math.round((n + Number.EPSILON) * 1e6) / 1e6;
 const EPS = 1e-9;
@@ -66,4 +67,55 @@ export async function allocateFefo(
     remaining = round6(remaining - take);
   }
   return { alloc, shortfall: Math.max(0, round6(remaining)) };
+}
+
+type IssueParams = {
+  itemId: string;
+  warehouseId: string;
+  qty: number; // positive quantity to issue out
+  voucherType: string;
+  voucherNo: string;
+  voucherDetailId?: string | null;
+  postingAt: Date;
+  createdBy?: string | null;
+};
+
+// Issue stock out, FEFO-splitting across batches for batch-tracked items. Any
+// quantity the batches can't cover falls back to a plain (unbatched) issue, so
+// the full amount always leaves stock. Returns the summed value + the latest
+// valuation rate (valuation is item-level, so the rate is consistent). Reused
+// by every issue flow (job cards, stock entry, delivery note, …).
+export async function postIssueFefo(
+  tx: Prisma.TransactionClient,
+  p: IssueParams,
+  batchTracked: boolean,
+): Promise<{ valueDiff: number; valuationRate: number; alloc: FefoAllocation[] }> {
+  const { qty, ...base } = p;
+  let remaining = qty;
+  let valueDiff = 0;
+  let valuationRate = 0;
+  let alloc: FefoAllocation[] = [];
+
+  if (batchTracked) {
+    const r = await allocateFefo(tx, p.itemId, p.warehouseId, qty);
+    alloc = r.alloc;
+    for (const a of alloc) {
+      const res = await postStockLedger(tx, {
+        ...base,
+        actualQty: -a.qty,
+        batchId: a.batchId,
+      });
+      valueDiff += res.stockValueDifference;
+      valuationRate = res.valuationRate;
+    }
+    remaining = r.shortfall;
+  }
+
+  if (remaining > EPS) {
+    const res = await postStockLedger(tx, { ...base, actualQty: -remaining });
+    valueDiff += res.stockValueDifference;
+    valuationRate = res.valuationRate;
+  }
+
+  return { valueDiff, valuationRate, alloc };
 }

@@ -4,7 +4,7 @@ import {
   createBatch,
   deleteBatch,
 } from "@/lib/services/batches";
-import { allocateFefo, batchOnHand } from "@/lib/batch-stock";
+import { allocateFefo, batchOnHand, postIssueFefo } from "@/lib/batch-stock";
 import {
   createJobCard,
   completeJobCard,
@@ -14,7 +14,9 @@ import {
   resetDb,
   seedAccounts,
   makeWarehouse,
+  makeItem,
   makeVehicle,
+  stockIn,
   binQty,
 } from "./helpers";
 
@@ -159,6 +161,44 @@ describe("batch stock + FEFO", () => {
     expect(oh.get(early.id)).toBe(5); // lots restored to the exact batches
     expect(oh.get(later.id)).toBe(5);
     expect(await binQty(item.id, wh.id)).toBe(10);
+  });
+
+  it("postIssueFefo (generic issue helper) splits a batch-tracked issue across lots", async () => {
+    const wh = await makeWarehouse();
+    const item = await batchItem();
+    const a = await createBatch(
+      batchForm({ itemId: item.id, warehouseId: wh.id, batchNo: "A", qty: 4, expiryDate: "2026-11-01" }),
+    );
+    const b = await createBatch(
+      batchForm({ itemId: item.id, warehouseId: wh.id, batchNo: "B", qty: 4, expiryDate: "2027-11-01" }),
+    );
+    const res = await prisma.$transaction((tx) =>
+      postIssueFefo(
+        tx,
+        { itemId: item.id, warehouseId: wh.id, qty: 5, voucherType: "Test", voucherNo: "T1", postingAt: new Date() },
+        true,
+      ),
+    );
+    expect(res.alloc.map((x) => x.qty)).toEqual([4, 1]); // earliest lot fully, then next
+    const oh = await batchOnHand(item.id, wh.id);
+    expect(oh.get(a.id)).toBe(0);
+    expect(oh.get(b.id)).toBe(3);
+    expect(await binQty(item.id, wh.id)).toBe(3);
+  });
+
+  it("postIssueFefo falls back to a plain issue for non-batch items", async () => {
+    const wh = await makeWarehouse();
+    const item = await makeItem("PLAIN", 10);
+    await stockIn(item.id, wh.id, 20, 10);
+    const res = await prisma.$transaction((tx) =>
+      postIssueFefo(
+        tx,
+        { itemId: item.id, warehouseId: wh.id, qty: 8, voucherType: "Test", voucherNo: "T2", postingAt: new Date() },
+        false,
+      ),
+    );
+    expect(res.alloc).toEqual([]);
+    expect(await binQty(item.id, wh.id)).toBe(12);
   });
 
   it("blocks deleting a batch that has stock movements", async () => {
