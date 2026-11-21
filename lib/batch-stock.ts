@@ -69,6 +69,48 @@ export async function allocateFefo(
   return { alloc, shortfall: Math.max(0, round6(remaining)) };
 }
 
+// Find-or-create a lot for an item (used by receipt flows that capture a batch
+// number). On-hand is ledger-derived, so the row is created with qty 0 — the
+// receipt SLE that follows supplies the actual quantity.
+export async function ensureBatch(
+  tx: Prisma.TransactionClient,
+  p: {
+    itemId: string;
+    batchNo: string;
+    warehouseId?: string | null;
+    expiryDate?: Date | null;
+  },
+): Promise<string> {
+  const batchNo = p.batchNo.trim();
+  const existing = await tx.batch.findUnique({
+    where: { itemId_batchNo: { itemId: p.itemId, batchNo } },
+  });
+  if (existing) {
+    // Backfill expiry/warehouse if this receipt supplies them and the lot
+    // didn't have them yet.
+    if ((p.expiryDate && !existing.expiryDate) || (p.warehouseId && !existing.warehouseId)) {
+      await tx.batch.update({
+        where: { id: existing.id },
+        data: {
+          expiryDate: existing.expiryDate ?? p.expiryDate ?? null,
+          warehouseId: existing.warehouseId ?? p.warehouseId ?? null,
+        },
+      });
+    }
+    return existing.id;
+  }
+  const created = await tx.batch.create({
+    data: {
+      itemId: p.itemId,
+      batchNo,
+      warehouseId: p.warehouseId ?? null,
+      expiryDate: p.expiryDate ?? null,
+      qty: 0,
+    },
+  });
+  return created.id;
+}
+
 type IssueParams = {
   itemId: string;
   warehouseId: string;

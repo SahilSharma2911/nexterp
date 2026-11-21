@@ -4,6 +4,8 @@ export const prItemSchema = z.object({
   itemId: z.string().min(1, "Select an item"),
   qty: z.number().positive("Qty must be > 0"),
   rate: z.number().min(0, "Rate must be ≥ 0"),
+  batchNo: z.string().trim().optional(),
+  batchExpiry: z.string().optional().nullable(),
 });
 
 export const purchaseReceiptFormSchema = z.object({
@@ -18,7 +20,13 @@ export type PurchaseReceiptFormValues = z.infer<
   typeof purchaseReceiptFormSchema
 >;
 
-export const emptyPrItem = { itemId: "", qty: 1, rate: 0 };
+export const emptyPrItem = {
+  itemId: "",
+  qty: 1,
+  rate: 0,
+  batchNo: "",
+  batchExpiry: "",
+};
 
 export const emptyPurchaseReceipt: PurchaseReceiptFormValues = {
   supplierId: "",
@@ -49,6 +57,8 @@ export type PurchaseReceiptItemRow = {
   qty: number;
   rate: number;
   amount: number;
+  batchNo: string | null;
+  batchExpiry: string | null;
 };
 
 export type PurchaseReceiptDetail = {

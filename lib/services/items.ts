@@ -212,6 +212,8 @@ export async function itemOptions() {
       stockUom: true,
       valuationRate: true,
       barcode: true,
+      hasBatchNo: true,
+      hasSerialNo: true,
     },
   });
   return rows.map((r) => ({
@@ -221,6 +223,8 @@ export async function itemOptions() {
     stockUom: r.stockUom,
     valuationRate: Number(r.valuationRate),
     barcode: r.barcode,
+    hasBatchNo: r.hasBatchNo,
+    hasSerialNo: r.hasSerialNo,
   }));
 }
 

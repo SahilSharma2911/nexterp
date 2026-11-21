@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { postStockLedger } from "@/lib/stock-ledger";
+import { ensureBatch } from "@/lib/batch-stock";
 import { adjustBinReservation } from "@/lib/bin";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import type {
@@ -34,7 +35,14 @@ function buildRows(input: PurchaseReceiptFormValues) {
     const amount = round2(qty * rate);
     totalQty += qty;
     totalAmount += amount;
-    return { itemId: it.itemId, qty, rate, amount };
+    return {
+      itemId: it.itemId,
+      qty,
+      rate,
+      amount,
+      batchNo: it.batchNo?.trim() || null,
+      batchExpiry: it.batchExpiry ? new Date(it.batchExpiry) : null,
+    };
   });
   return { rows, totalQty, totalAmount: round2(totalAmount) };
 }
@@ -120,6 +128,8 @@ export async function getPurchaseReceipt(
       qty: it.qty,
       rate: Number(it.rate),
       amount: Number(it.amount),
+      batchNo: it.batchNo,
+      batchExpiry: it.batchExpiry ? it.batchExpiry.toISOString() : null,
     })),
   };
 }
@@ -186,8 +196,25 @@ export async function submitPurchaseReceipt(id: string) {
   });
   if (!pr) throw new Error("Purchase Receipt not found");
   if (pr.status !== "DRAFT") throw new Error("Only draft receipts can be submitted");
+  const batchTracked = new Set(
+    (
+      await prisma.item.findMany({
+        where: { id: { in: pr.items.map((i) => i.itemId) }, hasBatchNo: true },
+        select: { id: true },
+      })
+    ).map((i) => i.id),
+  );
   await prisma.$transaction(async (tx) => {
     for (const it of pr.items) {
+      let batchId: string | undefined;
+      if (batchTracked.has(it.itemId) && it.batchNo) {
+        batchId = await ensureBatch(tx, {
+          itemId: it.itemId,
+          batchNo: it.batchNo,
+          warehouseId: pr.warehouseId,
+          expiryDate: it.batchExpiry ?? null,
+        });
+      }
       await postStockLedger(tx, {
         itemId: it.itemId,
         warehouseId: pr.warehouseId,
@@ -197,6 +224,7 @@ export async function submitPurchaseReceipt(id: string) {
         voucherNo: pr.name,
         voucherDetailId: it.id,
         postingAt: pr.postingAt,
+        batchId,
       });
     }
     if (pr.purchaseOrderId) {
@@ -260,6 +288,7 @@ export async function cancelPurchaseReceipt(id: string) {
         voucherNo: pr.name,
         voucherDetailId: s.voucherDetailId,
         postingAt: new Date(),
+        batchId: s.batchId,
       });
     }
     await tx.stockLedgerEntry.updateMany({

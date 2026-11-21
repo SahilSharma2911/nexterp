@@ -72,6 +72,8 @@ export function StockEntryForm({ entryId }: { entryId?: string }) {
           basicRate: it.basicRate,
           isFinishedItem: it.isFinishedItem,
           note: it.note ?? "",
+          batchNo: it.batchNo ?? "",
+          batchExpiry: it.batchExpiry ? it.batchExpiry.slice(0, 10) : "",
         })),
       });
     }
@@ -80,6 +82,10 @@ export function StockEntryForm({ entryId }: { entryId?: string }) {
 
   const purpose = form.watch("purpose");
   const needs = purposeNeeds(purpose);
+  const watchedItems = form.watch("items");
+  const isBatchRow = (i: number) =>
+    purpose === "MATERIAL_RECEIPT" &&
+    !!itemOptions.find((o) => o.id === watchedItems?.[i]?.itemId)?.hasBatchNo;
   const pending = create.isPending || update.isPending;
 
   function onSubmit(values: StockEntryFormValues) {
@@ -356,6 +362,39 @@ export function StockEntryForm({ entryId }: { entryId?: string }) {
                             </FormControl>
                           )}
                         />
+                        {isBatchRow(i) && (
+                          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+                            <FormField
+                              control={form.control}
+                              name={`items.${i}.batchNo`}
+                              render={({ field }) => (
+                                <FormControl>
+                                  <Input
+                                    placeholder="Batch / lot"
+                                    className="font-mono text-xs"
+                                    {...field}
+                                    value={field.value ?? ""}
+                                  />
+                                </FormControl>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`items.${i}.batchExpiry`}
+                              render={({ field }) => (
+                                <FormControl>
+                                  <Input
+                                    type="date"
+                                    className="text-xs"
+                                    title="Expiry date"
+                                    {...field}
+                                    value={field.value ?? ""}
+                                  />
+                                </FormControl>
+                              )}
+                            />
+                          </div>
+                        )}
                       </td>
                       <td className="p-2 text-right align-middle">
                         <Button

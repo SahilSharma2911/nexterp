@@ -39,6 +39,9 @@ export const stockEntryItemSchema = z.object({
   basicRate: z.number().min(0, "Rate must be ≥ 0"),
   isFinishedItem: z.boolean(),
   note: z.string().trim().optional(),
+  // Batch/lot captured when receiving a batch-tracked item.
+  batchNo: z.string().trim().optional(),
+  batchExpiry: z.string().optional().nullable(),
 });
 
 export const stockEntryFormSchema = z
@@ -94,6 +97,8 @@ export const emptyStockEntryItem = {
   basicRate: 0,
   isFinishedItem: false,
   note: "",
+  batchNo: "",
+  batchExpiry: "",
 };
 
 export const emptyStockEntry: StockEntryFormValues = {
@@ -130,6 +135,8 @@ export type StockEntryItem = {
   amount: number;
   isFinishedItem: boolean;
   note: string | null;
+  batchNo: string | null;
+  batchExpiry: string | null;
 };
 
 export type StockEntryDetail = {

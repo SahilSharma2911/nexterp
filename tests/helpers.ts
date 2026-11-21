@@ -16,6 +16,8 @@ export async function resetDb() {
   await prisma.vehicle.deleteMany();
   await prisma.dealer.deleteMany();
   await prisma.gLEntry.deleteMany();
+  await prisma.stockEntry.deleteMany(); // cascades StockEntryDetail (FK to item)
+  await prisma.purchaseReceipt.deleteMany(); // cascades PR items (FK to item)
   await prisma.stockLedgerEntry.deleteMany(); // FK to batch
   await prisma.batch.deleteMany();
   await prisma.serialNo.deleteMany();

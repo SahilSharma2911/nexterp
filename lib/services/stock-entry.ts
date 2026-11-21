@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { postStockLedger } from "@/lib/stock-ledger";
-import { allocateFefo, postIssueFefo } from "@/lib/batch-stock";
+import { allocateFefo, postIssueFefo, ensureBatch } from "@/lib/batch-stock";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import {
   purposeNeeds,
@@ -44,6 +44,8 @@ function itemsCreate(input: StockEntryFormValues) {
     amount: it.basicRate ? Number(it.qty) * Number(it.basicRate) : 0,
     isFinishedItem: !!it.isFinishedItem,
     note: it.note?.trim() || null,
+    batchNo: it.batchNo?.trim() || null,
+    batchExpiry: it.batchExpiry ? new Date(it.batchExpiry) : null,
   }));
 }
 
@@ -133,6 +135,8 @@ export async function getStockEntry(
       amount: Number(it.amount),
       isFinishedItem: it.isFinishedItem,
       note: it.note,
+      batchNo: it.batchNo,
+      batchExpiry: it.batchExpiry ? it.batchExpiry.toISOString() : null,
     })),
   };
 }
@@ -223,6 +227,7 @@ export async function submitStockEntry(id: string) {
       qty: number,
       rate: number,
       detailId: string,
+      batchId?: string,
     ) => {
       const res = await postStockLedger(tx, {
         itemId,
@@ -233,6 +238,7 @@ export async function submitStockEntry(id: string) {
         voucherNo: entry.name,
         voucherDetailId: detailId,
         postingAt,
+        batchId,
       });
       incoming += Math.abs(res.stockValueDifference);
       await tx.stockEntryDetail.update({
@@ -273,8 +279,18 @@ export async function submitStockEntry(id: string) {
     };
 
     if (purpose === "MATERIAL_RECEIPT") {
-      for (const r of entry.items)
-        await receive(r.itemId, to!, r.qty, Number(r.basicRate), r.id);
+      for (const r of entry.items) {
+        let batchId: string | undefined;
+        if (batchTracked.has(r.itemId) && r.batchNo) {
+          batchId = await ensureBatch(tx, {
+            itemId: r.itemId,
+            batchNo: r.batchNo,
+            warehouseId: to!,
+            expiryDate: r.batchExpiry ?? null,
+          });
+        }
+        await receive(r.itemId, to!, r.qty, Number(r.basicRate), r.id, batchId);
+      }
     } else if (purpose === "MATERIAL_ISSUE") {
       for (const r of entry.items) await issue(r.itemId, from!, r.qty, r.id);
     } else if (purpose === "MATERIAL_TRANSFER") {

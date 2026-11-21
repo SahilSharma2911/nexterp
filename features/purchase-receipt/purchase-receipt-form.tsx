@@ -77,6 +77,8 @@ export function PurchaseReceiptForm({
           itemId: it.itemId,
           qty: it.qty,
           rate: it.rate,
+          batchNo: it.batchNo ?? "",
+          batchExpiry: it.batchExpiry ? it.batchExpiry.slice(0, 10) : "",
         })),
       });
     }
@@ -94,6 +96,8 @@ export function PurchaseReceiptForm({
           itemId: it.itemId,
           qty: it.remaining,
           rate: it.rate,
+          batchNo: "",
+          batchExpiry: "",
         })),
       });
     }
@@ -274,6 +278,40 @@ export function PurchaseReceiptForm({
                               </FormItem>
                             )}
                           />
+                          {itemOptions.find((o) => o.id === r?.itemId)
+                            ?.hasBatchNo && (
+                            <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+                              <FormField
+                                control={form.control}
+                                name={`items.${i}.batchNo`}
+                                render={({ field }) => (
+                                  <FormControl>
+                                    <Input
+                                      placeholder="Batch / lot"
+                                      className="font-mono text-xs"
+                                      {...field}
+                                      value={field.value ?? ""}
+                                    />
+                                  </FormControl>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`items.${i}.batchExpiry`}
+                                render={({ field }) => (
+                                  <FormControl>
+                                    <Input
+                                      type="date"
+                                      className="text-xs"
+                                      title="Expiry date"
+                                      {...field}
+                                      value={field.value ?? ""}
+                                    />
+                                  </FormControl>
+                                )}
+                              />
+                            </div>
+                          )}
                         </td>
                         <td className="p-2 align-top">
                           <FormField

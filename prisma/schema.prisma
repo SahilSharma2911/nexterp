@@ -476,6 +476,8 @@ model StockEntryDetail {
   amount         Decimal @default(0) @db.Decimal(18, 2)
   isFinishedItem Boolean @default(false)
   note           String?
+  batchNo        String? // lot received into (batch-tracked items)
+  batchExpiry    DateTime?
 
   stockEntry StockEntry @relation(fields: [stockEntryId], references: [id], onDelete: Cascade)
   item       Item       @relation(fields: [itemId], references: [id])
@@ -552,13 +554,15 @@ model PurchaseReceipt {
 }
 
 model PurchaseReceiptItem {
-  id                String  @id @default(uuid()) @db.Uuid
-  purchaseReceiptId String  @db.Uuid
-  itemId            String  @db.Uuid
+  id                String    @id @default(uuid()) @db.Uuid
+  purchaseReceiptId String    @db.Uuid
+  itemId            String    @db.Uuid
   qty               Float
-  uom               String  @default("Nos")
-  rate              Decimal @default(0) @db.Decimal(18, 6)
-  amount            Decimal @default(0) @db.Decimal(18, 2)
+  uom               String    @default("Nos")
+  rate              Decimal   @default(0) @db.Decimal(18, 6)
+  amount            Decimal   @default(0) @db.Decimal(18, 2)
+  batchNo           String? // lot received into (batch-tracked items)
+  batchExpiry       DateTime?
 
   purchaseReceipt PurchaseReceipt @relation(fields: [purchaseReceiptId], references: [id], onDelete: Cascade)
   item            Item            @relation("PRItem", fields: [itemId], references: [id])

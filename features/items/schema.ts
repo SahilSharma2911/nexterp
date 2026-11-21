@@ -123,6 +123,8 @@ export type ItemOption = {
   stockUom: string;
   valuationRate: number;
   barcode: string | null;
+  hasBatchNo: boolean;
+  hasSerialNo: boolean;
 };
 
 // Shape of the TanStack Table `meta` for the items table.

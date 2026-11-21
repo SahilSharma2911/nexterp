@@ -3,7 +3,12 @@ import { prisma } from "@/lib/prisma";
 import {
   createBatch,
   deleteBatch,
+  batchesForItem,
 } from "@/lib/services/batches";
+import {
+  createStockEntry,
+  submitStockEntry,
+} from "@/lib/services/stock-entry";
 import { allocateFefo, batchOnHand, postIssueFefo } from "@/lib/batch-stock";
 import {
   createJobCard,
@@ -198,6 +203,35 @@ describe("batch stock + FEFO", () => {
       ),
     );
     expect(res.alloc).toEqual([]);
+    expect(await binQty(item.id, wh.id)).toBe(12);
+  });
+
+  it("a Stock Entry receipt into a batch creates the lot + posts on-hand", async () => {
+    const wh = await makeWarehouse();
+    const item = await batchItem();
+    const se = await createStockEntry({
+      purpose: "MATERIAL_RECEIPT",
+      fromWarehouseId: null,
+      toWarehouseId: wh.id,
+      remarks: "",
+      items: [
+        {
+          itemId: item.id,
+          qty: 12,
+          basicRate: 40,
+          isFinishedItem: false,
+          note: "",
+          batchNo: "PO-LOT-1",
+          batchExpiry: "2027-06-01",
+        },
+      ],
+    });
+    await submitStockEntry(se.id);
+
+    const rows = await batchesForItem(item.id);
+    expect(rows.length).toBe(1);
+    expect(rows[0].batchNo).toBe("PO-LOT-1");
+    expect(rows[0].onHand).toBe(12);
     expect(await binQty(item.id, wh.id)).toBe(12);
   });
 
