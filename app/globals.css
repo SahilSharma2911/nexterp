@@ -8,24 +8,24 @@
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji",
     "Segoe UI Emoji", sans-serif;
-  /* Neutral greys — true grey surfaces, no colour cast. */
-  --background: oklch(0.985 0 0);
-  --foreground: oklch(0.22 0 0);
+  /* Cool, airy neutrals — crisp white surfaces on a faint blue-grey canvas. */
+  --background: oklch(0.982 0.005 255);
+  --foreground: oklch(0.22 0.025 262);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0 0);
+  --card-foreground: oklch(0.22 0.025 262);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0 0);
+  --popover-foreground: oklch(0.22 0.025 262);
   --primary: oklch(0.5 0.21 263);
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.965 0 0);
-  --secondary-foreground: oklch(0.28 0 0);
-  --muted: oklch(0.966 0 0);
-  --muted-foreground: oklch(0.53 0 0);
-  --accent: oklch(0.958 0 0);
-  --accent-foreground: oklch(0.28 0 0);
+  --secondary: oklch(0.962 0.012 255);
+  --secondary-foreground: oklch(0.28 0.03 262);
+  --muted: oklch(0.966 0.008 255);
+  --muted-foreground: oklch(0.53 0.025 260);
+  --accent: oklch(0.958 0.018 258);
+  --accent-foreground: oklch(0.28 0.03 262);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.91 0 0);
+  --border: oklch(0.925 0.01 258);
+  --input: oklch(0.91 0.012 258);
   --ring: oklch(0.5 0.21 263);
   /* Fleet palette: blue · orange · violet · green · teal */
   --chart-1: oklch(0.58 0.2 262);
@@ -35,12 +35,12 @@
   --chart-5: oklch(0.7 0.12 200);
   --radius: 0.75rem;
   --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.3 0 0);
+  --sidebar-foreground: oklch(0.3 0.025 262);
   --sidebar-primary: oklch(0.5 0.21 263);
   --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.962 0 0);
-  --sidebar-accent-foreground: oklch(0.25 0 0);
-  --sidebar-border: oklch(0.93 0 0);
+  --sidebar-accent: oklch(0.962 0.018 258);
+  --sidebar-accent-foreground: oklch(0.25 0.03 262);
+  --sidebar-border: oklch(0.93 0.01 258);
   --sidebar-ring: oklch(0.5 0.21 263);
 }
 
@@ -99,21 +99,21 @@ body {
 }
 
 .dark {
-  /* Neutral dark greys — no navy cast. */
-  --background: oklch(0.17 0 0);
-  --foreground: oklch(0.96 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.96 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.96 0 0);
+  /* Deep navy — keeps the cool fleet palette readable at night. */
+  --background: oklch(0.17 0.02 262);
+  --foreground: oklch(0.96 0.005 255);
+  --card: oklch(0.205 0.022 262);
+  --card-foreground: oklch(0.96 0.005 255);
+  --popover: oklch(0.205 0.022 262);
+  --popover-foreground: oklch(0.96 0.005 255);
   --primary: oklch(0.66 0.17 262);
   --primary-foreground: oklch(0.15 0.02 262);
-  --secondary: oklch(0.26 0 0);
-  --secondary-foreground: oklch(0.96 0 0);
-  --muted: oklch(0.25 0 0);
-  --muted-foreground: oklch(0.72 0 0);
-  --accent: oklch(0.28 0 0);
-  --accent-foreground: oklch(0.96 0 0);
+  --secondary: oklch(0.26 0.025 262);
+  --secondary-foreground: oklch(0.96 0.005 255);
+  --muted: oklch(0.25 0.022 262);
+  --muted-foreground: oklch(0.72 0.02 258);
+  --accent: oklch(0.28 0.03 262);
+  --accent-foreground: oklch(0.96 0.005 255);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 9%);
   --input: oklch(1 0 0 / 13%);
@@ -123,12 +123,12 @@ body {
   --chart-3: oklch(0.7 0.17 300);
   --chart-4: oklch(0.72 0.15 155);
   --chart-5: oklch(0.76 0.11 200);
-  --sidebar: oklch(0.19 0 0);
-  --sidebar-foreground: oklch(0.92 0 0);
+  --sidebar: oklch(0.19 0.022 262);
+  --sidebar-foreground: oklch(0.92 0.006 255);
   --sidebar-primary: oklch(0.66 0.17 262);
   --sidebar-primary-foreground: oklch(0.15 0.02 262);
-  --sidebar-accent: oklch(0.27 0 0);
-  --sidebar-accent-foreground: oklch(0.96 0 0);
+  --sidebar-accent: oklch(0.27 0.03 262);
+  --sidebar-accent-foreground: oklch(0.96 0.005 255);
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: oklch(0.66 0.17 262);
 }
