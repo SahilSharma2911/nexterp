@@ -14,7 +14,7 @@ const SORTABLE = ["name", "requestedAt", "status"] as const;
 // and an HV-equipped bay. Validated whenever an appointment is saved.
 async function assertHvAssignment(
   tx: Prisma.TransactionClient,
-  v: AppointmentFormValues,
+  v: { isHV: boolean; bayId?: string | null; technicianId?: string | null },
 ) {
   if (!v.isHV) return;
   if (v.bayId) {
@@ -247,5 +247,31 @@ export async function startServiceAppointment(
       data: { status: "CONVERTED", jobCardId: job.id },
     });
     return { jobCardId: job.id, jobCardName: jobName };
+  });
+}
+
+// Quick-assign the technician + bay without the full edit form. Respects the
+// same HV rule as a full save.
+export async function assignServiceAppointment(
+  id: string,
+  input: { bayId?: string | null; technicianId?: string | null },
+): Promise<void> {
+  const appt = await prisma.serviceAppointment.findUnique({ where: { id } });
+  if (!appt) throw new Error("Appointment not found");
+  if (appt.status !== "BOOKED")
+    throw new Error("Only booked appointments can be reassigned");
+  await prisma.$transaction(async (tx) => {
+    await assertHvAssignment(tx, {
+      isHV: appt.isHV,
+      bayId: input.bayId ?? null,
+      technicianId: input.technicianId ?? null,
+    });
+    await tx.serviceAppointment.update({
+      where: { id },
+      data: {
+        bayId: input.bayId || null,
+        technicianId: input.technicianId || null,
+      },
+    });
   });
 }

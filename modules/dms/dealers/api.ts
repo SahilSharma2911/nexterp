@@ -3,6 +3,7 @@ import type { ListQuery, ListResponse } from "@/lib/api-list";
 import type {
   Dealer,
   DealerAnalytics,
+  DealerDetail,
   DealerFormValues,
   DealerOption,
 } from "./schema";
@@ -24,6 +25,11 @@ export async function fetchDealerAnalytics() {
 
 export async function fetchDealer(id: string) {
   const { data } = await api.get<Dealer>(`/dealers/${id}`);
+  return data;
+}
+
+export async function fetchDealerDetail(id: string) {
+  const { data } = await api.get<DealerDetail>(`/dealers/${id}/insights`);
   return data;
 }
 

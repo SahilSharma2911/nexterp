@@ -112,3 +112,24 @@ export function useCancelAppointment() {
     onError: (e: Error) => toast.error(e.message),
   });
 }
+
+export function useAssignAppointment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      bayId,
+      technicianId,
+    }: {
+      id: string;
+      bayId: string | null;
+      technicianId: string | null;
+    }) => apptApi.assignAppointment(id, { bayId, technicianId }),
+    onSuccess: (_d, { id }) => {
+      qc.invalidateQueries({ queryKey: appointmentKeys.all });
+      qc.invalidateQueries({ queryKey: appointmentKeys.detail(id) });
+      toast.success("Appointment assignment updated");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}

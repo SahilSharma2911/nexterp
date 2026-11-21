@@ -4,6 +4,7 @@ import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import { postStockLedger } from "@/lib/stock-ledger";
 import { postGL, getAccountId, reverseGL } from "@/lib/gl";
 import type {
+  JobCardActivity,
   JobCardAnalytics,
   JobCardDetail,
   JobCardFormValues,
@@ -159,6 +160,8 @@ export async function getJobCard(id: string): Promise<JobCardDetail | null> {
     qcBy: r.qcBy,
     qcAt: r.qcAt ? r.qcAt.toISOString() : null,
     qcNote: r.qcNote,
+    approvedBy: r.approvedBy,
+    approvedAt: r.approvedAt ? r.approvedAt.toISOString() : null,
     appointmentId: r.appointment?.id ?? null,
     appointmentName: r.appointment?.name ?? null,
     createdAt: r.createdAt.toISOString(),
@@ -185,6 +188,7 @@ export async function getJobCard(id: string): Promise<JobCardDetail | null> {
 
 export async function createJobCard(
   values: JobCardFormValues,
+  asEstimate = false,
 ): Promise<{ id: string; name: string }> {
   const { parts, labor, partsTotal, laborTotal, total } = priceLines(values);
   const year = new Date().getFullYear();
@@ -193,6 +197,7 @@ export async function createJobCard(
   const row = await prisma.jobCard.create({
     data: {
       name,
+      status: asEstimate ? "ESTIMATE" : "OPEN",
       vehicleId: values.vehicleId,
       warehouseId: values.warehouseId || null,
       complaint: values.complaint?.trim() || null,
@@ -220,8 +225,8 @@ export async function updateJobCard(
 ): Promise<{ id: string; name: string }> {
   const existing = await prisma.jobCard.findUnique({ where: { id } });
   if (!existing) throw new Error("Job Card not found");
-  if (existing.status !== "OPEN")
-    throw new Error("Only open job cards can be edited");
+  if (existing.status !== "OPEN" && existing.status !== "ESTIMATE")
+    throw new Error("Only estimates and open job cards can be edited");
   const { parts, labor, partsTotal, laborTotal, total } = priceLines(values);
   const row = await prisma.$transaction(async (tx) => {
     await tx.jobCardPart.deleteMany({ where: { jobCardId: id } });
@@ -256,22 +261,206 @@ export async function updateJobCard(
 export async function deleteJobCard(id: string): Promise<void> {
   const existing = await prisma.jobCard.findUnique({ where: { id } });
   if (!existing) throw new Error("Job Card not found");
-  if (existing.status !== "OPEN")
-    throw new Error("Only open job cards can be deleted");
+  if (existing.status !== "OPEN" && existing.status !== "ESTIMATE")
+    throw new Error("Only estimates and open job cards can be deleted");
   await prisma.jobCard.delete({ where: { id } });
 }
 
+// Quick-assign the technician + bay without the full edit form. Enforces the
+// same HV rule as appointments: HV jobs need an HV bay + HV-certified tech.
+export async function assignJobCard(
+  id: string,
+  input: { bayId?: string | null; technicianId?: string | null },
+): Promise<void> {
+  const job = await prisma.jobCard.findUnique({ where: { id } });
+  if (!job) throw new Error("Job Card not found");
+  if (job.status !== "OPEN" && job.status !== "ESTIMATE")
+    throw new Error("Only estimates and open job cards can be reassigned");
+
+  if (job.isHV && input.bayId) {
+    const bay = await prisma.serviceBay.findUnique({
+      where: { id: input.bayId },
+    });
+    if (bay && !bay.isHV)
+      throw new Error(
+        `Bay "${bay.name}" is not equipped for high-voltage work — pick an HV bay.`,
+      );
+  }
+  let technicianName: string | null = null;
+  if (input.technicianId) {
+    const tech = await prisma.technician.findUnique({
+      where: { id: input.technicianId },
+      select: { name: true, isHVCertified: true },
+    });
+    if (job.isHV && tech && !tech.isHVCertified)
+      throw new Error(
+        `Technician "${tech.name}" is not HV-certified — assign a certified technician.`,
+      );
+    technicianName = tech?.name ?? null;
+  }
+
+  await prisma.jobCard.update({
+    where: { id },
+    data: {
+      bayId: input.bayId || null,
+      technicianId: input.technicianId || null,
+      technician: technicianName,
+    },
+  });
+}
+
+// Approve an estimate: ESTIMATE → OPEN. No stock/GL impact — that still
+// happens only at completion. Stamps who approved and when.
+export async function approveJobCard(
+  id: string,
+  approvedBy?: string,
+): Promise<void> {
+  const existing = await prisma.jobCard.findUnique({ where: { id } });
+  if (!existing) throw new Error("Job Card not found");
+  if (existing.status !== "ESTIMATE")
+    throw new Error("Only estimates can be approved");
+  await prisma.jobCard.update({
+    where: { id },
+    data: {
+      status: "OPEN",
+      approvedAt: new Date(),
+      approvedBy: approvedBy?.trim() || null,
+    },
+  });
+}
+
 // Management insights for the Job Cards list header.
+// Six-month completion trend: counts of jobs completed per calendar month.
+function completionsByMonth(
+  rows: { completedAt: Date | null }[],
+): { name: string; value: number }[] {
+  const now = new Date();
+  const months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    return {
+      key: `${d.getFullYear()}-${d.getMonth()}`,
+      name: d.toLocaleString("en-US", { month: "short" }),
+    };
+  });
+  const counts = new Map<string, number>();
+  for (const r of rows) {
+    if (!r.completedAt) continue;
+    const d = r.completedAt;
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return months.map((m) => ({ name: m.name, value: counts.get(m.key) ?? 0 }));
+}
+
 export async function jobCardAnalytics(): Promise<JobCardAnalytics> {
-  const [grouped, done] = await Promise.all([
-    prisma.jobCard.groupBy({ by: ["status"], _count: true }),
-    prisma.jobCard.aggregate({
-      _sum: { total: true, partsTotal: true, laborTotal: true },
-      where: { status: "COMPLETED" },
-    }),
-  ]);
-  const countFor = (s: "OPEN" | "COMPLETED" | "CANCELLED") =>
+  const [grouped, done, open, qcPending, completedRows, techRows, recent] =
+    await Promise.all([
+      prisma.jobCard.groupBy({ by: ["status"], _count: true }),
+      prisma.jobCard.aggregate({
+        _sum: { total: true, partsTotal: true, laborTotal: true },
+        where: { status: "COMPLETED" },
+      }),
+      prisma.jobCard.aggregate({
+        _sum: { total: true },
+        where: { status: "OPEN" },
+      }),
+      prisma.jobCard.count({ where: { status: "OPEN", qcAt: null } }),
+      prisma.jobCard.findMany({
+        where: { status: "COMPLETED", completedAt: { not: null } },
+        select: { createdAt: true, completedAt: true },
+      }),
+      prisma.jobCard.findMany({
+        select: {
+          technician: true,
+          technicianRef: { select: { name: true } },
+        },
+      }),
+      prisma.jobCard.findMany({
+        orderBy: { updatedAt: "desc" },
+        take: 30,
+        select: {
+          id: true,
+          name: true,
+          vehicleId: true,
+          status: true,
+          total: true,
+          createdAt: true,
+          completedAt: true,
+          cancelledAt: true,
+          qcAt: true,
+          qcBy: true,
+          vehicle: { select: { vin: true, model: true } },
+        },
+      }),
+    ]);
+
+  const countFor = (s: "ESTIMATE" | "OPEN" | "COMPLETED" | "CANCELLED") =>
     grouped.find((g) => g.status === s)?._count ?? 0;
+
+  // Average turnaround (hours) across completed jobs.
+  let avgTurnaroundHours: number | null = null;
+  if (completedRows.length) {
+    const totalMs = completedRows.reduce(
+      (s, r) => s + (r.completedAt!.getTime() - r.createdAt.getTime()),
+      0,
+    );
+    avgTurnaroundHours =
+      Math.round((totalMs / completedRows.length / 3_600_000) * 10) / 10;
+  }
+
+  // Jobs by technician (top 6; fall back to free-text name / "Unassigned").
+  const techCounts = new Map<string, number>();
+  for (const r of techRows) {
+    const name = r.technicianRef?.name ?? r.technician?.trim() ?? "";
+    const key = name || "Unassigned";
+    techCounts.set(key, (techCounts.get(key) ?? 0) + 1);
+  }
+  const byTechnician = [...techCounts.entries()]
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6);
+
+  // Activity feed — derive events from each recent job's timestamps.
+  const recentActivity: JobCardActivity[] = recent
+    .flatMap((j) => {
+      const base = {
+        jobId: j.id,
+        name: j.name,
+        vehicleId: j.vehicleId,
+        vin: j.vehicle.vin,
+        model: j.vehicle.model,
+      };
+      const events: JobCardActivity[] = [
+        { ...base, id: `${j.id}:OPENED`, kind: "OPENED", at: j.createdAt.toISOString() },
+      ];
+      if (j.qcAt)
+        events.push({
+          ...base,
+          id: `${j.id}:QC`,
+          kind: "QC",
+          at: j.qcAt.toISOString(),
+          by: j.qcBy,
+        });
+      if (j.completedAt)
+        events.push({
+          ...base,
+          id: `${j.id}:COMPLETED`,
+          kind: "COMPLETED",
+          at: j.completedAt.toISOString(),
+          amount: Number(j.total),
+        });
+      if (j.cancelledAt)
+        events.push({
+          ...base,
+          id: `${j.id}:CANCELLED`,
+          kind: "CANCELLED",
+          at: j.cancelledAt.toISOString(),
+        });
+      return events;
+    })
+    .sort((a, b) => +new Date(b.at) - +new Date(a.at))
+    .slice(0, 8);
+
   return {
     open: countFor("OPEN"),
     completed: countFor("COMPLETED"),
@@ -279,11 +468,18 @@ export async function jobCardAnalytics(): Promise<JobCardAnalytics> {
     revenue: Number(done._sum.total ?? 0),
     partsValue: Number(done._sum.partsTotal ?? 0),
     laborValue: Number(done._sum.laborTotal ?? 0),
+    openValue: Number(open._sum.total ?? 0),
+    avgTurnaroundHours,
+    qcPending,
     byStatus: [
+      { name: "Estimate", value: countFor("ESTIMATE") },
       { name: "Open", value: countFor("OPEN") },
       { name: "Completed", value: countFor("COMPLETED") },
       { name: "Cancelled", value: countFor("CANCELLED") },
     ],
+    byTechnician,
+    completionsByMonth: completionsByMonth(completedRows),
+    recentActivity,
   };
 }
 

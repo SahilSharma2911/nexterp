@@ -42,6 +42,22 @@ export function useServiceBay(id?: string) {
   });
 }
 
+export function useServiceBayDashboard() {
+  return useQuery({
+    queryKey: [...serviceBayKeys.all, "dashboard"] as const,
+    queryFn: () => bayApi.fetchServiceBayDashboard(),
+    staleTime: 60_000,
+  });
+}
+
+export function useServiceBayDetail(id?: string) {
+  return useQuery({
+    queryKey: [...serviceBayKeys.detail(id ?? ""), "insights"] as const,
+    queryFn: () => bayApi.fetchServiceBayDetail(id as string),
+    enabled: !!id,
+  });
+}
+
 export function useCreateServiceBay() {
   const qc = useQueryClient();
   return useMutation({

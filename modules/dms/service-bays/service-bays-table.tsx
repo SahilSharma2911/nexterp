@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Plus, Search } from "lucide-react";
-import { useCanWrite } from "@/components/session-context";
+import { Search } from "lucide-react";
 import { useListParams } from "@/hooks/use-list-params";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { columns } from "./columns";
 import { useServiceBays } from "./queries";
@@ -16,7 +13,6 @@ import type { ServiceBaysTableMeta } from "./schema";
 export function ServiceBaysTable() {
   const [params, setParams] = useListParams();
   const [search, setSearch] = useState(params.q);
-  const canWrite = useCanWrite("dms");
 
   const { data, isFetching } = useServiceBays({
     page: params.page,
@@ -52,24 +48,14 @@ export function ServiceBaysTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search bays…"
-            className="pl-8"
-          />
-        </div>
-        {canWrite && (
-          <Button asChild>
-            <Link href="/dms/service-bays/new">
-              <Plus className="size-4" />
-              New Bay
-            </Link>
-          </Button>
-        )}
+      <div className="relative w-full max-w-sm">
+        <Search className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search bays…"
+          className="pl-8"
+        />
       </div>
 
       <DataTable

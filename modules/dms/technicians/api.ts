@@ -2,6 +2,8 @@ import { api } from "@/lib/axios";
 import type { ListQuery, ListResponse } from "@/lib/api-list";
 import type {
   Technician,
+  TechnicianAnalytics,
+  TechnicianDetail,
   TechnicianFormValues,
   TechnicianOption,
 } from "./schema";
@@ -13,6 +15,11 @@ export async function fetchTechnicians(params: ListQuery) {
   return data;
 }
 
+export async function fetchTechnicianAnalytics() {
+  const { data } = await api.get<TechnicianAnalytics>("/technicians/analytics");
+  return data;
+}
+
 export async function fetchTechnicianOptions() {
   const { data } = await api.get<TechnicianOption[]>("/technicians/options");
   return data;
@@ -20,6 +27,13 @@ export async function fetchTechnicianOptions() {
 
 export async function fetchTechnician(id: string) {
   const { data } = await api.get<Technician>(`/technicians/${id}`);
+  return data;
+}
+
+export async function fetchTechnicianDetail(id: string) {
+  const { data } = await api.get<TechnicianDetail>(
+    `/technicians/${id}/insights`,
+  );
   return data;
 }
 

@@ -31,11 +31,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DetailHeader, Field } from "@/components/detail/detail-shell";
+import {
+  AssignResourcesDialog,
+  AssignNotice,
+} from "@/components/dms/assign-resources-dialog";
 import { useCanWrite } from "@/components/session-context";
 import { fmtDateTime } from "@/lib/format";
 import { AppointmentStatusBadge } from "./columns";
 import {
   useAppointment,
+  useAssignAppointment,
   useCancelAppointment,
   useDeleteAppointment,
   useStartAppointment,
@@ -52,7 +57,9 @@ export function AppointmentDetail({
   const start = useStartAppointment();
   const cancel = useCancelAppointment();
   const del = useDeleteAppointment();
+  const assign = useAssignAppointment();
   const [confirm, setConfirm] = useState<null | "cancel" | "delete">(null);
+  const [assignOpen, setAssignOpen] = useState(false);
 
   if (isLoading || !a) {
     return (
@@ -65,6 +72,12 @@ export function AppointmentDetail({
 
   const dash = <span className="text-muted-foreground">—</span>;
   const isBooked = a.status === "BOOKED";
+  const unassigned = isBooked && (!a.bayId || !a.technicianId);
+  const missing = !a.bayId && !a.technicianId
+    ? "No technician or service bay assigned yet."
+    : !a.technicianId
+      ? "No technician assigned yet."
+      : "No service bay assigned yet.";
 
   return (
     <div className="space-y-4">
@@ -88,6 +101,14 @@ export function AppointmentDetail({
           <>
             {canWrite && isBooked && (
               <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAssignOpen(true)}
+                >
+                  <HardHat className="size-4" />
+                  Assign
+                </Button>
                 <Button asChild variant="outline" size="sm">
                   <Link href={`/dms/service-appointments/${a.id}/edit`}>
                     <Pencil className="size-4" />
@@ -131,6 +152,30 @@ export function AppointmentDetail({
           </>
         }
       />
+
+      {unassigned && (
+        <AssignNotice
+          label={missing}
+          onAssign={() => setAssignOpen(true)}
+          disabled={!canWrite}
+        />
+      )}
+
+      {assignOpen && (
+        <AssignResourcesDialog
+          isHV={a.isHV}
+          bayId={a.bayId}
+          technicianId={a.technicianId}
+          saving={assign.isPending}
+          onOpenChange={setAssignOpen}
+          onSave={(vals) =>
+            assign.mutate(
+              { id: a.id, ...vals },
+              { onSuccess: () => setAssignOpen(false) },
+            )
+          }
+        />
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">

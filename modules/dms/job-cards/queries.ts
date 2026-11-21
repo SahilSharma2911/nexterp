@@ -45,10 +45,51 @@ export function useJobCardAnalytics() {
 export function useCreateJobCard() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (values: JobCardFormValues) => jobsApi.createJobCard(values),
-    onSuccess: () => {
+    mutationFn: ({
+      values,
+      asEstimate,
+    }: {
+      values: JobCardFormValues;
+      asEstimate?: boolean;
+    }) => jobsApi.createJobCard(values, asEstimate),
+    onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: jobCardKeys.all });
-      toast.success("Job Card created");
+      toast.success(vars.asEstimate ? "Estimate created" : "Job Card created");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useApproveJobCard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, approvedBy }: { id: string; approvedBy?: string }) =>
+      jobsApi.approveJobCard(id, approvedBy),
+    onSuccess: (_d, { id }) => {
+      qc.invalidateQueries({ queryKey: jobCardKeys.all });
+      qc.invalidateQueries({ queryKey: jobCardKeys.detail(id) });
+      toast.success("Estimate approved — job card is now open");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useAssignJobCard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      bayId,
+      technicianId,
+    }: {
+      id: string;
+      bayId: string | null;
+      technicianId: string | null;
+    }) => jobsApi.assignJobCard(id, { bayId, technicianId }),
+    onSuccess: (_d, { id }) => {
+      qc.invalidateQueries({ queryKey: jobCardKeys.all });
+      qc.invalidateQueries({ queryKey: jobCardKeys.detail(id) });
+      toast.success("Job card assignment updated");
     },
     onError: (e: Error) => toast.error(e.message),
   });

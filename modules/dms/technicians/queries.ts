@@ -42,6 +42,22 @@ export function useTechnician(id?: string) {
   });
 }
 
+export function useTechnicianAnalytics() {
+  return useQuery({
+    queryKey: [...technicianKeys.all, "analytics"] as const,
+    queryFn: () => techApi.fetchTechnicianAnalytics(),
+    staleTime: 60_000,
+  });
+}
+
+export function useTechnicianDetail(id?: string) {
+  return useQuery({
+    queryKey: [...technicianKeys.detail(id ?? ""), "insights"] as const,
+    queryFn: () => techApi.fetchTechnicianDetail(id as string),
+    enabled: !!id,
+  });
+}
+
 export function useCreateTechnician() {
   const qc = useQueryClient();
   return useMutation({

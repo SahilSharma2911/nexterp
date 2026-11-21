@@ -124,18 +124,21 @@ export function JobCardForm({
   const grand = round2(partsTotal + laborTotal);
   const pending = create.isPending || update.isPending;
 
-  function onSubmit(values: JobCardFormValues) {
+  function submit(values: JobCardFormValues, asEstimate = false) {
     const done = (r: { id: string }) => router.push(`/dms/job-cards/${r.id}`);
     if (isEdit && jobId) {
       update.mutate({ id: jobId, values }, { onSuccess: done });
     } else {
-      create.mutate(values, { onSuccess: done });
+      create.mutate({ values, asEstimate }, { onSuccess: done });
     }
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form
+        onSubmit={form.handleSubmit((v) => submit(v, false))}
+        className="space-y-6"
+      >
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">Job</CardTitle>
@@ -626,6 +629,16 @@ export function JobCardForm({
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Cancel
           </Button>
+          {!isEdit && (
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={pending}
+              onClick={form.handleSubmit((v) => submit(v, true))}
+            >
+              {pending ? "Saving…" : "Save as estimate"}
+            </Button>
+          )}
           <Button type="submit" disabled={pending}>
             {pending ? "Saving…" : isEdit ? "Save changes" : "Create job card"}
           </Button>

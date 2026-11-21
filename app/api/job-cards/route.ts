@@ -17,8 +17,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const asEstimate = req.nextUrl.searchParams.get("estimate") === "1";
     const values = jobCardFormSchema.parse(await req.json());
-    const row = await createJobCard(values);
+    const row = await createJobCard(values, asEstimate);
     return NextResponse.json(row, { status: 201 });
   } catch (e) {
     return errorResponse(e);

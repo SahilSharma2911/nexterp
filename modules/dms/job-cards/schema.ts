@@ -1,9 +1,15 @@
 import { z } from "zod";
 
-export const JOB_STATUSES = ["OPEN", "COMPLETED", "CANCELLED"] as const;
+export const JOB_STATUSES = [
+  "ESTIMATE",
+  "OPEN",
+  "COMPLETED",
+  "CANCELLED",
+] as const;
 export type JobStatus = (typeof JOB_STATUSES)[number];
 
 export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
+  ESTIMATE: "Estimate",
   OPEN: "Open",
   COMPLETED: "Completed",
   CANCELLED: "Cancelled",
@@ -123,6 +129,8 @@ export type JobCardDetail = {
   qcBy: string | null;
   qcAt: string | null;
   qcNote: string | null;
+  approvedBy: string | null;
+  approvedAt: string | null;
   appointmentId: string | null;
   appointmentName: string | null;
   createdAt: string;
@@ -137,6 +145,21 @@ export type JobCardsTableMeta = {
   onSort: (field: string) => void;
 };
 
+export type JobCardActivityKind = "OPENED" | "QC" | "COMPLETED" | "CANCELLED";
+
+export type JobCardActivity = {
+  id: string; // `${jobId}:${kind}`
+  jobId: string;
+  name: string; // JOB-2026-00001
+  vehicleId: string;
+  vin: string;
+  model: string;
+  kind: JobCardActivityKind;
+  at: string; // ISO
+  by?: string | null; // QC inspector, etc.
+  amount?: number | null; // billed total for COMPLETED
+};
+
 export type JobCardAnalytics = {
   open: number;
   completed: number;
@@ -144,5 +167,11 @@ export type JobCardAnalytics = {
   revenue: number; // billed on completed jobs
   partsValue: number;
   laborValue: number;
+  openValue: number; // work-in-progress value tied up in open jobs
+  avgTurnaroundHours: number | null; // createdAt → completedAt, completed jobs
+  qcPending: number; // open jobs without a QC sign-off
   byStatus: { name: string; value: number }[];
+  byTechnician: { name: string; value: number }[];
+  completionsByMonth: { name: string; value: number }[];
+  recentActivity: JobCardActivity[];
 };

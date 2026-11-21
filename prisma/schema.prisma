@@ -1019,6 +1019,8 @@ model JobCard {
   qcBy         String? // Service & Workshop — quality check sign-off
   qcAt         DateTime?
   qcNote       String?
+  approvedBy   String? // who approved the estimate (ESTIMATE → OPEN)
+  approvedAt   DateTime?
   completedAt  DateTime?
   cancelledAt  DateTime?
   createdAt    DateTime  @default(now())
@@ -1062,6 +1064,7 @@ model JobCardLabor {
 }
 
 enum JobStatus {
+  ESTIMATE
   OPEN
   COMPLETED
   CANCELLED

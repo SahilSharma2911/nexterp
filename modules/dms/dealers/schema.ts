@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { VehicleStatus } from "@/modules/dms/vehicles/schema";
+import type { AllocationStatus } from "@/modules/dms/allocation/schema";
 
 export const dealerFormSchema = z.object({
   code: z.string().trim().min(1, "Dealer code is required"),
@@ -69,9 +71,66 @@ export type DealersTableMeta = {
   onSort: (field: string) => void;
 };
 
+export type DealerVehicleRow = {
+  id: string;
+  vin: string;
+  model: string;
+  variant: string | null;
+  status: VehicleStatus;
+  sellingRate: number;
+  deliveredAt: string | null;
+  imageUrl: string | null;
+};
+
+export type DealerDemandRow = {
+  id: string;
+  name: string; // ALLOC-2026-00001
+  model: string;
+  variant: string | null;
+  qty: number;
+  qtyAllocated: number;
+  status: AllocationStatus;
+  priority: number;
+  createdAt: string;
+};
+
+export type DealerDetail = Dealer & {
+  createdAt: string;
+  assigned: number;
+  pipeline: number;
+  delivered: number;
+  deliveredValue: number;
+  openDemand: number;
+  byStatus: { name: string; value: number }[];
+  deliveriesByMonth: { name: string; value: number }[];
+  demand: DealerDemandRow[];
+  recentVehicles: DealerVehicleRow[];
+};
+
+export type DealerLeaderRow = {
+  id: string;
+  code: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+  assigned: number; // vehicles linked to the dealer
+  delivered: number; // vehicles delivered to buyers
+  pipeline: number; // allocated / in-transit / at dealer, not yet delivered
+  deliveredValue: number; // ₹ sold through this dealer
+  openDemand: number; // outstanding allocation qty (pending/partial)
+};
+
 export type DealerAnalytics = {
   total: number;
   active: number;
   vehiclesAssigned: number;
+  delivered: number;
+  deliveredValue: number;
+  pipeline: number;
+  openDemand: number;
   byDealer: { name: string; value: number }[]; // top dealers by vehicle count
+  byRegion: { name: string; value: number }[]; // dealers by state
+  topByValue: { name: string; value: number }[]; // top dealers by ₹ delivered
+  deliveriesByMonth: { name: string; value: number }[];
+  leaderboard: DealerLeaderRow[];
 };

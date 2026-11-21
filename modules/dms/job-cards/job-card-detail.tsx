@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Activity,
+  BadgeCheck,
   BatteryCharging,
   Car,
   CheckCircle2,
@@ -30,7 +31,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,13 +50,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DetailHeader } from "@/components/detail/detail-shell";
-import { useCanWrite } from "@/components/session-context";
+import {
+  AssignResourcesDialog,
+  AssignNotice,
+} from "@/components/dms/assign-resources-dialog";
+import { useCanWrite, useSession } from "@/components/session-context";
 import { cn } from "@/lib/utils";
 import { fmtMoney, fmtQty, fmtRate, fmtDateTime } from "@/lib/format";
 import { useVehicle } from "@/modules/dms/vehicles/queries";
 import { JobStatusBadge } from "./columns";
 import type { JobCardDetail as JobCard } from "./schema";
 import {
+  useApproveJobCard,
+  useAssignJobCard,
   useCancelJobCard,
   useCompleteJobCard,
   useDeleteJobCard,
@@ -88,12 +94,16 @@ function fmtDuration(ms: number) {
 export function JobCardDetail({ jobId }: { jobId: string }) {
   const router = useRouter();
   const canWrite = useCanWrite("dms");
+  const session = useSession();
   const { data: j, isLoading } = useJobCard(jobId);
   const complete = useCompleteJobCard();
   const cancel = useCancelJobCard();
   const del = useDeleteJobCard();
+  const approve = useApproveJobCard();
+  const assign = useAssignJobCard();
   const qc = useRecordJobCardQc(jobId);
   const [confirm, setConfirm] = useState<null | "cancel" | "delete">(null);
+  const [assignOpen, setAssignOpen] = useState(false);
   const [qcOpen, setQcOpen] = useState(false);
   const [qcBy, setQcBy] = useState("");
   const [qcNote, setQcNote] = useState("");
@@ -108,8 +118,16 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
     );
   }
 
+  const isEstimate = j.status === "ESTIMATE";
   const isOpen = j.status === "OPEN";
   const isCompleted = j.status === "COMPLETED";
+  const assignable = isEstimate || isOpen;
+  const unassigned = assignable && (!j.bayId || !j.technicianId);
+  const missing = !j.bayId && !j.technicianId
+    ? "No technician or service bay assigned yet."
+    : !j.technicianId
+      ? "No technician assigned yet."
+      : "No service bay assigned yet.";
 
   return (
     <div className="space-y-4">
@@ -131,8 +149,16 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
         stats={[{ label: "Total", value: fmtMoney(j.total) }]}
         actions={
           <>
-            {canWrite && isOpen && (
+            {canWrite && assignable && (
               <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAssignOpen(true)}
+                >
+                  <Wrench className="size-4" />
+                  Assign
+                </Button>
                 <Button asChild variant="outline" size="sm">
                   <Link href={`/dms/job-cards/${j.id}/edit`}>
                     <Pencil className="size-4" />
@@ -148,6 +174,22 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
                   <Trash2 className="size-4" />
                   Delete
                 </Button>
+              </>
+            )}
+            {canWrite && isEstimate && (
+              <Button
+                size="sm"
+                disabled={approve.isPending}
+                onClick={() =>
+                  approve.mutate({ id: j.id, approvedBy: session.name })
+                }
+              >
+                <BadgeCheck className="size-4" />
+                {approve.isPending ? "Approving…" : "Approve estimate"}
+              </Button>
+            )}
+            {canWrite && isOpen && (
+              <>
                 <Button
                   variant="outline"
                   size="sm"
@@ -183,61 +225,54 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
         }
       />
 
-      <Tabs defaultValue="details">
-        <TabsList className="max-w-full">
-          <TabsTrigger value="details">
-            <FileText /> Job detail
-          </TabsTrigger>
-          <TabsTrigger value="progress">
-            <Activity /> Progress
-          </TabsTrigger>
-          <TabsTrigger value="parts">
-            <Package /> Parts
-          </TabsTrigger>
-          <TabsTrigger value="labour">
-            <Timer /> Labour
-          </TabsTrigger>
-          <TabsTrigger value="quality">
-            <ClipboardCheck /> Quality
-          </TabsTrigger>
-          <TabsTrigger value="notes">
-            <FileText /> Notes
-          </TabsTrigger>
-          <TabsTrigger value="vehicle">
-            <Car /> Vehicle health
-          </TabsTrigger>
-        </TabsList>
+      {unassigned && (
+        <AssignNotice
+          label={missing}
+          onAssign={() => setAssignOpen(true)}
+          disabled={!canWrite}
+        />
+      )}
 
-        <TabsContent value="details">
-          <DetailsTab j={j} />
-        </TabsContent>
-        <TabsContent value="progress">
-          <ProgressTab j={j} />
-        </TabsContent>
-        <TabsContent value="parts">
-          <PartsTab j={j} />
-        </TabsContent>
-        <TabsContent value="labour">
-          <LabourTab j={j} />
-        </TabsContent>
-        <TabsContent value="quality">
-          <QualityTab
-            j={j}
-            canWrite={canWrite && isOpen}
-            onRecord={() => {
-              setQcBy(j.qcBy ?? "");
-              setQcNote(j.qcNote ?? "");
-              setQcOpen(true);
-            }}
-          />
-        </TabsContent>
-        <TabsContent value="notes">
-          <NotesTab j={j} />
-        </TabsContent>
-        <TabsContent value="vehicle">
-          <VehicleHealth vehicleId={j.vehicleId} />
-        </TabsContent>
-      </Tabs>
+      {assignOpen && (
+        <AssignResourcesDialog
+          isHV={j.isHV}
+          bayId={j.bayId}
+          technicianId={j.technicianId}
+          saving={assign.isPending}
+          onOpenChange={setAssignOpen}
+          onSave={(vals) =>
+            assign.mutate(
+              { id: j.id, ...vals },
+              { onSuccess: () => setAssignOpen(false) },
+            )
+          }
+        />
+      )}
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-6">
+        <DetailsTab j={j} className="lg:col-span-4" />
+        <ProgressCard j={j} className="lg:col-span-2" />
+
+        <PartsTab j={j} className="lg:col-span-4" />
+        <TimeTrackingCard j={j} className="lg:col-span-2" />
+
+        <LabourTab j={j} className="lg:col-span-4" />
+        <ActivityCard j={j} className="lg:col-span-2 lg:row-span-2" />
+
+        <QualityTab
+          j={j}
+          canWrite={canWrite && isOpen}
+          onRecord={() => {
+            setQcBy(j.qcBy ?? "");
+            setQcNote(j.qcNote ?? "");
+            setQcOpen(true);
+          }}
+          className="lg:col-span-2"
+        />
+        <NotesTab j={j} className="lg:col-span-2" />
+
+        <VehicleHealth vehicleId={j.vehicleId} className="lg:col-span-6" />
+      </div>
 
       <AlertDialog
         open={confirm !== null}
@@ -250,7 +285,7 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirm === "delete"
-                ? "This permanently deletes the open job card."
+                ? `This permanently deletes the ${isEstimate ? "estimate" : "open job card"}.`
                 : "This reverses the issued parts (stock ledger) and the posted revenue (GL). This cannot be undone."}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -327,10 +362,16 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
 
 const dash = <span className="text-muted-foreground">—</span>;
 
-function DetailsTab({ j }: { j: JobCard }) {
+function DetailsTab({ j, className }: { j: JobCard; className?: string }) {
   return (
-    <Card>
-      <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <Card className={cn("h-full", className)}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Wrench className="size-4 text-muted-foreground" />
+          Job detail
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Meta
           label="Vehicle"
           value={
@@ -370,7 +411,7 @@ function DetailsTab({ j }: { j: JobCard }) {
           <Meta label="From appointment" value={dash} />
         )}
         {j.complaint && (
-          <div className="sm:col-span-2 lg:col-span-4">
+          <div className="sm:col-span-2 lg:col-span-3">
             <Meta label="Complaint" value={j.complaint} />
           </div>
         )}
@@ -379,15 +420,105 @@ function DetailsTab({ j }: { j: JobCard }) {
   );
 }
 
-function ProgressTab({ j }: { j: JobCard }) {
+function ProgressCard({ j, className }: { j: JobCard; className?: string }) {
   const steps = ["Opened", "Quality check", "Completed"];
   let current = 0;
   if (j.qcAt) current = 1;
   if (j.status === "COMPLETED") current = 2;
   const cancelled = j.status === "CANCELLED";
+  const pct = cancelled ? 100 : Math.round((current / (steps.length - 1)) * 100);
 
+  return (
+    <Card className={cn("h-full", className)}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Activity className="size-4 text-muted-foreground" />
+          Job progress
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className={cn(
+              "h-full rounded-full transition-all",
+              cancelled ? "bg-destructive" : "bg-primary",
+            )}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        {cancelled ? (
+          <Badge variant="destructive">Cancelled</Badge>
+        ) : (
+          <ol className="flex flex-wrap items-center gap-1 text-xs">
+            {steps.map((s, i) => (
+              <li key={s} className="flex items-center gap-1">
+                <span
+                  className={cn(
+                    "rounded px-2 py-1 font-medium",
+                    i === current
+                      ? "bg-primary text-primary-foreground"
+                      : i < current
+                        ? "bg-primary/10 text-primary"
+                        : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {s}
+                </span>
+                {i < steps.length - 1 && (
+                  <span className="text-muted-foreground">→</span>
+                )}
+              </li>
+            ))}
+          </ol>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TimeTrackingCard({ j, className }: { j: JobCard; className?: string }) {
+  const estHours = j.labor.reduce((s, l) => s + l.hours, 0);
+  const endIso = j.completedAt ?? j.cancelledAt;
+  const open = !endIso;
+  const turnaround = endIso
+    ? fmtDuration(+new Date(endIso) - +new Date(j.createdAt))
+    : null;
+
+  return (
+    <Card className={cn("h-full", className)}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Clock className="size-4 text-muted-foreground" />
+          Time tracking
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4 sm:grid-cols-3">
+        <Meta label="Estimated labour" value={`${fmtQty(estHours)} h`} />
+        <Meta
+          label={open ? "Opened" : "Turnaround"}
+          value={open ? fmtDateTime(j.createdAt) : turnaround}
+        />
+        <Meta
+          label="Status"
+          value={
+            open
+              ? "In workshop"
+              : j.status === "COMPLETED"
+                ? "Delivered"
+                : "Cancelled"
+          }
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ActivityCard({ j, className }: { j: JobCard; className?: string }) {
   const events = [
     { label: "Job card opened", at: j.createdAt, icon: Plus },
+    j.approvedAt
+      ? { label: `Estimate approved${j.approvedBy ? ` · ${j.approvedBy}` : ""}`, at: j.approvedAt, icon: BadgeCheck }
+      : null,
     j.qcAt
       ? { label: `Quality check${j.qcBy ? ` · ${j.qcBy}` : ""}`, at: j.qcAt, icon: ClipboardCheck }
       : null,
@@ -401,107 +532,39 @@ function ProgressTab({ j }: { j: JobCard }) {
     .filter((e): e is { label: string; at: string; icon: typeof Plus } => !!e)
     .sort((a, b) => +new Date(a.at) - +new Date(b.at));
 
-  const estHours = j.labor.reduce((s, l) => s + l.hours, 0);
-  const endIso = j.completedAt ?? j.cancelledAt;
-  const open = !endIso;
-  const turnaround = endIso
-    ? fmtDuration(+new Date(endIso) - +new Date(j.createdAt))
-    : null;
-
   return (
-    <div className="space-y-4">
-      {/* Job progress stepper */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="size-4 text-muted-foreground" />
-            Job progress
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {cancelled ? (
-            <Badge variant="destructive">Cancelled</Badge>
-          ) : (
-            <ol className="flex flex-wrap items-center gap-1 text-xs">
-              {steps.map((s, i) => (
-                <li key={s} className="flex items-center gap-1">
-                  <span
-                    className={cn(
-                      "rounded px-2 py-1 font-medium",
-                      i === current
-                        ? "bg-primary text-primary-foreground"
-                        : i < current
-                          ? "bg-primary/10 text-primary"
-                          : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {s}
-                  </span>
-                  {i < steps.length - 1 && (
-                    <span className="text-muted-foreground">→</span>
-                  )}
-                </li>
-              ))}
-            </ol>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Time tracking */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="size-4 text-muted-foreground" />
-            Time tracking
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3">
-          <Meta label="Estimated labour" value={`${fmtQty(estHours)} h`} />
-          <Meta
-            label={open ? "Opened" : "Turnaround"}
-            value={open ? fmtDateTime(j.createdAt) : turnaround}
-          />
-          <Meta
-            label="Status"
-            value={open ? "In workshop" : j.status === "COMPLETED" ? "Delivered" : "Cancelled"}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Activity timeline */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="size-4 text-muted-foreground" />
-            Activity timeline
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ol className="relative space-y-4 border-l pl-6">
-            {events.map((e, i) => {
-              const Icon = e.icon;
-              return (
-                <li key={i} className="relative">
-                  <span className="absolute -left-[31px] flex size-6 items-center justify-center rounded-full border bg-background text-muted-foreground">
-                    <Icon className="size-3.5" />
-                  </span>
-                  <p className="text-sm font-medium">{e.label}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {fmtDateTime(e.at)}
-                  </p>
-                </li>
-              );
-            })}
-          </ol>
-        </CardContent>
-      </Card>
-    </div>
+    <Card className={cn("h-full", className)}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Activity className="size-4 text-muted-foreground" />
+          Activity timeline
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ol className="relative space-y-4 border-l pl-6">
+          {events.map((e, i) => {
+            const Icon = e.icon;
+            return (
+              <li key={i} className="relative">
+                <span className="absolute -left-[31px] flex size-6 items-center justify-center rounded-full border bg-background text-muted-foreground">
+                  <Icon className="size-3.5" />
+                </span>
+                <p className="text-sm font-medium">{e.label}</p>
+                <p className="text-xs text-muted-foreground">
+                  {fmtDateTime(e.at)}
+                </p>
+              </li>
+            );
+          })}
+        </ol>
+      </CardContent>
+    </Card>
   );
 }
 
-function PartsTab({ j }: { j: JobCard }) {
+function PartsTab({ j, className }: { j: JobCard; className?: string }) {
   return (
-    <Card>
+    <Card className={cn("h-full", className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Package className="size-4 text-muted-foreground" />
@@ -561,9 +624,9 @@ function PartsTab({ j }: { j: JobCard }) {
   );
 }
 
-function LabourTab({ j }: { j: JobCard }) {
+function LabourTab({ j, className }: { j: JobCard; className?: string }) {
   return (
-    <Card>
+    <Card className={cn("h-full", className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Timer className="size-4 text-muted-foreground" />
@@ -617,13 +680,15 @@ function QualityTab({
   j,
   canWrite,
   onRecord,
+  className,
 }: {
   j: JobCard;
   canWrite: boolean;
   onRecord: () => void;
+  className?: string;
 }) {
   return (
-    <Card>
+    <Card className={cn("h-full", className)}>
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle className="flex items-center gap-2">
           <ClipboardCheck className="size-4 text-muted-foreground" />
@@ -656,9 +721,9 @@ function QualityTab({
   );
 }
 
-function NotesTab({ j }: { j: JobCard }) {
+function NotesTab({ j, className }: { j: JobCard; className?: string }) {
   return (
-    <div className="space-y-4">
+    <div className={cn("flex h-full flex-col gap-4", className)}>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -677,7 +742,7 @@ function NotesTab({ j }: { j: JobCard }) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="flex-1">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="size-4 text-muted-foreground" />
@@ -721,15 +786,21 @@ function sohClass(soh: number) {
   return "text-red-600 dark:text-red-400";
 }
 
-function VehicleHealth({ vehicleId }: { vehicleId: string }) {
+function VehicleHealth({
+  vehicleId,
+  className,
+}: {
+  vehicleId: string;
+  className?: string;
+}) {
   const { data: v, isLoading } = useVehicle(vehicleId);
 
   if (isLoading)
-    return <Skeleton className="h-48 w-full rounded-xl" />;
+    return <Skeleton className={cn("h-48 w-full rounded-xl", className)} />;
   if (!v) return null;
 
   return (
-    <div className="space-y-4">
+    <div className={cn("space-y-4", className)}>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

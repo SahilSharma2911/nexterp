@@ -2,6 +2,8 @@ import { api } from "@/lib/axios";
 import type { ListQuery, ListResponse } from "@/lib/api-list";
 import type {
   ServiceBay,
+  ServiceBayDashboard,
+  ServiceBayDetail,
   ServiceBayFormValues,
   ServiceBayOption,
 } from "./schema";
@@ -10,6 +12,18 @@ export async function fetchServiceBays(params: ListQuery) {
   const { data } = await api.get<ListResponse<ServiceBay>>("/service-bays", {
     params,
   });
+  return data;
+}
+
+export async function fetchServiceBayDashboard() {
+  const { data } = await api.get<ServiceBayDashboard>("/service-bays/dashboard");
+  return data;
+}
+
+export async function fetchServiceBayDetail(id: string) {
+  const { data } = await api.get<ServiceBayDetail>(
+    `/service-bays/${id}/insights`,
+  );
   return data;
 }
 

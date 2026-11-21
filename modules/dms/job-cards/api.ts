@@ -27,12 +27,27 @@ export async function fetchJobCardAnalytics() {
   return data;
 }
 
-export async function createJobCard(values: JobCardFormValues) {
+export async function createJobCard(
+  values: JobCardFormValues,
+  asEstimate = false,
+) {
   const { data } = await api.post<{ id: string; name: string }>(
     "/job-cards",
     values,
+    { params: asEstimate ? { estimate: 1 } : undefined },
   );
   return data;
+}
+
+export async function approveJobCard(id: string, approvedBy?: string) {
+  await api.post(`/job-cards/${id}/approve`, { approvedBy });
+}
+
+export async function assignJobCard(
+  id: string,
+  input: { bayId: string | null; technicianId: string | null },
+) {
+  await api.post(`/job-cards/${id}/assign`, input);
 }
 
 export async function updateJobCard(id: string, values: JobCardFormValues) {

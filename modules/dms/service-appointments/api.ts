@@ -64,3 +64,10 @@ export async function startAppointment(id: string) {
 export async function cancelAppointment(id: string) {
   await api.post(`/service-appointments/${id}/cancel`);
 }
+
+export async function assignAppointment(
+  id: string,
+  input: { bayId: string | null; technicianId: string | null },
+) {
+  await api.post(`/service-appointments/${id}/assign`, input);
+}
