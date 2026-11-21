@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ScanLine } from "lucide-react";
+import { ScanLine, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { BarcodeCameraScanner } from "@/components/barcode-scanner";
 import { fetchItemByBarcode } from "@/features/items/api";
 import type { ItemOption } from "@/features/items/schema";
 
@@ -21,9 +22,10 @@ export function BarcodeScan({
 }) {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
 
-  async function lookup() {
-    const c = code.trim();
+  async function lookup(raw?: string) {
+    const c = (raw ?? code).trim();
     if (!c || busy) return;
     setBusy(true);
     try {
@@ -65,11 +67,32 @@ export function BarcodeScan({
           variant="outline"
           size="sm"
           disabled={busy || !code.trim()}
-          onClick={lookup}
+          onClick={() => lookup()}
         >
           {busy ? "…" : "Add"}
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="size-9"
+          title="Scan with camera"
+          onClick={() => setScanOpen(true)}
+        >
+          <Camera className="size-4" />
+        </Button>
       </div>
+
+      {scanOpen && (
+        <BarcodeCameraScanner
+          title="Scan an item"
+          onClose={() => setScanOpen(false)}
+          onDetected={(c) => {
+            setScanOpen(false);
+            lookup(c);
+          }}
+        />
+      )}
     </div>
   );
 }
