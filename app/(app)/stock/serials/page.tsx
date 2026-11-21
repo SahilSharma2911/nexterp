@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/page-header";
 import { NewButton } from "@/components/new-button";
 import { SerialsTable } from "@/features/serials/serials-table";
 import { SerialAnalytics } from "@/features/serials/serial-analytics";
+import { SerialScanPanel } from "@/features/serials/serial-scan-panel";
 
 export const metadata = { title: "Serial Numbers · Seeka Motor" };
 
@@ -18,6 +19,7 @@ export default function SerialsPage() {
         }
       />
       <div className="space-y-6">
+        <SerialScanPanel />
         <SerialAnalytics />
         <SerialsTable />
       </div>
