@@ -25,9 +25,9 @@ export const ACCENTS = [
 const DEFAULT_ACCENT = "blue";
 
 function applyAccent(key: string) {
-  const el = document.documentElement;
-  if (key === "neutral") el.removeAttribute("data-accent");
-  else el.setAttribute("data-accent", key);
+  // Always set the attribute (including "neutral") so each theme — blue
+  // included — is an explicit, self-contained choice rather than the base.
+  document.documentElement.setAttribute("data-accent", key);
 }
 
 export function AccentPicker() {

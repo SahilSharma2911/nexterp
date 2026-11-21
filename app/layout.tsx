@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 // Set the saved accent before paint to avoid a flash of the wrong colour.
-const accentScript = `try{var a=localStorage.getItem('accent')||'blue';if(a&&a!=='neutral')document.documentElement.setAttribute('data-accent',a);}catch(e){}`;
+const accentScript = `try{var a=localStorage.getItem('accent')||'blue';if(a)document.documentElement.setAttribute('data-accent',a);}catch(e){}`;
 
 export default function RootLayout({
   children,

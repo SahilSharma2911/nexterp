@@ -208,6 +208,53 @@ body {
   --sidebar-primary: oklch(0.7 0.12 44);
 }
 
+/* True neutral — a grey primary AND grey surfaces, no blue cast. Overrides the
+   blue-grey base so "Neutral" is a distinct, fully-grey theme. */
+[data-accent="neutral"] {
+  --primary: oklch(0.37 0 0);
+  --primary-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.44 0 0);
+  --sidebar-primary: oklch(0.37 0 0);
+  --background: oklch(0.985 0 0);
+  --foreground: oklch(0.22 0 0);
+  --card-foreground: oklch(0.22 0 0);
+  --popover-foreground: oklch(0.22 0 0);
+  --secondary: oklch(0.965 0 0);
+  --secondary-foreground: oklch(0.28 0 0);
+  --muted: oklch(0.966 0 0);
+  --muted-foreground: oklch(0.53 0 0);
+  --accent: oklch(0.958 0 0);
+  --accent-foreground: oklch(0.28 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.91 0 0);
+  --sidebar-foreground: oklch(0.3 0 0);
+  --sidebar-accent: oklch(0.962 0 0);
+  --sidebar-accent-foreground: oklch(0.25 0 0);
+  --sidebar-border: oklch(0.93 0 0);
+}
+.dark[data-accent="neutral"] {
+  --primary: oklch(0.8 0 0);
+  --primary-foreground: oklch(0.2 0 0);
+  --ring: oklch(0.7 0 0);
+  --sidebar-primary: oklch(0.8 0 0);
+  --background: oklch(0.17 0 0);
+  --foreground: oklch(0.96 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.96 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.96 0 0);
+  --secondary: oklch(0.26 0 0);
+  --secondary-foreground: oklch(0.96 0 0);
+  --muted: oklch(0.25 0 0);
+  --muted-foreground: oklch(0.72 0 0);
+  --accent: oklch(0.28 0 0);
+  --accent-foreground: oklch(0.96 0 0);
+  --sidebar: oklch(0.19 0 0);
+  --sidebar-foreground: oklch(0.92 0 0);
+  --sidebar-accent: oklch(0.27 0 0);
+  --sidebar-accent-foreground: oklch(0.96 0 0);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
