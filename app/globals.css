@@ -233,3 +233,15 @@ body {
     scrollbar-color: var(--border) transparent;
   }
 }
+/* Printing (barcode label sheets etc.) — drop the app chrome, keep the sheet. */
+@media print {
+  aside,
+  header,
+  .no-print {
+    display: none !important;
+  }
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
