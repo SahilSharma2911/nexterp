@@ -17,6 +17,9 @@ export type PostStockParams = {
   postingAt: Date;
   createdBy?: string | null;
   allowNegative?: boolean;
+  // Batch/lot this movement is attributed to (batch-tracked items). Does not
+  // affect valuation — that stays at the item + warehouse level.
+  batchId?: string | null;
 };
 
 export type PostStockResult = {
@@ -84,6 +87,7 @@ export async function postStockLedger(
       valuationRate: newRate,
       stockValue: newValue,
       stockValueDifference: valueDiff,
+      batchId: p.batchId ?? null,
       createdBy: p.createdBy ?? null,
     },
   });

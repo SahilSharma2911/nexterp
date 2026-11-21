@@ -102,19 +102,22 @@ model Item {
 // and one scannable barcode. Enabled per item via Item.hasBatchNo. (Serialised
 // items — Item.hasSerialNo — instead get one identity per individual unit.)
 model Batch {
-  id         String    @id @default(uuid()) @db.Uuid
-  batchNo    String // lot number, e.g. B-2026-07
-  itemId     String    @db.Uuid
-  barcode    String? // scannable code for the whole lot
-  mfgDate    DateTime?
-  expiryDate DateTime? // shelf-life cutoff (the point of batch tracking)
-  qty        Float     @default(0) // units received into this batch
-  supplier   String?
-  notes      String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id          String    @id @default(uuid()) @db.Uuid
+  batchNo     String // lot number, e.g. B-2026-07
+  itemId      String    @db.Uuid
+  warehouseId String?   @db.Uuid // warehouse the lot was received into
+  barcode     String? // scannable code for the whole lot
+  mfgDate     DateTime?
+  expiryDate  DateTime? // shelf-life cutoff (the point of batch tracking)
+  qty         Float     @default(0) // opening quantity received into this batch
+  supplier    String?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  item          Item               @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  warehouse     Warehouse?         @relation(fields: [warehouseId], references: [id])
+  ledgerEntries StockLedgerEntry[]
 
   @@unique([itemId, batchNo])
   @@index([itemId])
@@ -167,6 +170,7 @@ model Warehouse {
   createdAt     DateTime @default(now())
 
   ledgerEntries    StockLedgerEntry[]
+  batches          Batch[]
   bins             Bin[]
   stockEntriesFrom StockEntry[]              @relation("SEFrom")
   stockEntriesTo   StockEntry[]              @relation("SETo")
@@ -217,6 +221,7 @@ model StockLedgerEntry {
   stockValue           Decimal  @default(0) @db.Decimal(18, 2)
   stockValueDifference Decimal  @default(0) @db.Decimal(18, 2)
   batchNo              String?
+  batchId              String?  @db.Uuid // batch/lot this movement is attributed to
   serialNos            String?
   isCancelled          Boolean  @default(false)
   createdAt            DateTime @default(now())
@@ -224,10 +229,12 @@ model StockLedgerEntry {
 
   item      Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
   warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  batch     Batch?    @relation(fields: [batchId], references: [id])
 
   @@index([itemId, warehouseId, postingAt])
   @@index([voucherType, voucherNo])
   @@index([isCancelled])
+  @@index([batchId])
 }
 
 // ERPNext: Bin — cached running balance per (item, warehouse).

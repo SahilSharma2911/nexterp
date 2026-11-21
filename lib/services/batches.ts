@@ -1,6 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
+import { postStockLedger } from "@/lib/stock-ledger";
+import { batchOnHand } from "@/lib/batch-stock";
 import type {
   Batch,
   BatchAnalytics,
@@ -11,10 +13,9 @@ import type {
 
 const SORTABLE = ["batchNo", "expiryDate", "qty", "createdAt"] as const;
 const EXPIRING_DAYS = 90; // a batch within this many days of expiry is "expiring"
-
 const DAY = 86_400_000;
+const RECEIPT_VT = "Batch Receipt";
 
-// Derive shelf-life state from an expiry date relative to today.
 function expiryOf(expiryDate: Date | null): {
   status: ExpiryStatus;
   days: number | null;
@@ -27,10 +28,18 @@ function expiryOf(expiryDate: Date | null): {
 }
 
 type Row = Prisma.BatchGetPayload<{
-  include: { item: { select: { itemCode: true; itemName: true } } };
+  include: {
+    item: { select: { itemCode: true; itemName: true } };
+    warehouse: { select: { warehouseName: true } };
+  };
 }>;
 
-function toListItem(r: Row): BatchListItem {
+const INCLUDE = {
+  item: { select: { itemCode: true, itemName: true } },
+  warehouse: { select: { warehouseName: true } },
+} as const;
+
+function toListItem(r: Row, onHand: number): BatchListItem {
   const { status, days } = expiryOf(r.expiryDate);
   return {
     id: r.id,
@@ -39,18 +48,26 @@ function toListItem(r: Row): BatchListItem {
     itemId: r.itemId,
     itemCode: r.item.itemCode,
     itemName: r.item.itemName,
+    warehouseId: r.warehouseId,
+    warehouseName: r.warehouse?.warehouseName ?? null,
     mfgDate: r.mfgDate ? r.mfgDate.toISOString() : null,
     expiryDate: r.expiryDate ? r.expiryDate.toISOString() : null,
     qty: r.qty,
+    onHand,
     supplier: r.supplier,
     expiry: status,
     daysToExpiry: days,
   };
 }
 
+function toDetail(r: Row, onHand: number): Batch {
+  return { ...toListItem(r, onHand), notes: r.notes, createdAt: r.createdAt.toISOString() };
+}
+
 function toData(v: BatchFormValues) {
   return {
     itemId: v.itemId,
+    warehouseId: v.warehouseId?.trim() || null,
     batchNo: v.batchNo.trim(),
     barcode: v.barcode?.trim() || null,
     mfgDate: v.mfgDate ? new Date(v.mfgDate) : null,
@@ -61,9 +78,18 @@ function toData(v: BatchFormValues) {
   };
 }
 
-const INCLUDE_ITEM = {
-  item: { select: { itemCode: true, itemName: true } },
-} as const;
+// On-hand summed from the ledger for a set of batch ids (one query).
+async function onHandForIds(ids: string[]): Promise<Map<string, number>> {
+  if (ids.length === 0) return new Map();
+  const rows = await prisma.stockLedgerEntry.groupBy({
+    by: ["batchId"],
+    where: { batchId: { in: ids }, isCancelled: false },
+    _sum: { actualQty: true },
+  });
+  const m = new Map<string, number>();
+  for (const r of rows) if (r.batchId) m.set(r.batchId, r._sum.actualQty ?? 0);
+  return m;
+}
 
 export async function listBatches(
   p: ListParams,
@@ -94,48 +120,65 @@ export async function listBatches(
       orderBy,
       skip: (p.page - 1) * p.limit,
       take: p.limit,
-      include: INCLUDE_ITEM,
+      include: INCLUDE,
     }),
     prisma.batch.count({ where }),
   ]);
 
-  return { rows: rows.map(toListItem), total, page: p.page, limit: p.limit };
+  const oh = await onHandForIds(rows.map((r) => r.id));
+  return {
+    rows: rows.map((r) => toListItem(r, oh.get(r.id) ?? 0)),
+    total,
+    page: p.page,
+    limit: p.limit,
+  };
 }
 
 export async function batchAnalytics(): Promise<BatchAnalytics> {
   const now = new Date();
   const soon = new Date(now.getTime() + EXPIRING_DAYS * DAY);
 
-  const [total, expired, expiring, agg, soonRows] = await Promise.all([
+  const [total, expired, expiring, soonRows] = await Promise.all([
     prisma.batch.count(),
     prisma.batch.count({ where: { expiryDate: { lt: now } } }),
     prisma.batch.count({ where: { expiryDate: { gte: now, lte: soon } } }),
-    prisma.batch.aggregate({ _sum: { qty: true } }),
     prisma.batch.findMany({
       where: { expiryDate: { gte: now, lte: soon } },
       orderBy: { expiryDate: "asc" },
       take: 8,
-      include: INCLUDE_ITEM,
+      include: INCLUDE,
     }),
   ]);
+
+  // Units tracked = total on-hand across every batch (live from the ledger).
+  const onHandAgg = await prisma.stockLedgerEntry.aggregate({
+    where: { isCancelled: false, batchId: { not: null } },
+    _sum: { actualQty: true },
+  });
+  const oh = await onHandForIds(soonRows.map((r) => r.id));
 
   return {
     total,
     expired,
     expiring,
     fresh: total - expired - expiring,
-    totalQty: agg._sum.qty ?? 0,
-    expiringSoon: soonRows.map(toListItem),
+    totalQty: Math.max(0, onHandAgg._sum.actualQty ?? 0),
+    expiringSoon: soonRows.map((r) => toListItem(r, oh.get(r.id) ?? 0)),
   };
 }
 
-export async function getBatchById(id: string): Promise<Batch | null> {
-  const r = await prisma.batch.findUnique({
-    where: { id },
-    include: INCLUDE_ITEM,
+async function oneOnHand(id: string): Promise<number> {
+  const agg = await prisma.stockLedgerEntry.aggregate({
+    where: { batchId: id, isCancelled: false },
+    _sum: { actualQty: true },
   });
+  return agg._sum.actualQty ?? 0;
+}
+
+export async function getBatchById(id: string): Promise<Batch | null> {
+  const r = await prisma.batch.findUnique({ where: { id }, include: INCLUDE });
   if (!r) return null;
-  return { ...toListItem(r), notes: r.notes, createdAt: r.createdAt.toISOString() };
+  return toDetail(r, await oneOnHand(id));
 }
 
 export async function batchByBarcode(code: string): Promise<Batch | null> {
@@ -148,19 +191,20 @@ export async function batchByBarcode(code: string): Promise<Batch | null> {
         { batchNo: { equals: c, mode: "insensitive" } },
       ],
     },
-    include: INCLUDE_ITEM,
+    include: INCLUDE,
   });
   if (!r) return null;
-  return { ...toListItem(r), notes: r.notes, createdAt: r.createdAt.toISOString() };
+  return toDetail(r, await oneOnHand(r.id));
 }
 
 export async function batchesForItem(itemId: string): Promise<BatchListItem[]> {
   const rows = await prisma.batch.findMany({
     where: { itemId },
     orderBy: { expiryDate: "asc" },
-    include: INCLUDE_ITEM,
+    include: INCLUDE,
   });
-  return rows.map(toListItem);
+  const oh = await batchOnHand(itemId);
+  return rows.map((r) => toListItem(r, oh.get(r.id) ?? 0));
 }
 
 export async function createBatch(values: BatchFormValues): Promise<Batch> {
@@ -171,11 +215,35 @@ export async function createBatch(values: BatchFormValues): Promise<Batch> {
     throw new Error(
       `Batch "${values.batchNo.trim()}" already exists for this item`,
     );
-  const r = await prisma.batch.create({
-    data: toData(values),
-    include: INCLUDE_ITEM,
+
+  return prisma.$transaction(async (tx) => {
+    const item = await tx.item.findUnique({
+      where: { id: values.itemId },
+      select: { valuationRate: true },
+    });
+    if (!item) throw new Error("Item not found");
+
+    const r = await tx.batch.create({ data: toData(values), include: INCLUDE });
+
+    let onHand = 0;
+    // Receiving a lot with a warehouse + qty posts a real stock receipt,
+    // attributed to the batch — so the batch becomes genuine on-hand stock.
+    if (values.warehouseId && values.qty > 0) {
+      await postStockLedger(tx, {
+        itemId: values.itemId,
+        warehouseId: values.warehouseId,
+        actualQty: values.qty,
+        incomingRate: Number(item.valuationRate),
+        voucherType: RECEIPT_VT,
+        voucherNo: r.batchNo,
+        voucherDetailId: r.id,
+        batchId: r.id,
+        postingAt: new Date(),
+      });
+      onHand = values.qty;
+    }
+    return toDetail(r, onHand);
   });
-  return { ...toListItem(r), notes: r.notes, createdAt: r.createdAt.toISOString() };
 }
 
 export async function updateBatch(
@@ -184,14 +252,23 @@ export async function updateBatch(
 ): Promise<Batch> {
   const existing = await prisma.batch.findUnique({ where: { id } });
   if (!existing) throw new Error("Batch not found");
+  // Editing metadata only — quantity on-hand is driven by the ledger, not this
+  // field, so edits here never silently move stock.
   const r = await prisma.batch.update({
     where: { id },
     data: toData(values),
-    include: INCLUDE_ITEM,
+    include: INCLUDE,
   });
-  return { ...toListItem(r), notes: r.notes, createdAt: r.createdAt.toISOString() };
+  return toDetail(r, await oneOnHand(id));
 }
 
 export async function deleteBatch(id: string): Promise<void> {
+  const movements = await prisma.stockLedgerEntry.count({
+    where: { batchId: id },
+  });
+  if (movements > 0)
+    throw new Error(
+      "Can't delete — this batch has stock movements in the ledger.",
+    );
   await prisma.batch.delete({ where: { id } });
 }

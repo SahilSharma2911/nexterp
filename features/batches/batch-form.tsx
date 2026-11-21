@@ -26,8 +26,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useItemOptions } from "@/features/items/queries";
+import { useWarehouseOptions } from "@/features/warehouses/queries";
 import { batchFormSchema, emptyBatch, type BatchFormValues } from "./schema";
 import { useBatch, useCreateBatch, useUpdateBatch } from "./queries";
+
+const UNASSIGNED = "__none__";
 
 export function BatchForm({
   batchId,
@@ -40,6 +43,7 @@ export function BatchForm({
   const isEdit = !!batchId;
   const { data: existing, isLoading } = useBatch(batchId);
   const { data: itemOptions = [] } = useItemOptions();
+  const { data: warehouseOptions = [] } = useWarehouseOptions();
   const create = useCreateBatch();
   const update = useUpdateBatch();
 
@@ -54,6 +58,7 @@ export function BatchForm({
     if (isEdit && existing) {
       form.reset({
         itemId: existing.itemId,
+        warehouseId: existing.warehouseId ?? "",
         batchNo: existing.batchNo,
         barcode: existing.barcode ?? "",
         mfgDate: existing.mfgDate ? existing.mfgDate.slice(0, 10) : "",
@@ -168,6 +173,44 @@ export function BatchForm({
                       }
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="warehouseId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Receive into warehouse</FormLabel>
+                  <Select
+                    value={field.value || UNASSIGNED}
+                    onValueChange={(v) =>
+                      field.onChange(v === UNASSIGNED ? "" : v)
+                    }
+                    disabled={isEdit}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={UNASSIGNED}>
+                        — Don&apos;t receive yet —
+                      </SelectItem>
+                      {warehouseOptions.map((w) => (
+                        <SelectItem key={w.id} value={w.id}>
+                          {w.warehouseName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    {isEdit
+                      ? "Stock is received when the batch is first created."
+                      : "Picking a warehouse posts the quantity into stock as a receipt."}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

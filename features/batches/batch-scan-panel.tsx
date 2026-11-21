@@ -76,7 +76,7 @@ export function BatchScanPanel() {
               </Link>
               <p className="text-xs text-muted-foreground">
                 <span className="font-mono">{batch.itemCode}</span>{" "}
-                {batch.itemName} · {fmtQty(batch.qty)} units
+                {batch.itemName} · {fmtQty(batch.onHand)} on hand
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">

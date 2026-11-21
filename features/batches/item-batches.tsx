@@ -48,7 +48,7 @@ export function ItemBatches({ itemId }: { itemId: string }) {
             <thead>
               <tr className="border-y text-left text-xs text-muted-foreground">
                 <th className="p-3 font-medium">Batch / Lot</th>
-                <th className="p-3 text-right font-medium">Qty</th>
+                <th className="p-3 text-right font-medium">On hand</th>
                 <th className="p-3 font-medium">Expiry</th>
                 <th className="p-3 font-medium">Shelf life</th>
               </tr>
@@ -65,7 +65,7 @@ export function ItemBatches({ itemId }: { itemId: string }) {
                     </Link>
                   </td>
                   <td className="p-3 text-right tabular-nums">
-                    {fmtQty(b.qty)}
+                    {fmtQty(b.onHand)}
                   </td>
                   <td className="p-3 tabular-nums">{fmtDate(b.expiryDate)}</td>
                   <td className="p-3">

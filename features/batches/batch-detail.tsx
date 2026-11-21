@@ -12,6 +12,7 @@ import {
   ScanLine,
   Trash2,
   Truck,
+  Warehouse,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,7 +62,7 @@ export function BatchDetail({ batchId }: { batchId: string }) {
         titleMono
         subtitle={`${b.itemCode} · ${b.itemName}`}
         badge={<ExpiryBadge status={b.expiry} days={b.daysToExpiry} />}
-        stats={[{ label: "Qty", value: fmtQty(b.qty) }]}
+        stats={[{ label: "On hand", value: fmtQty(b.onHand) }]}
         actions={
           canWrite && (
             <>
@@ -106,7 +107,16 @@ export function BatchDetail({ batchId }: { batchId: string }) {
                 </Link>
               }
             />
-            <Field icon={Boxes} label="Quantity" value={fmtQty(b.qty)} />
+            <Field
+              icon={Boxes}
+              label="On hand"
+              value={`${fmtQty(b.onHand)} (received ${fmtQty(b.qty)})`}
+            />
+            <Field
+              icon={Warehouse}
+              label="Warehouse"
+              value={b.warehouseName ?? dash}
+            />
             <Field
               icon={Factory}
               label="Manufactured"

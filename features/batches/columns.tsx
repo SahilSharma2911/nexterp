@@ -79,10 +79,21 @@ export const columns: ColumnDef<BatchListItem>[] = [
     ),
   },
   {
-    accessorKey: "qty",
-    header: sortableHeader<BatchListItem>("qty", "Qty"),
+    id: "onHand",
+    header: "On hand",
     cell: ({ row }) => (
-      <span className="tabular-nums">{fmtQty(row.original.qty)}</span>
+      <span className="tabular-nums font-medium">
+        {fmtQty(row.original.onHand)}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "qty",
+    header: sortableHeader<BatchListItem>("qty", "Received"),
+    cell: ({ row }) => (
+      <span className="tabular-nums text-muted-foreground">
+        {fmtQty(row.original.qty)}
+      </span>
     ),
   },
   {

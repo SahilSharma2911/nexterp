@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import { postStockLedger } from "@/lib/stock-ledger";
+import { allocateFefo } from "@/lib/batch-stock";
 import { postGL, getAccountId, reverseGL } from "@/lib/gl";
 import type {
   JobCardActivity,
@@ -500,17 +501,52 @@ export async function completeJobCard(id: string): Promise<void> {
     if (job.parts.length && !job.warehouseId)
       throw new Error("Select a warehouse to issue the parts from");
 
-    // 1) Inventory — issue each part from the service warehouse.
+    // 1) Inventory — issue each part from the service warehouse. Batch-tracked
+    //    parts are consumed First-Expiry-First-Out across their lots; any
+    //    shortfall beyond batch stock falls back to a plain (unbatched) issue
+    //    so the full quantity always leaves stock.
+    const partItems = await tx.item.findMany({
+      where: { id: { in: job.parts.map((p) => p.itemId) } },
+      select: { id: true, hasBatchNo: true },
+    });
+    const batchTracked = new Set(
+      partItems.filter((i) => i.hasBatchNo).map((i) => i.id),
+    );
+
     for (const p of job.parts) {
-      await postStockLedger(tx, {
-        itemId: p.itemId,
-        warehouseId: job.warehouseId!,
-        actualQty: -p.qty,
-        voucherType: VT,
-        voucherNo: job.name,
-        voucherDetailId: p.id,
-        postingAt: job.serviceDate,
-      });
+      let remaining = p.qty;
+      if (batchTracked.has(p.itemId)) {
+        const { alloc, shortfall } = await allocateFefo(
+          tx,
+          p.itemId,
+          job.warehouseId!,
+          p.qty,
+        );
+        for (const a of alloc) {
+          await postStockLedger(tx, {
+            itemId: p.itemId,
+            warehouseId: job.warehouseId!,
+            actualQty: -a.qty,
+            voucherType: VT,
+            voucherNo: job.name,
+            voucherDetailId: p.id,
+            postingAt: job.serviceDate,
+            batchId: a.batchId,
+          });
+        }
+        remaining = shortfall;
+      }
+      if (remaining > 1e-9) {
+        await postStockLedger(tx, {
+          itemId: p.itemId,
+          warehouseId: job.warehouseId!,
+          actualQty: -remaining,
+          voucherType: VT,
+          voucherNo: job.name,
+          voucherDetailId: p.id,
+          postingAt: job.serviceDate,
+        });
+      }
     }
 
     // 2) Accounting — bill the customer: Debtors Dr / Service Income Cr.
@@ -579,6 +615,7 @@ export async function cancelJobCard(id: string): Promise<void> {
         voucherNo: job.name,
         voucherDetailId: s.voucherDetailId,
         postingAt: new Date(),
+        batchId: s.batchId, // credit the same lot the part was issued from
       });
     }
     await tx.stockLedgerEntry.updateMany({
