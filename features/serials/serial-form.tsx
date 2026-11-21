@@ -111,11 +111,13 @@ export function SerialForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {itemOptions.map((i) => (
-                        <SelectItem key={i.id} value={i.id}>
-                          {i.itemCode} — {i.itemName}
-                        </SelectItem>
-                      ))}
+                      {itemOptions
+                        .filter((i) => i.hasSerialNo)
+                        .map((i) => (
+                          <SelectItem key={i.id} value={i.id}>
+                            {i.itemCode} — {i.itemName}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
