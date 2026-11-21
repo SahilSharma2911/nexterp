@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2 } from "lucide-react";
+import { FileText, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -92,9 +92,20 @@ export function PurchaseReceiptDetail({ receiptId }: { receiptId: string }) {
               </>
             )}
             {canWrite && isSubmitted && (
-              <Button variant="destructive" onClick={() => setConfirm("cancel")}>
-                Cancel Receipt
-              </Button>
+              <>
+                <Button asChild>
+                  <Link href={`/accounts/purchase-invoice/new?pr=${pr.id}`}>
+                    <FileText className="size-4" />
+                    Create Invoice
+                  </Link>
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => setConfirm("cancel")}
+                >
+                  Cancel Receipt
+                </Button>
+              </>
             )}
           </div>
         }

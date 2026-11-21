@@ -26,6 +26,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { fmtMoney } from "@/lib/format";
 import { useItemOptions } from "@/features/items/queries";
 import { useSupplierOptions } from "@/features/suppliers/queries";
+import { usePurchaseReceipt } from "@/features/purchase-receipt/queries";
 import {
   emptyPurchaseInvoice,
   emptyPurchaseInvoiceItem,
@@ -40,10 +41,17 @@ import {
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-export function PurchaseInvoiceForm({ invoiceId }: { invoiceId?: string }) {
+export function PurchaseInvoiceForm({
+  invoiceId,
+  prId,
+}: {
+  invoiceId?: string;
+  prId?: string;
+}) {
   const router = useRouter();
   const isEdit = !!invoiceId;
   const { data: existing } = usePurchaseInvoice(invoiceId);
+  const { data: fromPr } = usePurchaseReceipt(!isEdit ? prId : undefined);
   const { data: itemOptions = [] } = useItemOptions();
   const { data: supplierOptions = [] } = useSupplierOptions();
   const create = useCreatePurchaseInvoice();
@@ -73,6 +81,23 @@ export function PurchaseInvoiceForm({ invoiceId }: { invoiceId?: string }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, existing]);
+
+  // Prefill from a purchase receipt ("Create Invoice" on a submitted receipt).
+  useEffect(() => {
+    if (!isEdit && fromPr) {
+      form.reset({
+        supplierId: fromPr.supplierId,
+        dueDate: "",
+        remarks: `Against receipt ${fromPr.name}`,
+        items: fromPr.items.map((it) => ({
+          itemId: it.itemId,
+          qty: it.qty,
+          rate: it.rate,
+        })),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromPr]);
 
   const watchedItems = useWatch({ control: form.control, name: "items" });
   const total = round2(

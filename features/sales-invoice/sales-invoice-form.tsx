@@ -26,6 +26,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { fmtMoney } from "@/lib/format";
 import { useItemOptions } from "@/features/items/queries";
 import { useCustomerOptions } from "@/features/customers/queries";
+import { useDeliveryNote } from "@/features/delivery-note/queries";
 import {
   emptySalesInvoice,
   emptySalesInvoiceItem,
@@ -40,10 +41,17 @@ import {
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-export function SalesInvoiceForm({ invoiceId }: { invoiceId?: string }) {
+export function SalesInvoiceForm({
+  invoiceId,
+  dnId,
+}: {
+  invoiceId?: string;
+  dnId?: string;
+}) {
   const router = useRouter();
   const isEdit = !!invoiceId;
   const { data: existing } = useSalesInvoice(invoiceId);
+  const { data: fromDn } = useDeliveryNote(!isEdit ? dnId : undefined);
   const { data: itemOptions = [] } = useItemOptions();
   const { data: customerOptions = [] } = useCustomerOptions();
   const create = useCreateSalesInvoice();
@@ -73,6 +81,23 @@ export function SalesInvoiceForm({ invoiceId }: { invoiceId?: string }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, existing]);
+
+  // Prefill from a delivery note ("Create Invoice" on a submitted DN).
+  useEffect(() => {
+    if (!isEdit && fromDn) {
+      form.reset({
+        customerId: fromDn.customerId,
+        dueDate: "",
+        remarks: `Against delivery ${fromDn.name}`,
+        items: fromDn.items.map((it) => ({
+          itemId: it.itemId,
+          qty: it.qty,
+          rate: it.rate,
+        })),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromDn]);
 
   const watchedItems = useWatch({ control: form.control, name: "items" });
   const total = round2(

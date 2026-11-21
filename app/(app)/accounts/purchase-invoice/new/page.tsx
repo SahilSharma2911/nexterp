@@ -3,11 +3,14 @@ import { PurchaseInvoiceForm } from "@/features/purchase-invoice/purchase-invoic
 
 export const metadata = { title: "New Purchase Invoice · Seeka Motor" };
 
-export default function NewPurchaseInvoicePage() {
+export default async function NewPurchaseInvoicePage(props: {
+  searchParams: Promise<{ pr?: string }>;
+}) {
+  const { pr } = await props.searchParams;
   return (
     <>
       <PageHeader title="New Purchase Invoice" subtitle="Bill a supplier" />
-      <PurchaseInvoiceForm />
+      <PurchaseInvoiceForm prId={pr} />
     </>
   );
 }

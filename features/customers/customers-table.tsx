@@ -1,20 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Plus, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useListParams } from "@/hooks/use-list-params";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useCanWrite } from "@/components/session-context";
 import { columns } from "./columns";
 import { useCustomers } from "./queries";
 import type { CustomersTableMeta } from "./schema";
 
 export function CustomersTable() {
-  const canWrite = useCanWrite("selling");
   const [params, setParams] = useListParams();
   const [search, setSearch] = useState(params.q);
 
@@ -47,24 +43,14 @@ export function CustomersTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search customers…"
-            className="pl-8"
-          />
-        </div>
-        {canWrite && (
-          <Button asChild>
-            <Link href="/selling/customers/new">
-              <Plus className="size-4" />
-              New Customer
-            </Link>
-          </Button>
-        )}
+      <div className="relative w-full max-w-sm">
+        <Search className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search customers…"
+          className="pl-8"
+        />
       </div>
 
       <DataTable
