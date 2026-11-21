@@ -906,6 +906,7 @@ model Vehicle {
   accessories    VehicleAccessory[]
   appointments   ServiceAppointment[]
   specifications VehicleSpecification[]
+  booking        VehicleBooking?
 
   @@index([status])
   @@index([dealerId])
@@ -1023,6 +1024,7 @@ model Dealer {
 
   vehicles           Vehicle[]
   allocationRequests AllocationRequest[]
+  bookings           VehicleBooking[]
 }
 
 // DMS · Allocation — a dealer's demand for vehicles, fulfilled by the FIFO
@@ -1044,6 +1046,45 @@ model AllocationRequest {
   dealer Dealer @relation(fields: [dealerId], references: [id])
 
   @@index([status])
+  @@index([dealerId])
+}
+
+enum BookingStatus {
+  BOOKED // customer in the queue, no vehicle yet
+  ALLOTTED // a specific vehicle assigned to this booking
+  DELIVERED // handed over to the customer
+  CANCELLED
+}
+
+// DMS · a customer's booking for a vehicle. Bookings queue per model
+// (priority, then first-come-first-served); a specific vehicle is allotted when
+// one is available, then delivered — so the next customer moves up the queue.
+model VehicleBooking {
+  id           String        @id @default(uuid()) @db.Uuid
+  name         String        @unique // BKG-2026-00001
+  customerName String
+  customerId   String?       @db.Uuid // loose ref to a core Customer
+  phone        String?
+  model        String // desired model
+  variant      String?
+  color        String?
+  dealerId     String?       @db.Uuid
+  priority     Int           @default(2) // 1 high · 2 normal · 3 low
+  advance      Decimal       @default(0) @db.Decimal(18, 2) // token / advance paid
+  note         String?
+  status       BookingStatus @default(BOOKED)
+  vehicleId    String?       @unique @db.Uuid // the allotted vehicle
+  allottedAt   DateTime?
+  deliveredAt  DateTime?
+  cancelledAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  dealer  Dealer?  @relation(fields: [dealerId], references: [id])
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
+
+  @@index([status])
+  @@index([model])
   @@index([dealerId])
 }
 
