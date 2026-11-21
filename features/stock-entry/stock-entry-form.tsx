@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -74,6 +75,7 @@ export function StockEntryForm({ entryId }: { entryId?: string }) {
           note: it.note ?? "",
           batchNo: it.batchNo ?? "",
           batchExpiry: it.batchExpiry ? it.batchExpiry.slice(0, 10) : "",
+          serials: it.serials ?? "",
         })),
       });
     }
@@ -86,6 +88,9 @@ export function StockEntryForm({ entryId }: { entryId?: string }) {
   const isBatchRow = (i: number) =>
     purpose === "MATERIAL_RECEIPT" &&
     !!itemOptions.find((o) => o.id === watchedItems?.[i]?.itemId)?.hasBatchNo;
+  const isSerialRow = (i: number) =>
+    purpose === "MATERIAL_RECEIPT" &&
+    !!itemOptions.find((o) => o.id === watchedItems?.[i]?.itemId)?.hasSerialNo;
   const pending = create.isPending || update.isPending;
 
   function onSubmit(values: StockEntryFormValues) {
@@ -394,6 +399,23 @@ export function StockEntryForm({ entryId }: { entryId?: string }) {
                               )}
                             />
                           </div>
+                        )}
+                        {isSerialRow(i) && (
+                          <FormField
+                            control={form.control}
+                            name={`items.${i}.serials`}
+                            render={({ field }) => (
+                              <FormControl>
+                                <Textarea
+                                  rows={3}
+                                  placeholder="Serial numbers — one per line"
+                                  className="mt-1.5 font-mono text-xs"
+                                  {...field}
+                                  value={field.value ?? ""}
+                                />
+                              </FormControl>
+                            )}
+                          />
                         )}
                       </td>
                       <td className="p-2 text-right align-middle">

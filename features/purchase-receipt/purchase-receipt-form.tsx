@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useItemOptions } from "@/features/items/queries";
@@ -79,6 +80,7 @@ export function PurchaseReceiptForm({
           rate: it.rate,
           batchNo: it.batchNo ?? "",
           batchExpiry: it.batchExpiry ? it.batchExpiry.slice(0, 10) : "",
+          serials: it.serials ?? "",
         })),
       });
     }
@@ -98,6 +100,7 @@ export function PurchaseReceiptForm({
           rate: it.rate,
           batchNo: "",
           batchExpiry: "",
+          serials: "",
         })),
       });
     }
@@ -311,6 +314,24 @@ export function PurchaseReceiptForm({
                                 )}
                               />
                             </div>
+                          )}
+                          {itemOptions.find((o) => o.id === r?.itemId)
+                            ?.hasSerialNo && (
+                            <FormField
+                              control={form.control}
+                              name={`items.${i}.serials`}
+                              render={({ field }) => (
+                                <FormControl>
+                                  <Textarea
+                                    rows={3}
+                                    placeholder="Serial numbers — one per line"
+                                    className="mt-1.5 font-mono text-xs"
+                                    {...field}
+                                    value={field.value ?? ""}
+                                  />
+                                </FormControl>
+                              )}
+                            />
                           )}
                         </td>
                         <td className="p-2 align-top">

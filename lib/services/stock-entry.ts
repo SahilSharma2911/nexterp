@@ -2,6 +2,13 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { postStockLedger } from "@/lib/stock-ledger";
 import { allocateFefo, postIssueFefo, ensureBatch } from "@/lib/batch-stock";
+import {
+  parseSerials,
+  receiveSerials,
+  consumeSerials,
+  restoreSerials,
+  removeReceivedSerials,
+} from "@/lib/serial-stock";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import {
   purposeNeeds,
@@ -46,6 +53,7 @@ function itemsCreate(input: StockEntryFormValues) {
     note: it.note?.trim() || null,
     batchNo: it.batchNo?.trim() || null,
     batchExpiry: it.batchExpiry ? new Date(it.batchExpiry) : null,
+    serials: it.serials?.trim() || null,
   }));
 }
 
@@ -137,6 +145,7 @@ export async function getStockEntry(
       note: it.note,
       batchNo: it.batchNo,
       batchExpiry: it.batchExpiry ? it.batchExpiry.toISOString() : null,
+      serials: it.serials,
     })),
   };
 }
@@ -211,10 +220,13 @@ export async function submitStockEntry(id: string) {
   // Which of the entry's items are batch-tracked (drives FEFO on issue).
   const itemFlags = await prisma.item.findMany({
     where: { id: { in: entry.items.map((i) => i.itemId) } },
-    select: { id: true, hasBatchNo: true },
+    select: { id: true, hasBatchNo: true, hasSerialNo: true },
   });
   const batchTracked = new Set(
     itemFlags.filter((i) => i.hasBatchNo).map((i) => i.id),
+  );
+  const serialTracked = new Set(
+    itemFlags.filter((i) => i.hasSerialNo).map((i) => i.id),
   );
 
   await prisma.$transaction(async (tx) => {
@@ -290,9 +302,28 @@ export async function submitStockEntry(id: string) {
           });
         }
         await receive(r.itemId, to!, r.qty, Number(r.basicRate), r.id, batchId);
+        if (serialTracked.has(r.itemId) && r.serials) {
+          await receiveSerials(tx, {
+            itemId: r.itemId,
+            warehouseId: to!,
+            qty: r.qty,
+            serials: parseSerials(r.serials),
+          });
+        }
       }
     } else if (purpose === "MATERIAL_ISSUE") {
-      for (const r of entry.items) await issue(r.itemId, from!, r.qty, r.id);
+      for (const r of entry.items) {
+        await issue(r.itemId, from!, r.qty, r.id);
+        if (serialTracked.has(r.itemId)) {
+          await consumeSerials(tx, {
+            itemId: r.itemId,
+            warehouseId: from!,
+            qty: r.qty,
+            voucherType: VOUCHER_TYPE,
+            voucherNo: entry.name,
+          });
+        }
+      }
     } else if (purpose === "MATERIAL_TRANSFER") {
       for (const r of entry.items) {
         const srcBin = await tx.bin.findUnique({
@@ -410,7 +441,10 @@ export async function submitStockEntry(id: string) {
 }
 
 export async function cancelStockEntry(id: string) {
-  const entry = await prisma.stockEntry.findUnique({ where: { id } });
+  const entry = await prisma.stockEntry.findUnique({
+    where: { id },
+    include: { items: true },
+  });
   if (!entry) throw new Error("Stock Entry not found");
   if (entry.status !== "SUBMITTED")
     throw new Error("Only submitted entries can be cancelled");
@@ -433,6 +467,7 @@ export async function cancelStockEntry(id: string) {
         voucherNo: entry.name,
         voucherDetailId: s.voucherDetailId,
         postingAt: new Date(),
+        batchId: s.batchId,
       });
     }
     await tx.stockLedgerEntry.updateMany({
@@ -443,6 +478,18 @@ export async function cancelStockEntry(id: string) {
       },
       data: { isCancelled: true },
     });
+    // Serials: return any this entry issued, and remove any it received.
+    await restoreSerials(tx, {
+      voucherType: VOUCHER_TYPE,
+      voucherNo: entry.name,
+    });
+    for (const it of entry.items) {
+      if (it.serials)
+        await removeReceivedSerials(tx, {
+          itemId: it.itemId,
+          serials: parseSerials(it.serials),
+        });
+    }
     await tx.stockEntry.update({
       where: { id: entry.id },
       data: { status: "CANCELLED", cancelledAt: new Date() },

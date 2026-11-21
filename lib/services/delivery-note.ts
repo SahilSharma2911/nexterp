@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { postStockLedger } from "@/lib/stock-ledger";
 import { postIssueFefo } from "@/lib/batch-stock";
+import { consumeSerials, restoreSerials } from "@/lib/serial-stock";
 import { adjustBinReservation } from "@/lib/bin";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import type {
@@ -191,10 +192,13 @@ export async function submitDeliveryNote(id: string) {
   if (dn.status !== "DRAFT") throw new Error("Only draft notes can be submitted");
   const itemFlags = await prisma.item.findMany({
     where: { id: { in: dn.items.map((i) => i.itemId) } },
-    select: { id: true, hasBatchNo: true },
+    select: { id: true, hasBatchNo: true, hasSerialNo: true },
   });
   const batchTracked = new Set(
     itemFlags.filter((i) => i.hasBatchNo).map((i) => i.id),
+  );
+  const serialTracked = new Set(
+    itemFlags.filter((i) => i.hasSerialNo).map((i) => i.id),
   );
   await prisma.$transaction(async (tx) => {
     let cogs = 0;
@@ -213,6 +217,15 @@ export async function submitDeliveryNote(id: string) {
         batchTracked.has(it.itemId),
       );
       cogs += Math.abs(res.valueDiff);
+      if (serialTracked.has(it.itemId)) {
+        await consumeSerials(tx, {
+          itemId: it.itemId,
+          warehouseId: dn.warehouseId,
+          qty: it.qty,
+          voucherType: VT,
+          voucherNo: dn.name,
+        });
+      }
       await tx.deliveryNoteItem.update({
         where: { id: it.id },
         data: { valuationRate: res.valuationRate },
@@ -286,6 +299,8 @@ export async function cancelDeliveryNote(id: string) {
       where: { voucherType: VT, voucherNo: dn.name, isCancelled: false },
       data: { isCancelled: true },
     });
+    // Return any serial-tracked units to stock.
+    await restoreSerials(tx, { voucherType: VT, voucherNo: dn.name });
     if (dn.salesOrderId) {
       const so = await tx.salesOrder.findUnique({
         where: { id: dn.salesOrderId },

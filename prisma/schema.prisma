@@ -142,6 +142,9 @@ model SerialNo {
   barcode     String?
   status      SerialStatus @default(IN_STOCK)
   notes       String?
+  // Set when the unit is issued/delivered, so a cancel can restore it.
+  outVoucherType String?
+  outVoucherNo   String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -478,6 +481,7 @@ model StockEntryDetail {
   note           String?
   batchNo        String? // lot received into (batch-tracked items)
   batchExpiry    DateTime?
+  serials        String? // serial numbers captured on receipt (one per line)
 
   stockEntry StockEntry @relation(fields: [stockEntryId], references: [id], onDelete: Cascade)
   item       Item       @relation(fields: [itemId], references: [id])
@@ -563,6 +567,7 @@ model PurchaseReceiptItem {
   amount            Decimal   @default(0) @db.Decimal(18, 2)
   batchNo           String? // lot received into (batch-tracked items)
   batchExpiry       DateTime?
+  serials           String? // serial numbers captured on receipt (one per line)
 
   purchaseReceipt PurchaseReceipt @relation(fields: [purchaseReceiptId], references: [id], onDelete: Cascade)
   item            Item            @relation("PRItem", fields: [itemId], references: [id])

@@ -2,6 +2,11 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { postStockLedger } from "@/lib/stock-ledger";
 import { ensureBatch } from "@/lib/batch-stock";
+import {
+  parseSerials,
+  receiveSerials,
+  removeReceivedSerials,
+} from "@/lib/serial-stock";
 import { adjustBinReservation } from "@/lib/bin";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import type {
@@ -42,6 +47,7 @@ function buildRows(input: PurchaseReceiptFormValues) {
       amount,
       batchNo: it.batchNo?.trim() || null,
       batchExpiry: it.batchExpiry ? new Date(it.batchExpiry) : null,
+      serials: it.serials?.trim() || null,
     };
   });
   return { rows, totalQty, totalAmount: round2(totalAmount) };
@@ -130,6 +136,7 @@ export async function getPurchaseReceipt(
       amount: Number(it.amount),
       batchNo: it.batchNo,
       batchExpiry: it.batchExpiry ? it.batchExpiry.toISOString() : null,
+      serials: it.serials,
     })),
   };
 }
@@ -196,13 +203,15 @@ export async function submitPurchaseReceipt(id: string) {
   });
   if (!pr) throw new Error("Purchase Receipt not found");
   if (pr.status !== "DRAFT") throw new Error("Only draft receipts can be submitted");
+  const flags = await prisma.item.findMany({
+    where: { id: { in: pr.items.map((i) => i.itemId) } },
+    select: { id: true, hasBatchNo: true, hasSerialNo: true },
+  });
   const batchTracked = new Set(
-    (
-      await prisma.item.findMany({
-        where: { id: { in: pr.items.map((i) => i.itemId) }, hasBatchNo: true },
-        select: { id: true },
-      })
-    ).map((i) => i.id),
+    flags.filter((i) => i.hasBatchNo).map((i) => i.id),
+  );
+  const serialTracked = new Set(
+    flags.filter((i) => i.hasSerialNo).map((i) => i.id),
   );
   await prisma.$transaction(async (tx) => {
     for (const it of pr.items) {
@@ -213,6 +222,14 @@ export async function submitPurchaseReceipt(id: string) {
           batchNo: it.batchNo,
           warehouseId: pr.warehouseId,
           expiryDate: it.batchExpiry ?? null,
+        });
+      }
+      if (serialTracked.has(it.itemId) && it.serials) {
+        await receiveSerials(tx, {
+          itemId: it.itemId,
+          warehouseId: pr.warehouseId,
+          qty: it.qty,
+          serials: parseSerials(it.serials),
         });
       }
       await postStockLedger(tx, {
@@ -295,6 +312,14 @@ export async function cancelPurchaseReceipt(id: string) {
       where: { voucherType: VT, voucherNo: pr.name, isCancelled: false },
       data: { isCancelled: true },
     });
+    // Remove any serials this receipt created (still in stock).
+    for (const it of pr.items) {
+      if (it.serials)
+        await removeReceivedSerials(tx, {
+          itemId: it.itemId,
+          serials: parseSerials(it.serials),
+        });
+    }
     if (pr.purchaseOrderId) {
       const po = await tx.purchaseOrder.findUnique({
         where: { id: pr.purchaseOrderId },

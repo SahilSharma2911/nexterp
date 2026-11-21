@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import { postStockLedger } from "@/lib/stock-ledger";
 import { allocateFefo } from "@/lib/batch-stock";
+import { consumeSerials, restoreSerials } from "@/lib/serial-stock";
 import { postGL, getAccountId, reverseGL } from "@/lib/gl";
 import type {
   JobCardActivity,
@@ -507,10 +508,13 @@ export async function completeJobCard(id: string): Promise<void> {
     //    so the full quantity always leaves stock.
     const partItems = await tx.item.findMany({
       where: { id: { in: job.parts.map((p) => p.itemId) } },
-      select: { id: true, hasBatchNo: true },
+      select: { id: true, hasBatchNo: true, hasSerialNo: true },
     });
     const batchTracked = new Set(
       partItems.filter((i) => i.hasBatchNo).map((i) => i.id),
+    );
+    const serialTracked = new Set(
+      partItems.filter((i) => i.hasSerialNo).map((i) => i.id),
     );
 
     for (const p of job.parts) {
@@ -545,6 +549,16 @@ export async function completeJobCard(id: string): Promise<void> {
           voucherNo: job.name,
           voucherDetailId: p.id,
           postingAt: job.serviceDate,
+        });
+      }
+      // Serial-tracked parts: mark the oldest in-stock units delivered.
+      if (serialTracked.has(p.itemId)) {
+        await consumeSerials(tx, {
+          itemId: p.itemId,
+          warehouseId: job.warehouseId!,
+          qty: p.qty,
+          voucherType: VT,
+          voucherNo: job.name,
         });
       }
     }
@@ -622,6 +636,9 @@ export async function cancelJobCard(id: string): Promise<void> {
       where: { voucherType: VT, voucherNo: job.name, isCancelled: false },
       data: { isCancelled: true },
     });
+
+    // Return any serial-tracked units to stock.
+    await restoreSerials(tx, { voucherType: VT, voucherNo: job.name });
 
     // Reverse the GL revenue.
     await reverseGL(tx, VT, job.name, new Date());

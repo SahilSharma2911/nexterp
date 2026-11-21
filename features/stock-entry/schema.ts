@@ -42,6 +42,8 @@ export const stockEntryItemSchema = z.object({
   // Batch/lot captured when receiving a batch-tracked item.
   batchNo: z.string().trim().optional(),
   batchExpiry: z.string().optional().nullable(),
+  // Serial numbers (one per line) captured when receiving a serialised item.
+  serials: z.string().optional().nullable(),
 });
 
 export const stockEntryFormSchema = z
@@ -99,6 +101,7 @@ export const emptyStockEntryItem = {
   note: "",
   batchNo: "",
   batchExpiry: "",
+  serials: "",
 };
 
 export const emptyStockEntry: StockEntryFormValues = {
@@ -137,6 +140,7 @@ export type StockEntryItem = {
   note: string | null;
   batchNo: string | null;
   batchExpiry: string | null;
+  serials: string | null;
 };
 
 export type StockEntryDetail = {
