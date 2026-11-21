@@ -59,8 +59,8 @@ const HEADING_AREA: Record<string, Area | null> = {
   Overview: null,
   Stock: "stock",
   Manufacturing: "manufacturing",
-  Buying: "buying",
-  Selling: "selling",
+  // Trade spans buying + selling — gated per item, so leave the group open.
+  Trade: null,
   Accounts: "accounts",
   Dealership: "dms",
 };
@@ -70,14 +70,19 @@ const HEADING_MODULE: Record<string, ModuleId | null> = {
   Overview: null,
   Stock: "erp",
   Manufacturing: "erp",
-  Buying: "erp",
-  Selling: "erp",
+  Trade: "erp",
   Accounts: "erp",
   Dealership: "dms",
   Settings: null,
 };
 
-export type NavItem = { href: string; label: string; icon: React.ElementType };
+export type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  // Optional per-item permission gate (for groups that span areas, e.g. Trade).
+  area?: Area;
+};
 type NavGroup = { heading: string; items: NavItem[] };
 
 const NAV: NavGroup[] = [
@@ -106,19 +111,14 @@ const NAV: NavGroup[] = [
     ],
   },
   {
-    heading: "Buying",
+    heading: "Trade",
     items: [
-      { href: "/buying/suppliers", label: "Suppliers", icon: Truck },
-      { href: "/buying/purchase-order", label: "Purchase Order", icon: ShoppingCart },
-      { href: "/buying/purchase-receipt", label: "Purchase Receipt", icon: PackageCheck },
-    ],
-  },
-  {
-    heading: "Selling",
-    items: [
-      { href: "/selling/customers", label: "Customers", icon: Users },
-      { href: "/selling/sales-order", label: "Sales Order", icon: ShoppingBag },
-      { href: "/selling/delivery-note", label: "Delivery Note", icon: Send },
+      { href: "/buying/suppliers", label: "Suppliers", icon: Truck, area: "buying" },
+      { href: "/buying/purchase-order", label: "Purchase Order", icon: ShoppingCart, area: "buying" },
+      { href: "/buying/purchase-receipt", label: "Purchase Receipt", icon: PackageCheck, area: "buying" },
+      { href: "/selling/customers", label: "Customers", icon: Users, area: "selling" },
+      { href: "/selling/sales-order", label: "Sales Order", icon: ShoppingBag, area: "selling" },
+      { href: "/selling/delivery-note", label: "Delivery Note", icon: Send, area: "selling" },
     ],
   },
   {
@@ -174,7 +174,14 @@ export function visibleNavGroups(role: Role): NavGroup[] {
     if (g.heading === "Settings") return isAdmin(role);
     const area = HEADING_AREA[g.heading];
     return area === null || canSeeNav(role, area);
-  });
+  })
+    // Drop items the role can't access (for area-spanning groups like Trade),
+    // then drop any group left with nothing visible.
+    .map((g) => ({
+      ...g,
+      items: g.items.filter((it) => !it.area || canSeeNav(role, it.area)),
+    }))
+    .filter((g) => g.items.length > 0);
 }
 
 export function SidebarNav({
