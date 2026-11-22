@@ -13,7 +13,8 @@ import {
   cancelBooking,
 } from "@/lib/services/vehicle-bookings";
 import { emptyBooking } from "@/modules/dms/vehicle-bookings/schema";
-import { resetDb, makeVehicle } from "./helpers";
+import { prisma } from "@/lib/prisma";
+import { resetDb, makeVehicle, seedAccounts, glFor } from "./helpers";
 
 const form = (over: Partial<typeof emptyBooking> = {}) => ({
   ...emptyBooking,
@@ -135,15 +136,46 @@ describe("vehicle bookings service", () => {
     await expect(allotNextVehicle(booking.id)).rejects.toThrow(/no matching/i);
   });
 
-  it("delivers an allotted booking", async () => {
+  it("delivers an allotted booking and hands over the vehicle", async () => {
     const booking = await createBooking(form({ model: "City EV" }));
-    const v = await makeVehicle("VIN-1", { model: "City EV", status: "AT_DEALER" });
+    const v = await makeVehicle("VIN-1", { model: "City EV", status: "PDI_DONE" });
     await allotBooking(booking.id, v.id);
     await deliverBooking(booking.id);
 
     const d = await getBookingById(booking.id);
     expect(d?.status).toBe("DELIVERED");
     expect(d?.deliveredAt).toBeTruthy();
+
+    // the real vehicle lifecycle advanced too — so it can't be sold again
+    const veh = await prisma.vehicle.findUnique({ where: { id: v.id } });
+    expect(veh?.status).toBe("DELIVERED");
+    expect(veh?.customerName).toBe("Asha");
+  });
+
+  it("won't deliver until the allotted vehicle has passed PDI", async () => {
+    const booking = await createBooking(form({ model: "City EV" }));
+    const v = await makeVehicle("VIN-1", { model: "City EV", status: "AT_DEALER" });
+    await allotBooking(booking.id, v.id);
+    await expect(deliverBooking(booking.id)).rejects.toThrow(/PDI/i);
+  });
+
+  it("posts the vehicle sale to the GL on delivery", async () => {
+    await seedAccounts();
+    const booking = await createBooking(form({ model: "City EV" }));
+    const v = await makeVehicle("VIN-SALE", {
+      model: "City EV",
+      status: "PDI_DONE",
+      sellingRate: 150000,
+    });
+    await allotBooking(booking.id, v.id);
+    await deliverBooking(booking.id);
+
+    const gl = await glFor("VIN-SALE");
+    expect(gl.length).toBeGreaterThan(0);
+    const debit = gl.reduce((s, e) => s + Number(e.debit), 0);
+    const credit = gl.reduce((s, e) => s + Number(e.credit), 0);
+    expect(debit).toBe(150000);
+    expect(credit).toBe(150000);
   });
 
   it("won't deliver a booking that isn't allotted", async () => {
@@ -169,7 +201,7 @@ describe("vehicle bookings service", () => {
 
   it("won't cancel a delivered booking", async () => {
     const booking = await createBooking(form({ model: "City EV" }));
-    const v = await makeVehicle("VIN-1", { model: "City EV", status: "AT_DEALER" });
+    const v = await makeVehicle("VIN-1", { model: "City EV", status: "PDI_DONE" });
     await allotBooking(booking.id, v.id);
     await deliverBooking(booking.id);
     await expect(cancelBooking(booking.id)).rejects.toThrow(/delivered/i);

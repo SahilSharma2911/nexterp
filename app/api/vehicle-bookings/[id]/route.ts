@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { errorResponse } from "@/lib/api-server";
-import { bookingFormSchema } from "@/modules/dms/vehicle-bookings/schema";
+import { bookingApiSchema } from "@/modules/dms/vehicle-bookings/schema";
 import {
   deleteBooking,
   getBookingById,
@@ -22,7 +22,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 export async function PATCH(req: NextRequest, { params }: Ctx) {
   try {
     const { id } = await params;
-    const values = bookingFormSchema.parse(await req.json());
+    const values = bookingApiSchema.parse(await req.json());
     return NextResponse.json(await updateBooking(id, values));
   } catch (e) {
     return errorResponse(e);

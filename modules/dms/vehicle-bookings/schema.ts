@@ -36,6 +36,13 @@ export const bookingFormSchema = z.object({
 
 export type BookingFormValues = z.infer<typeof bookingFormSchema>;
 
+// Server-side: the UI always sends priority/advance, but tolerate partial
+// payloads from raw API callers by filling the natural defaults.
+export const bookingApiSchema = bookingFormSchema.extend({
+  priority: z.number().int().min(1).max(3).default(2),
+  advance: z.number().min(0, "Advance must be ≥ 0").default(0),
+});
+
 export const emptyBooking: BookingFormValues = {
   customerName: "",
   phone: "",
@@ -70,6 +77,7 @@ export type BookingListItem = {
 
 export type BookingDetail = BookingListItem & {
   note: string | null;
+  vehicleStatus: string | null; // lifecycle status of the allotted vehicle
   allottedAt: string | null;
   deliveredAt: string | null;
   cancelledAt: string | null;

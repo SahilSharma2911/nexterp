@@ -1,5 +1,6 @@
 import { Prisma, VehicleStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { deliverVehicle } from "@/lib/services/vehicle-lifecycle";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import type {
   AvailableVehicle,
@@ -24,7 +25,7 @@ type Row = Prisma.VehicleBookingGetPayload<{
 
 const INCLUDE = {
   dealer: { select: { name: true } },
-  vehicle: { select: { vin: true } },
+  vehicle: { select: { vin: true, status: true } },
 } as const;
 
 // Position (1-based) of every BOOKED booking within its model's queue:
@@ -152,6 +153,7 @@ export async function getBookingById(id: string): Promise<BookingDetail | null> 
   return {
     ...toListItem(r, queue),
     note: r.note,
+    vehicleStatus: r.vehicle?.status ?? null,
     allottedAt: r.allottedAt ? r.allottedAt.toISOString() : null,
     deliveredAt: r.deliveredAt ? r.deliveredAt.toISOString() : null,
     cancelledAt: r.cancelledAt ? r.cancelledAt.toISOString() : null,
@@ -252,11 +254,41 @@ export async function allotNextVehicle(id: string): Promise<void> {
   await allotBooking(id, list[0].id);
 }
 
-export async function deliverBooking(id: string): Promise<void> {
-  const b = await prisma.vehicleBooking.findUnique({ where: { id } });
+// Delivering a booking drives the real vehicle hand-over: the allotted vehicle
+// must have passed PDI, then it moves to DELIVERED and the sale posts to the GL
+// (via deliverVehicle) — so a booked car can't also be sold to someone else.
+export async function deliverBooking(
+  id: string,
+  by?: string | null,
+): Promise<void> {
+  const b = await prisma.vehicleBooking.findUnique({
+    where: { id },
+    include: { vehicle: { select: { id: true, status: true } } },
+  });
   if (!b) throw new Error("Booking not found");
   if (b.status !== "ALLOTTED")
     throw new Error("Only an allotted booking can be delivered");
+  if (!b.vehicle) throw new Error("This booking has no vehicle allotted");
+  if (b.vehicle.status === "DELIVERED") {
+    // Vehicle already handed over (e.g. delivered from its own page) — just
+    // close the booking so the queue stays consistent.
+    await prisma.vehicleBooking.update({
+      where: { id },
+      data: { status: "DELIVERED", deliveredAt: new Date() },
+    });
+    return;
+  }
+  if (b.vehicle.status !== "PDI_DONE")
+    throw new Error(
+      `Run PDI on the vehicle before delivery (it's "${b.vehicle.status}").`,
+    );
+
+  // Hand over the vehicle itself — posts the sale + moves it to DELIVERED.
+  await deliverVehicle(
+    b.vehicle.id,
+    { customerName: b.customerName, customerId: b.customerId ?? undefined },
+    by,
+  );
   await prisma.vehicleBooking.update({
     where: { id },
     data: { status: "DELIVERED", deliveredAt: new Date() },

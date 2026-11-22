@@ -43,6 +43,8 @@ import { DetailHeader, Field } from "@/components/detail/detail-shell";
 import { useCanWrite } from "@/components/session-context";
 import { cn } from "@/lib/utils";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
+import { VEHICLE_STATUS_LABELS } from "@/modules/dms/vehicles/schema";
+import type { VehicleStatus } from "@/modules/dms/vehicles/schema";
 import { BookingStatusBadge } from "./columns";
 import { PRIORITY_LABELS, type AvailableVehicle } from "./schema";
 import {
@@ -85,6 +87,12 @@ export function BookingDetail({ bookingId }: { bookingId: string }) {
     allotNext.isPending ||
     deliver.isPending ||
     cancel.isPending;
+  // An allotted vehicle must pass PDI before the booking can be delivered.
+  const pdiPending =
+    b.status === "ALLOTTED" &&
+    b.vehicleStatus != null &&
+    b.vehicleStatus !== "PDI_DONE" &&
+    b.vehicleStatus !== "DELIVERED";
 
   const actions = canWrite ? (
     <>
@@ -112,7 +120,11 @@ export function BookingDetail({ bookingId }: { bookingId: string }) {
         </>
       )}
       {b.status === "ALLOTTED" && (
-        <Button disabled={busy} onClick={() => deliver.mutate(b.id)}>
+        <Button
+          disabled={busy || pdiPending}
+          title={pdiPending ? "Complete the vehicle's PDI first" : undefined}
+          onClick={() => deliver.mutate(b.id)}
+        >
           <Truck className="size-4" />
           Mark delivered
         </Button>
@@ -160,6 +172,31 @@ export function BookingDetail({ bookingId }: { bookingId: string }) {
         ]}
         actions={actions}
       />
+
+      {pdiPending && (
+        <div className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
+          <Clock className="mt-0.5 size-4 shrink-0" />
+          <span>
+            Vehicle is{" "}
+            <span className="font-medium">
+              {VEHICLE_STATUS_LABELS[b.vehicleStatus as VehicleStatus] ??
+                b.vehicleStatus}
+            </span>{" "}
+            — complete its PDI before you can deliver this booking.
+            {b.vehicleId && (
+              <>
+                {" "}
+                <Link
+                  href={`/dms/vehicles/${b.vehicleId}`}
+                  className="font-medium underline"
+                >
+                  Open vehicle
+                </Link>
+              </>
+            )}
+          </span>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Customer + vehicle */}
@@ -214,6 +251,16 @@ export function BookingDetail({ bookingId }: { bookingId: string }) {
                 ) : (
                   dash
                 )
+              }
+            />
+            <Field
+              icon={Truck}
+              label="Vehicle status"
+              value={
+                b.vehicleStatus
+                  ? (VEHICLE_STATUS_LABELS[b.vehicleStatus as VehicleStatus] ??
+                    b.vehicleStatus)
+                  : dash
               }
             />
             {b.note && (
