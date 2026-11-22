@@ -15,6 +15,8 @@ import {
   MapPin,
   Palette,
   Pencil,
+  Printer,
+  ScanLine,
   ShieldCheck,
   Trash2,
   TrendingUp,
@@ -36,6 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useCanWrite } from "@/components/session-context";
+import { Barcode } from "@/components/barcode";
 import { cn } from "@/lib/utils";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
 import { VEHICLE_STATUS_LABELS } from "./schema";
@@ -323,6 +326,24 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
               {v.remarks && (
                 <Field icon={Pencil} label="Remarks" value={v.remarks} />
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ScanLine className="size-4 text-muted-foreground" />
+                Vehicle barcode (VIN)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-3 py-4">
+              <Barcode value={v.vin} />
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/dms/vehicles/${v.id}/label`}>
+                  <Printer className="size-4" />
+                  Print tag
+                </Link>
+              </Button>
             </CardContent>
           </Card>
 
