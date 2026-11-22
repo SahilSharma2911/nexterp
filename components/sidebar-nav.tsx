@@ -138,7 +138,6 @@ const NAV: NavGroup[] = [
       { href: "/dms/vehicles", label: "Vehicles", icon: Car },
       { href: "/dms/dealers", label: "Dealers", icon: Building2 },
       { href: "/dms/allocation", label: "Allocation", icon: Workflow },
-      { href: "/dms/vehicle-bookings", label: "Bookings", icon: ClipboardCheck },
       { href: "/dms/service-appointments", label: "Appointments", icon: CalendarClock },
       { href: "/dms/job-cards", label: "Job Cards", icon: Wrench },
       { href: "/dms/technicians", label: "Technicians", icon: HardHat },

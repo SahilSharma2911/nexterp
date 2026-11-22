@@ -200,7 +200,6 @@ export async function deliverVehicle(
   id: string,
   values: DeliverValues,
   by?: string | null,
-  opts?: { skipBookingCheck?: boolean },
 ) {
   const v = await requireStage(id, "PDI_DONE", "deliver");
   const customer = values.customerName.trim();
@@ -213,19 +212,6 @@ export async function deliverVehicle(
   const accTotal = round2(accessories.reduce((s, a) => s + a.amount, 0));
 
   await prisma.$transaction(async (tx) => {
-    // Don't sell a car out from under an active booking — unless this delivery
-    // is itself being driven by that booking (deliverBooking passes the flag).
-    if (!opts?.skipBookingCheck) {
-      const held = await tx.vehicleBooking.findUnique({
-        where: { vehicleId: id },
-        select: { name: true, status: true, customerName: true },
-      });
-      if (held && held.status === "ALLOTTED")
-        throw new Error(
-          `This vehicle is reserved for booking ${held.name} (${held.customerName}). Deliver it from that booking, or cancel the booking first.`,
-        );
-    }
-
     const veh = await tx.vehicle.findUnique({
       where: { id },
       select: { vin: true, sellingRate: true },
