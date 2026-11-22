@@ -12,6 +12,7 @@ import {
   deliverBooking,
   cancelBooking,
 } from "@/lib/services/vehicle-bookings";
+import { deliverVehicle } from "@/lib/services/vehicle-lifecycle";
 import { emptyBooking } from "@/modules/dms/vehicle-bookings/schema";
 import { prisma } from "@/lib/prisma";
 import { resetDb, makeVehicle, seedAccounts, glFor } from "./helpers";
@@ -176,6 +177,22 @@ describe("vehicle bookings service", () => {
     const credit = gl.reduce((s, e) => s + Number(e.credit), 0);
     expect(debit).toBe(150000);
     expect(credit).toBe(150000);
+  });
+
+  it("blocks selling a reserved vehicle directly from the vehicle page", async () => {
+    const booking = await createBooking(form({ model: "City EV" }));
+    const v = await makeVehicle("VIN-1", { model: "City EV", status: "PDI_DONE" });
+    await allotBooking(booking.id, v.id);
+
+    // Someone tries to deliver the car to a different customer via its own flow.
+    await expect(
+      deliverVehicle(v.id, { customerName: "Someone Else" }),
+    ).rejects.toThrow(/reserved for booking/i);
+
+    // The booking's own delivery still goes through (bypasses the guard).
+    await deliverBooking(booking.id);
+    const veh = await prisma.vehicle.findUnique({ where: { id: v.id } });
+    expect(veh?.status).toBe("DELIVERED");
   });
 
   it("won't deliver a booking that isn't allotted", async () => {

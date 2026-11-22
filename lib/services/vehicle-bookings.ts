@@ -284,10 +284,13 @@ export async function deliverBooking(
     );
 
   // Hand over the vehicle itself — posts the sale + moves it to DELIVERED.
+  // skipBookingCheck: this delivery IS the booking, so the reservation guard
+  // in deliverVehicle must not block it.
   await deliverVehicle(
     b.vehicle.id,
     { customerName: b.customerName, customerId: b.customerId ?? undefined },
     by,
+    { skipBookingCheck: true },
   );
   await prisma.vehicleBooking.update({
     where: { id },
