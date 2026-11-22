@@ -106,3 +106,9 @@ export type BookingsTableMeta = {
   sort: string;
   onSort: (field: string) => void;
 };
+
+export type BookingCatalogue = {
+  models: string[];
+  variants: string[];
+  colors: string[];
+};

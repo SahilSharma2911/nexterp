@@ -5,6 +5,7 @@ import {
   deleteBooking,
   listBookings,
   bookingAnalytics,
+  vehicleCatalogue,
   getBookingById,
   availableVehicles,
   allotBooking,
@@ -233,6 +234,19 @@ describe("vehicle bookings service", () => {
       updateBooking(booking.id, form({ customerName: "Changed" })),
     ).rejects.toThrow(/booked/i);
     await expect(deleteBooking(booking.id)).rejects.toThrow(/cancel instead/i);
+  });
+
+  it("builds a de-duped catalogue from vehicles + bookings", async () => {
+    await makeVehicle("VIN-A", { model: "City EV", variant: "LR", color: "Blue" });
+    await makeVehicle("VIN-B", { model: "Zip", variant: "LR", color: "Red" });
+    await createBooking(form({ model: "City EV", variant: "SR", color: "Blue" }));
+    await createBooking(form({ model: "Nova", customerName: "Ben" }));
+
+    const cat = await vehicleCatalogue();
+    // distinct + sorted, merged across both tables
+    expect(cat.models).toEqual(["City EV", "Nova", "Zip"]);
+    expect(cat.variants).toEqual(["LR", "SR"]);
+    expect(cat.colors).toEqual(["Blue", "Red"]);
   });
 
   it("summarises counts and open demand", async () => {

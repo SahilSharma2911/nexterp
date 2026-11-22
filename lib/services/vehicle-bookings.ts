@@ -118,6 +118,34 @@ export async function listBookings(
   };
 }
 
+// Distinct model / variant / colour values already used anywhere in the system
+// (vehicles + existing bookings) — powers the "pick or type" suggestions on the
+// booking form so the per-model queue doesn't fragment on typos.
+export async function vehicleCatalogue(): Promise<{
+  models: string[];
+  variants: string[];
+  colors: string[];
+}> {
+  const [vehicles, bookings] = await Promise.all([
+    prisma.vehicle.findMany({
+      select: { model: true, variant: true, color: true },
+    }),
+    prisma.vehicleBooking.findMany({
+      select: { model: true, variant: true, color: true },
+    }),
+  ]);
+  const rows = [...vehicles, ...bookings];
+  const uniq = (xs: (string | null)[]) =>
+    [...new Set(xs.map((s) => s?.trim()).filter((s): s is string => !!s))].sort(
+      (a, b) => a.localeCompare(b),
+    );
+  return {
+    models: uniq(rows.map((r) => r.model)),
+    variants: uniq(rows.map((r) => r.variant)),
+    colors: uniq(rows.map((r) => r.color)),
+  };
+}
+
 export async function bookingAnalytics(): Promise<BookingAnalytics> {
   const [grouped, adv, bookedByModel] = await Promise.all([
     prisma.vehicleBooking.groupBy({ by: ["status"], _count: true }),

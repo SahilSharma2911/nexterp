@@ -34,6 +34,14 @@ export function useBookingAnalytics() {
   });
 }
 
+export function useBookingCatalogue() {
+  return useQuery({
+    queryKey: [...bookingKeys.all, "catalogue"] as const,
+    queryFn: () => bookingApi.fetchBookingCatalogue(),
+    staleTime: 60_000,
+  });
+}
+
 export function useBooking(id?: string) {
   return useQuery({
     queryKey: bookingKeys.detail(id ?? ""),

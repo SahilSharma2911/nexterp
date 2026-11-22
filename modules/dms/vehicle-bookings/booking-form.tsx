@@ -31,7 +31,12 @@ import {
   emptyBooking,
   type BookingFormValues,
 } from "./schema";
-import { useBooking, useCreateBooking, useUpdateBooking } from "./queries";
+import {
+  useBooking,
+  useBookingCatalogue,
+  useCreateBooking,
+  useUpdateBooking,
+} from "./queries";
 
 const UNASSIGNED = "__none__";
 
@@ -40,6 +45,7 @@ export function BookingForm({ bookingId }: { bookingId?: string }) {
   const isEdit = !!bookingId;
   const { data: existing, isLoading } = useBooking(bookingId);
   const { data: dealerOptions = [] } = useDealerOptions();
+  const { data: catalogue } = useBookingCatalogue();
   const create = useCreateBooking();
   const update = useUpdateBooking();
 
@@ -150,7 +156,11 @@ export function BookingForm({ bookingId }: { bookingId?: string }) {
                 <FormItem>
                   <FormLabel>Model</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. City EV" {...field} />
+                    <Input
+                      list="booking-models"
+                      placeholder="Pick or type a model"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -163,7 +173,12 @@ export function BookingForm({ bookingId }: { bookingId?: string }) {
                 <FormItem>
                   <FormLabel>Variant</FormLabel>
                   <FormControl>
-                    <Input {...field} value={field.value ?? ""} />
+                    <Input
+                      list="booking-variants"
+                      placeholder="Pick or type a variant"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -176,7 +191,12 @@ export function BookingForm({ bookingId }: { bookingId?: string }) {
                 <FormItem>
                   <FormLabel>Colour</FormLabel>
                   <FormControl>
-                    <Input {...field} value={field.value ?? ""} />
+                    <Input
+                      list="booking-colors"
+                      placeholder="Pick or type a colour"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -249,6 +269,22 @@ export function BookingForm({ bookingId }: { bookingId?: string }) {
                 </FormItem>
               )}
             />
+
+            <datalist id="booking-models">
+              {(catalogue?.models ?? []).map((m) => (
+                <option key={m} value={m} />
+              ))}
+            </datalist>
+            <datalist id="booking-variants">
+              {(catalogue?.variants ?? []).map((v) => (
+                <option key={v} value={v} />
+              ))}
+            </datalist>
+            <datalist id="booking-colors">
+              {(catalogue?.colors ?? []).map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
           </CardContent>
         </Card>
 

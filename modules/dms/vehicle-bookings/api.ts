@@ -3,6 +3,7 @@ import type { ListQuery, ListResponse } from "@/lib/api-list";
 import type {
   AvailableVehicle,
   BookingAnalytics,
+  BookingCatalogue,
   BookingDetail,
   BookingFormValues,
   BookingListItem,
@@ -20,6 +21,13 @@ export async function fetchBookings(params: BookingsQuery) {
 
 export async function fetchBookingAnalytics() {
   const { data } = await api.get<BookingAnalytics>("/vehicle-bookings/analytics");
+  return data;
+}
+
+export async function fetchBookingCatalogue() {
+  const { data } = await api.get<BookingCatalogue>(
+    "/vehicle-bookings/catalogue",
+  );
   return data;
 }
 
