@@ -38,5 +38,9 @@ export function Barcode({
   }, [value, height, displayValue]);
 
   if (!value) return null;
-  return <svg ref={ref} className={cn("text-foreground", className)} />;
+  // max-w-full + h-auto keeps the generated SVG inside its container (long
+  // codes like a 17-char VIN would otherwise overflow narrow cards).
+  return (
+    <svg ref={ref} className={cn("h-auto max-w-full text-foreground", className)} />
+  );
 }
