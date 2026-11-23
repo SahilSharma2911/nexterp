@@ -63,7 +63,11 @@ const HEADING_AREA: Record<string, Area | null> = {
   // Stock Trade spans buying + selling — gated per item, so leave it open.
   "Stock Trade": null,
   Accounts: "accounts",
+  // Dealership (DMS) split into themed sub-sections, all gated on the dms area.
   Dealership: "dms",
+  "Service & Workshop": "dms",
+  Aftersales: "dms",
+  Subsidies: "dms",
 };
 
 // Which vertical module each nav group belongs to (null = always-on core).
@@ -74,6 +78,9 @@ const HEADING_MODULE: Record<string, ModuleId | null> = {
   "Stock Trade": "erp",
   Accounts: "erp",
   Dealership: "dms",
+  "Service & Workshop": "dms",
+  Aftersales: "dms",
+  Subsidies: "dms",
   Settings: null,
 };
 
@@ -139,13 +146,28 @@ const NAV: NavGroup[] = [
       { href: "/dms/vehicles", label: "Vehicles", icon: Car },
       { href: "/dms/dealers", label: "Dealers", icon: Building2 },
       { href: "/dms/allocation", label: "Allocation", icon: Workflow },
+    ],
+  },
+  {
+    heading: "Service & Workshop",
+    items: [
       { href: "/dms/service-appointments", label: "Appointments", icon: CalendarClock },
       { href: "/dms/job-cards", label: "Job Cards", icon: Wrench },
       { href: "/dms/technicians", label: "Technicians", icon: HardHat },
       { href: "/dms/service-bays", label: "Service Bays", icon: LayoutGrid },
+    ],
+  },
+  {
+    heading: "Aftersales",
+    items: [
       { href: "/dms/warranties", label: "Warranties", icon: ShieldCheck },
       { href: "/dms/warranty-claims", label: "Claims", icon: FileWarning },
       { href: "/dms/recalls", label: "Recalls", icon: Megaphone },
+    ],
+  },
+  {
+    heading: "Subsidies",
+    items: [
       { href: "/dms/subsidy-schemes", label: "Subsidy Schemes", icon: BadgePercent },
       { href: "/dms/subsidy-claims", label: "Subsidy Claims", icon: BadgeIndianRupee },
     ],
