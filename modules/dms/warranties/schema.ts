@@ -105,6 +105,22 @@ export type WarrantyOption = {
   component: WarrantyComponent;
 };
 
+export type WarrantyAnalytics = {
+  activeCovers: number;
+  expiringSoon: number; // active, expiring within 90 days
+  vehiclesCovered: number;
+  autoRegistered: number;
+  byComponent: { name: string; value: number }[]; // active covers per component
+  expiring: {
+    id: string;
+    vehicleId: string;
+    vehicle: string;
+    component: string;
+    expiryDate: string;
+    daysLeft: number;
+  }[];
+};
+
 export type WarrantiesTableMeta = {
   sort: string;
   onSort: (field: string) => void;

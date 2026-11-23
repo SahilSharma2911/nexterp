@@ -4,6 +4,8 @@ import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
 import {
   COMPONENT_LABELS,
   type Warranty,
+  type WarrantyAnalytics,
+  type WarrantyComponent,
   type WarrantyFormValues,
   type WarrantyOption,
   type WarrantyRegistration,
@@ -99,6 +101,48 @@ export async function listWarranties(
   ]);
 
   return { rows: rows.map(toItem), total, page: p.page, limit: p.limit };
+}
+
+// Headline analytics for the Warranties list page.
+export async function warrantyAnalytics(): Promise<WarrantyAnalytics> {
+  const now = new Date();
+  const soonCut = new Date(now);
+  soonCut.setDate(soonCut.getDate() + 90);
+
+  const rows = await prisma.warranty.findMany({
+    include: { vehicle: { select: { vin: true } } },
+  });
+
+  const active = rows
+    .map((r) => ({ r, exp: warrantyExpiry(r.startDate, r.months) }))
+    .filter((x) => x.r.status === "ACTIVE" && x.exp >= now);
+
+  const expiring = active
+    .filter((x) => x.exp <= soonCut)
+    .sort((a, b) => a.exp.getTime() - b.exp.getTime());
+
+  const byComponent = new Map<WarrantyComponent, number>();
+  for (const { r } of active)
+    byComponent.set(r.component, (byComponent.get(r.component) ?? 0) + 1);
+
+  return {
+    activeCovers: active.length,
+    expiringSoon: expiring.length,
+    vehiclesCovered: new Set(active.map((x) => x.r.vehicleId)).size,
+    autoRegistered: rows.filter((r) => r.autoRegistered).length,
+    byComponent: [...byComponent.entries()].map(([k, v]) => ({
+      name: COMPONENT_LABELS[k],
+      value: v,
+    })),
+    expiring: expiring.slice(0, 8).map((x) => ({
+      id: x.r.id,
+      vehicleId: x.r.vehicleId,
+      vehicle: x.r.vehicle.vin,
+      component: COMPONENT_LABELS[x.r.component],
+      expiryDate: x.exp.toISOString(),
+      daysLeft: Math.max(0, daysBetween(now, x.exp)),
+    })),
+  };
 }
 
 export async function warrantyOptions(

@@ -26,6 +26,14 @@ export function useWarranties(params: warrantiesApi.WarrantiesQuery) {
   });
 }
 
+export function useWarrantyAnalytics() {
+  return useQuery({
+    queryKey: [...warrantyKeys.all, "analytics"] as const,
+    queryFn: () => warrantiesApi.fetchWarrantyAnalytics(),
+    staleTime: 60_000,
+  });
+}
+
 export function useWarrantyOptions(vehicleId?: string) {
   return useQuery({
     queryKey: [...warrantyKeys.all, "options", vehicleId ?? ""] as const,

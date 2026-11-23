@@ -2,6 +2,7 @@ import { api } from "@/lib/axios";
 import type { ListQuery, ListResponse } from "@/lib/api-list";
 import type {
   Warranty,
+  WarrantyAnalytics,
   WarrantyFormValues,
   WarrantyOption,
   WarrantyRegistration,
@@ -13,6 +14,11 @@ export async function fetchWarranties(params: WarrantiesQuery) {
   const { data } = await api.get<ListResponse<Warranty>>("/warranties", {
     params,
   });
+  return data;
+}
+
+export async function fetchWarrantyAnalytics() {
+  const { data } = await api.get<WarrantyAnalytics>("/warranties/analytics");
   return data;
 }
 

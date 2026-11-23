@@ -72,25 +72,33 @@ export function WarrantyDetail({ warrantyId }: { warrantyId: string }) {
           { label: "Claims", value: w.claimCount },
         ]}
         actions={
-          canWrite && (
-            <>
-              <Button asChild variant="outline" size="sm">
-                <Link href={`/dms/warranties/${w.id}/edit`}>
-                  <Pencil className="size-4" />
-                  Edit
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-destructive"
-                onClick={() => setConfirmOpen(true)}
-              >
-                <Trash2 className="size-4" />
-                Delete
-              </Button>
-            </>
-          )
+          <>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/dms/warranties/vehicle/${w.vehicleId}`}>
+                <ShieldCheck className="size-4" />
+                Vehicle coverage
+              </Link>
+            </Button>
+            {canWrite && (
+              <>
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/dms/warranties/${w.id}/edit`}>
+                    <Pencil className="size-4" />
+                    Edit
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive"
+                  onClick={() => setConfirmOpen(true)}
+                >
+                  <Trash2 className="size-4" />
+                  Delete
+                </Button>
+              </>
+            )}
+          </>
         }
       />
 
