@@ -19,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Field } from "@/components/detail/detail-shell";
 import { cn } from "@/lib/utils";
 import { useClaimEligibility } from "./queries";
-import type { CheckStatus, EligibilityCheck } from "./schema";
+import type { CheckStatus, ClaimEligibility, EligibilityCheck } from "./schema";
 
 const dash = <span className="text-muted-foreground">—</span>;
 
@@ -61,11 +61,11 @@ function CheckRow({ check }: { check: EligibilityCheck }) {
 
 export function EligibilityPanel({ claimId }: { claimId: string }) {
   const { data, isLoading } = useClaimEligibility(claimId);
+  if (isLoading || !data) return <Skeleton className="h-64 w-full rounded-xl" />;
+  return <EligibilityResult data={data} />;
+}
 
-  if (isLoading || !data) {
-    return <Skeleton className="h-64 w-full rounded-xl" />;
-  }
-
+export function EligibilityResult({ data }: { data: ClaimEligibility }) {
   const { eligible, preQualified, note, checks, coverage, vehicle, job } = data;
 
   return (

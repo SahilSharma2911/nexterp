@@ -13,6 +13,8 @@ export async function resetDb() {
   await prisma.serviceBay.deleteMany();
   await prisma.allocationRequest.deleteMany(); // FK to dealer
   await prisma.allocationRule.deleteMany();
+  await prisma.recallItem.deleteMany(); // FK to vehicle + campaign
+  await prisma.recallCampaign.deleteMany();
   await prisma.vehicle.deleteMany();
   await prisma.dealer.deleteMany();
   await prisma.gLEntry.deleteMany();

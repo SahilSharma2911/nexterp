@@ -35,6 +35,18 @@ export async function fetchClaimEligibility(id: string) {
   return data;
 }
 
+export async function previewEligibility(body: {
+  warrantyId: string;
+  faultCode?: string;
+  odometerKm?: number | null;
+}) {
+  const { data } = await api.post<ClaimEligibility>(
+    "/warranty-claims/check",
+    body,
+  );
+  return data;
+}
+
 export async function createClaim(values: ClaimFormValues) {
   const { data } = await api.post<{ id: string; name: string }>(
     "/warranty-claims",

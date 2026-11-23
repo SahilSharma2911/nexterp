@@ -906,6 +906,7 @@ model Vehicle {
   accessories    VehicleAccessory[]
   appointments   ServiceAppointment[]
   specifications VehicleSpecification[]
+  recallItems    RecallItem[]
 
   @@index([status])
   @@index([dealerId])
@@ -1270,6 +1271,69 @@ enum WarrantyComponent {
   CONTROLLER
   CHARGER
   CORROSION
+}
+
+// DMS vertical — an OEM safety/quality recall. Affected vehicles are matched by
+// model + manufacturing date range, then each is tracked through remediation.
+model RecallCampaign {
+  id          String       @id @default(uuid()) @db.Uuid
+  code        String       @unique // RC-2026-0001 or the OEM's own code
+  title       String
+  component   String? // affected part, e.g. "Battery pack", "Brake controller"
+  severity    RecallSeverity @default(MEDIUM)
+  description String?
+  models      String[] // affected models
+  mfgFrom     DateTime? // affected manufacturing window (start)
+  mfgTo       DateTime? // affected manufacturing window (end)
+  status      RecallStatus @default(OPEN)
+  launchedAt  DateTime     @default(now())
+  closedAt    DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  items RecallItem[]
+
+  @@index([status])
+}
+
+// One affected vehicle within a recall, tracked from notice to repair.
+model RecallItem {
+  id         String           @id @default(uuid()) @db.Uuid
+  campaignId String           @db.Uuid
+  vehicleId  String           @db.Uuid
+  status     RecallItemStatus @default(PENDING)
+  jobCardId  String?          @db.Uuid // the remediation job, if any
+  notifiedAt DateTime?
+  repairedAt DateTime?
+  notes      String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  campaign RecallCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  vehicle  Vehicle        @relation(fields: [vehicleId], references: [id])
+
+  @@unique([campaignId, vehicleId])
+  @@index([status])
+  @@index([vehicleId])
+}
+
+enum RecallSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RecallStatus {
+  OPEN
+  CLOSED
+}
+
+enum RecallItemStatus {
+  PENDING // identified, not yet contacted
+  NOTIFIED // customer informed
+  REPAIRED // remedy applied
+  NOT_AFFECTED // checked and cleared
 }
 
 enum WarrantyStatus {

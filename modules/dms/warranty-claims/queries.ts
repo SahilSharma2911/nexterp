@@ -50,6 +50,17 @@ export function useClaimEligibility(id?: string) {
   });
 }
 
+export function usePreviewEligibility() {
+  return useMutation({
+    mutationFn: (body: {
+      warrantyId: string;
+      faultCode?: string;
+      odometerKm?: number | null;
+    }) => claimsApi.previewEligibility(body),
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
 export function useCreateClaim() {
   const qc = useQueryClient();
   return useMutation({

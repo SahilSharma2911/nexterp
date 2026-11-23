@@ -254,6 +254,83 @@ async function eligibilityContext(claimId: string) {
   return { claim, w, claimJob, odometerKm, lastService, input };
 }
 
+// Standalone pre-check: run the eligibility report for a warranty + fault code +
+// odometer, without needing a claim. Used by the eligibility check tool.
+export async function previewEligibility(p: {
+  warrantyId: string;
+  faultCode?: string | null;
+  odometerKm?: number | null;
+}): Promise<ClaimEligibility | null> {
+  const w = await prisma.warranty.findUnique({
+    where: { id: p.warrantyId },
+    include: {
+      vehicle: {
+        select: { id: true, vin: true, model: true, batterySoH: true, customerName: true },
+      },
+    },
+  });
+  if (!w) return null;
+
+  const latestOdo =
+    p.odometerKm == null
+      ? (
+          await prisma.jobCard.findFirst({
+            where: { vehicleId: w.vehicleId, odometer: { not: null } },
+            orderBy: { serviceDate: "desc" },
+            select: { odometer: true },
+          })
+        )?.odometer ?? null
+      : p.odometerKm;
+
+  const lastService = await prisma.jobCard.findFirst({
+    where: { vehicleId: w.vehicleId },
+    orderBy: { serviceDate: "desc" },
+    select: { serviceDate: true },
+  });
+
+  const report = evaluateEligibilityReport({
+    component: w.component,
+    startDate: w.startDate,
+    months: w.months,
+    kmLimit: w.kmLimit,
+    soHThreshold: w.soHThreshold,
+    status: w.status,
+    vehicleSoH: w.vehicle.batterySoH,
+    odometerKm: latestOdo,
+    faultCode: p.faultCode,
+    lastServiceAt: lastService?.serviceDate ?? null,
+  });
+  const expiry = new Date(w.startDate);
+  expiry.setMonth(expiry.getMonth() + w.months);
+
+  return {
+    eligible: report.eligible,
+    preQualified: report.preQualified,
+    note: report.note,
+    checks: report.checks,
+    coverage: {
+      component: COMPONENT_LABELS[w.component],
+      startDate: w.startDate.toISOString(),
+      expiryDate: expiry.toISOString(),
+      months: w.months,
+      kmLimit: w.kmLimit,
+      soHThreshold: w.soHThreshold,
+      status: w.status,
+    },
+    vehicle: {
+      id: w.vehicle.id,
+      vin: w.vehicle.vin,
+      model: w.vehicle.model,
+      batterySoH: w.vehicle.batterySoH,
+      odometerKm: latestOdo,
+      customerName: w.vehicle.customerName,
+    },
+    job: null,
+    faultCode: p.faultCode?.trim() || null,
+    lastServiceAt: lastService?.serviceDate.toISOString() ?? null,
+  };
+}
+
 // The full automated eligibility report for the claim detail / check page.
 export async function getClaimEligibility(
   id: string,
