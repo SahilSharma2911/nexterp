@@ -253,14 +253,15 @@ export async function getVehicleRelated(id: string): Promise<VehicleRelated> {
 }
 
 export async function deleteVehicle(id: string): Promise<void> {
-  const [jobs, warranties, subsidies] = await Promise.all([
+  const [jobs, warranties, subsidies, recalls] = await Promise.all([
     prisma.jobCard.count({ where: { vehicleId: id } }),
     prisma.warranty.count({ where: { vehicleId: id } }),
     prisma.subsidyClaim.count({ where: { vehicleId: id } }),
+    prisma.recallItem.count({ where: { vehicleId: id } }),
   ]);
-  if (jobs + warranties + subsidies > 0)
+  if (jobs + warranties + subsidies + recalls > 0)
     throw new Error(
-      "Can't delete — this vehicle has job cards, warranties or subsidy claims. Reassign or remove them first.",
+      "Can't delete — this vehicle has job cards, warranties, subsidy claims or recall records. Reassign or remove them first.",
     );
   await prisma.vehicle.delete({ where: { id } });
 }
