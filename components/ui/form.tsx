@@ -78,7 +78,10 @@ function FormItem({ className, ...props }: React.ComponentProps<"div">) {
     <FormItemContext.Provider value={{ id }}>
       <div
         data-slot="form-item"
-        className={cn("grid gap-2", className)}
+        // content-start: when a taller sibling (e.g. one with helper text) makes
+        // this grid cell stretch, pack the label+input to the top instead of
+        // stretching the rows — so inputs stay aligned across a form row.
+        className={cn("grid content-start gap-2", className)}
         {...props}
       />
     </FormItemContext.Provider>
