@@ -95,7 +95,12 @@ function FormLabel({
     <Label
       data-slot="form-label"
       data-error={!!error}
-      className={cn("data-[error=true]:text-destructive", className)}
+      // Keep labels to a single line so fields in a grid row stay aligned —
+      // a wrapping label would otherwise push its input lower than its neighbours.
+      className={cn(
+        "block min-w-0 truncate data-[error=true]:text-destructive",
+        className,
+      )}
       htmlFor={formItemId}
       {...props}
     />
