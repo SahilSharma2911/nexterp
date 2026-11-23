@@ -253,6 +253,13 @@ export async function reimburseClaim(
   if (!claim) throw new Error("Claim not found");
   if (claim.status !== "APPROVED" && claim.status !== "SETTLED")
     throw new Error("Only approved or settled claims can be reimbursed");
+  // Credit notes are the authoritative payment record — don't let a manual entry
+  // silently fight the reconciliation that drives reimbursedAmount.
+  const noteCount = await prisma.creditNote.count({ where: { claimId: id } });
+  if (noteCount > 0)
+    throw new Error(
+      "This claim is reconciled via credit notes — record the payment there instead.",
+    );
   const amount = round2(body.amount);
   await prisma.$transaction([
     prisma.warrantyClaim.update({

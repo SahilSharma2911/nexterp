@@ -12,6 +12,7 @@ import {
   submitClaim,
   approveClaim,
   getClaim,
+  reimburseClaim,
 } from "@/lib/services/warranty-claims";
 import { prisma } from "@/lib/prisma";
 import { resetDb, makeVehicle } from "./helpers";
@@ -121,5 +122,34 @@ describe("reimbursement reconciliation", () => {
     const s = await reconciliationSummary();
     expect(s.unmatchedNotes).toBe(1);
     expect(s.unmatchedValue).toBe(12000);
+  });
+
+  it("won't match a credit note to a non-decided (draft) claim", async () => {
+    const v = await makeVehicle("VIN-DRAFT", { batterySoH: 70 });
+    const w = await prisma.warranty.create({
+      data: {
+        vehicleId: v.id,
+        component: "BATTERY",
+        startDate: new Date("2026-01-01"),
+        months: 96,
+        status: "ACTIVE",
+      },
+    });
+    const { id } = await createClaim({
+      warrantyId: w.id,
+      claimDate: "2026-06-01",
+      claimAmount: 10000,
+    });
+    await expect(
+      createCreditNote({ number: "CN-DRAFT", amount: 10000, claimId: id }),
+    ).rejects.toThrow(/approved or settled/i);
+  });
+
+  it("blocks manual reimbursement once a claim has credit notes", async () => {
+    const claimId = await approvedClaim(40000);
+    await createCreditNote({ number: "CN-M", amount: 40000, claimId });
+    await expect(reimburseClaim(claimId, { amount: 1000 })).rejects.toThrow(
+      /credit notes/i,
+    );
   });
 });

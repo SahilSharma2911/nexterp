@@ -39,6 +39,23 @@ async function syncClaim(
     await tx.creditNote.updateMany({ where: { claimId }, data: { status } });
 }
 
+// Credit notes reconcile OEM payments, so they only attach to a decided claim.
+async function assertReconcilable(
+  tx: Prisma.TransactionClient,
+  claimId: string | null,
+) {
+  if (!claimId) return;
+  const claim = await tx.warrantyClaim.findUnique({
+    where: { id: claimId },
+    select: { status: true },
+  });
+  if (!claim) throw new Error("Claim not found");
+  if (claim.status !== "APPROVED" && claim.status !== "SETTLED")
+    throw new Error(
+      "Credit notes can only be matched to approved or settled claims.",
+    );
+}
+
 function toRow(
   n: Prisma.CreditNoteGetPayload<{
     include: { claim: { select: { name: true; approvedAmount: true } } };
@@ -104,6 +121,7 @@ export async function createCreditNote(
 ): Promise<{ id: string }> {
   const data = toData(v);
   const id = await prisma.$transaction(async (tx) => {
+    await assertReconcilable(tx, data.claimId);
     const n = await tx.creditNote.create({
       data: { ...data, status: data.claimId ? "MATCHED" : "UNMATCHED" },
     });
@@ -121,6 +139,7 @@ export async function updateCreditNote(
   if (!existing) throw new Error("Credit note not found");
   const data = toData(v);
   await prisma.$transaction(async (tx) => {
+    await assertReconcilable(tx, data.claimId);
     await tx.creditNote.update({
       where: { id },
       data: { ...data, status: data.claimId ? "MATCHED" : "UNMATCHED" },
@@ -149,6 +168,7 @@ export async function matchCreditNote(
   const existing = await prisma.creditNote.findUnique({ where: { id } });
   if (!existing) throw new Error("Credit note not found");
   await prisma.$transaction(async (tx) => {
+    await assertReconcilable(tx, claimId);
     await tx.creditNote.update({
       where: { id },
       data: { claimId, status: claimId ? "MATCHED" : "UNMATCHED" },
@@ -210,7 +230,12 @@ export async function reconciliationSummary(): Promise<ReconciliationSummary> {
   const now = Date.now();
   let totalApproved = 0;
   let totalReimbursed = 0;
-  let discrepancies = 0;
+
+  // A discrepancy is a genuine amount mismatch flagged on a credit note, not a
+  // claim that's merely awaiting the rest of its payment.
+  const discrepancies = new Set(
+    notes.filter((n) => n.status === "DISCREPANCY" && n.claimId).map((n) => n.claimId!),
+  ).size;
 
   const outstanding = claims
     .map((c) => {
@@ -218,8 +243,6 @@ export async function reconciliationSummary(): Promise<ReconciliationSummary> {
       const reimbursed = Number(c.reimbursedAmount);
       totalApproved += approved;
       totalReimbursed += reimbursed;
-      if (reimbursed > 0 && round2(reimbursed) !== round2(approved))
-        discrepancies++;
       const out = Math.max(0, round2(approved - reimbursed));
       const approvedAt = c.events[0]?.at ?? null;
       const days = approvedAt
@@ -278,7 +301,11 @@ export async function reconciliationSummary(): Promise<ReconciliationSummary> {
   return {
     totalApproved: round2(totalApproved),
     totalReimbursed: round2(totalReimbursed),
-    totalOutstanding: round2(totalApproved - totalReimbursed),
+    // Sum of per-claim outstanding (clamped) — consistent with aging / top lists
+    // and never negative if a claim is over-reimbursed.
+    totalOutstanding: round2(
+      outstanding.reduce((s, c) => s + c.outstanding, 0),
+    ),
     discrepancies,
     unmatchedNotes: unmatched.length,
     unmatchedValue: round2(unmatched.reduce((s, n) => s + Number(n.amount), 0)),

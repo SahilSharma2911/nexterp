@@ -48,8 +48,11 @@ export function ClaimTracking({ claim }: { claim: ClaimDetail }) {
   const [reimburseOpen, setReimburseOpen] = useState(false);
   const [amount, setAmount] = useState("");
 
+  // Manual reimbursement is only for claims not reconciled via credit notes
+  // (those drive reimbursedAmount automatically).
   const canReimburse =
-    claim.status === "APPROVED" || claim.status === "SETTLED";
+    (claim.status === "APPROVED" || claim.status === "SETTLED") &&
+    claim.creditNotes.length === 0;
 
   return (
     <div className="grid gap-4 lg:grid-cols-5">
