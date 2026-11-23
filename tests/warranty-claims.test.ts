@@ -7,6 +7,8 @@ import {
   settleClaim,
   cancelClaim,
   getClaim,
+  addClaimEvent,
+  reimburseClaim,
 } from "@/lib/services/warranty-claims";
 import { prisma } from "@/lib/prisma";
 import { resetDb, makeVehicle } from "./helpers";
@@ -82,5 +84,41 @@ describe("warranty claims service", () => {
     const { id } = await createClaim(claimForm(warrantyId));
     await cancelClaim(id);
     expect((await getClaim(id))?.status).toBe("CANCELLED");
+  });
+
+  it("builds an OEM tracking timeline across the workflow", async () => {
+    const { warrantyId } = await setup(72, 80);
+    const { id } = await createClaim(claimForm(warrantyId));
+    await addClaimEvent(id, { kind: "COMMENT", note: "OEM asked for photos", by: "Reviewer" });
+    await submitClaim(id);
+    await approveClaim(id, { approvedAmount: 45000 });
+
+    const c = await getClaim(id);
+    const kinds = c!.events.map((e) => e.kind);
+    // newest-first
+    expect(kinds).toEqual(["APPROVED", "SUBMITTED", "COMMENT", "CREATED"]);
+    expect(c!.events.find((e) => e.kind === "COMMENT")?.by).toBe("Reviewer");
+  });
+
+  it("records reimbursement and tracks outstanding", async () => {
+    const { warrantyId } = await setup(72, 80);
+    const { id } = await createClaim(claimForm(warrantyId));
+    await submitClaim(id);
+    await approveClaim(id, { approvedAmount: 50000 });
+
+    let c = await getClaim(id);
+    expect(c?.outstanding).toBe(50000);
+
+    await reimburseClaim(id, { amount: 30000 });
+    c = await getClaim(id);
+    expect(c?.reimbursedAmount).toBe(30000);
+    expect(c?.outstanding).toBe(20000);
+    expect(c?.events.some((e) => e.kind === "REIMBURSED")).toBe(true);
+  });
+
+  it("won't reimburse a draft claim", async () => {
+    const { warrantyId } = await setup(72, 80);
+    const { id } = await createClaim(claimForm(warrantyId));
+    await expect(reimburseClaim(id, { amount: 100 })).rejects.toThrow(/approved or settled/i);
   });
 });

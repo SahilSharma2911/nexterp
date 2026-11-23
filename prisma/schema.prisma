@@ -1244,10 +1244,17 @@ model WarrantyClaim {
   claimDate       DateTime    @default(now())
   description     String?
   faultCode       String? // diagnostic trouble code reported for the fault
+  laborCode       String? // OEM labor operation code
+  diagnosis       String? // technician's diagnosis
+  partsNeeded     String? // parts required for the repair (free-text list)
+  evidence        String[]  @default([]) // photo / video evidence URLs
+  documents       String[]  @default([]) // documents submitted to the OEM
   status          ClaimStatus @default(DRAFT)
   claimAmount     Decimal     @default(0) @db.Decimal(18, 2)
   approvedAmount  Decimal     @default(0) @db.Decimal(18, 2)
+  reimbursedAmount Decimal    @default(0) @db.Decimal(18, 2) // paid by OEM
   oemRef          String?
+  expectedReimburseAt DateTime? // expected OEM payment date
   eligible        Boolean? // verdict computed at submit
   eligibilityNote String?
   eligibilityChecks Json? // structured per-check breakdown from the last run
@@ -1257,7 +1264,9 @@ model WarrantyClaim {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
-  warranty Warranty @relation(fields: [warrantyId], references: [id])
+  warranty    Warranty     @relation(fields: [warrantyId], references: [id])
+  events      ClaimEvent[]
+  creditNotes CreditNote[]
 
   @@index([status])
   @@index([warrantyId])
@@ -1348,6 +1357,58 @@ enum ClaimStatus {
   REJECTED
   SETTLED
   CANCELLED
+}
+
+// DMS vertical — an entry on a claim's OEM tracking timeline: status changes,
+// reviewer comments, and internal notes.
+model ClaimEvent {
+  id      String         @id @default(uuid()) @db.Uuid
+  claimId String         @db.Uuid
+  kind    ClaimEventKind
+  note    String?
+  by      String? // author (reviewer / user)
+  at      DateTime       @default(now())
+
+  claim WarrantyClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@index([claimId])
+}
+
+enum ClaimEventKind {
+  CREATED
+  SUBMITTED
+  COMMENT // OEM reviewer comment
+  APPROVED
+  REJECTED
+  SETTLED
+  REIMBURSED
+  NOTE // internal note
+}
+
+// DMS vertical — an OEM credit note reconciled against warranty claims. Matched
+// against a claim's approved amount; a mismatch is flagged as a discrepancy.
+model CreditNote {
+  id        String           @id @default(uuid()) @db.Uuid
+  number    String           @unique // OEM credit note number
+  oemRef    String?
+  amount    Decimal          @default(0) @db.Decimal(18, 2)
+  noteDate  DateTime         @default(now())
+  claimId   String?          @db.Uuid // matched claim
+  status    CreditNoteStatus @default(UNMATCHED)
+  notes     String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  claim WarrantyClaim? @relation(fields: [claimId], references: [id])
+
+  @@index([status])
+  @@index([claimId])
+}
+
+enum CreditNoteStatus {
+  UNMATCHED // not yet tied to a claim
+  MATCHED // amount matches the claim's approved amount
+  DISCREPANCY // tied to a claim but the amounts differ
 }
 
 // DMS vertical — a government/OEM EV incentive scheme (e.g. FAME-II, state EV

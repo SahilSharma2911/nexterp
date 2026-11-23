@@ -24,8 +24,14 @@ export const claimFormSchema = z.object({
   jobCardId: z.string().optional().nullable(),
   claimDate: z.string().optional().nullable(),
   faultCode: z.string().trim().optional(),
+  laborCode: z.string().trim().optional(),
+  diagnosis: z.string().trim().optional(),
+  partsNeeded: z.string().trim().optional(),
+  evidence: z.array(z.string().trim().min(1)).optional(),
+  documents: z.array(z.string().trim().min(1)).optional(),
   description: z.string().trim().optional(),
   claimAmount: z.number().min(0, "Must be ≥ 0"),
+  expectedReimburseAt: z.string().optional().nullable(),
   remarks: z.string().trim().optional(),
 });
 
@@ -36,9 +42,56 @@ export const emptyClaim: ClaimFormValues = {
   jobCardId: "",
   claimDate: "",
   faultCode: "",
+  laborCode: "",
+  diagnosis: "",
+  partsNeeded: "",
+  evidence: [],
+  documents: [],
   description: "",
   claimAmount: 0,
+  expectedReimburseAt: "",
   remarks: "",
+};
+
+export const CLAIM_EVENT_KINDS = [
+  "CREATED",
+  "SUBMITTED",
+  "COMMENT",
+  "APPROVED",
+  "REJECTED",
+  "SETTLED",
+  "REIMBURSED",
+  "NOTE",
+] as const;
+export type ClaimEventKind = (typeof CLAIM_EVENT_KINDS)[number];
+
+export type ClaimEvent = {
+  id: string;
+  kind: ClaimEventKind;
+  note: string | null;
+  by: string | null;
+  at: string;
+};
+
+export type ClaimCreditNote = {
+  id: string;
+  number: string;
+  amount: number;
+  noteDate: string;
+  status: "UNMATCHED" | "MATCHED" | "DISCREPANCY";
+};
+
+// Defaults pulled from a job card to pre-populate a new claim.
+export type ClaimJobDefaults = {
+  jobCardId: string;
+  jobCard: string;
+  warrantyId: string | null;
+  faultCode: string | null;
+  diagnosis: string | null;
+  partsNeeded: string | null;
+  description: string | null;
+  claimAmount: number;
+  photos: string[];
 };
 
 export type CheckStatus = "pass" | "fail" | "warn" | "na";
@@ -100,14 +153,26 @@ export type ClaimDetail = {
   jobCard: string | null;
   claimDate: string;
   faultCode: string | null;
+  laborCode: string | null;
+  diagnosis: string | null;
+  partsNeeded: string | null;
+  evidence: string[];
+  documents: string[];
   description: string | null;
   status: ClaimStatus;
   claimAmount: number;
   approvedAmount: number;
+  reimbursedAmount: number;
+  outstanding: number; // approved − reimbursed (once approved)
   oemRef: string | null;
+  expectedReimburseAt: string | null;
+  submittedAt: string | null;
+  settledAt: string | null;
   eligible: boolean | null;
   eligibilityNote: string | null;
   remarks: string | null;
+  events: ClaimEvent[];
+  creditNotes: ClaimCreditNote[];
 };
 
 export type ClaimsTableMeta = {

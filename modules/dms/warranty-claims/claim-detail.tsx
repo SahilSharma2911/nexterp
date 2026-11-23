@@ -37,6 +37,7 @@ import { useCanWrite } from "@/components/session-context";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
 import { ClaimStatusBadge } from "./columns";
 import { EligibilityPanel } from "./eligibility-panel";
+import { ClaimTracking } from "./claim-tracking";
 import {
   useApproveClaim,
   useCancelClaim,
@@ -236,6 +237,23 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
           />
           <Field icon={Hash} label="OEM ref" value={c.oemRef ?? dash} />
           <Field icon={FileWarning} label="Fault code" value={c.faultCode ?? dash} />
+          <Field icon={Hash} label="Labor code" value={c.laborCode ?? dash} />
+          {c.diagnosis && (
+            <Field
+              icon={FileText}
+              label="Diagnosis"
+              value={c.diagnosis}
+              className="sm:col-span-2 lg:col-span-4"
+            />
+          )}
+          {c.partsNeeded && (
+            <Field
+              icon={FileText}
+              label="Parts needed"
+              value={c.partsNeeded}
+              className="sm:col-span-2 lg:col-span-4"
+            />
+          )}
           {c.description && (
             <Field
               icon={FileText}
@@ -254,6 +272,23 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
           )}
         </CardContent>
       </Card>
+
+      {(c.documents.length > 0 || c.evidence.length > 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="size-4 text-muted-foreground" />
+              Documents &amp; evidence
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <LinkList label="Documents submitted" items={c.documents} />
+            <LinkList label="Photo / video evidence" items={c.evidence} />
+          </CardContent>
+        </Card>
+      )}
+
+      <ClaimTracking claim={c} />
 
       <AlertDialog
         open={confirm !== null}
@@ -294,6 +329,41 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
           )}
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function LinkList({ label, items }: { label: string; items: string[] }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+        {label}
+      </p>
+      {items.length === 0 ? (
+        <p className="mt-1 text-sm text-muted-foreground">—</p>
+      ) : (
+        <ul className="mt-1 space-y-1">
+          {items.map((it, i) => {
+            const isUrl = /^https?:\/\//i.test(it);
+            return (
+              <li key={i} className="truncate text-sm">
+                {isUrl ? (
+                  <a
+                    href={it}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    {it}
+                  </a>
+                ) : (
+                  it
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

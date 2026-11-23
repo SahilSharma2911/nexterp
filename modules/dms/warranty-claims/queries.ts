@@ -116,6 +116,32 @@ function useClaimAction(
   });
 }
 
+export function useAddClaimComment(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { kind?: "COMMENT" | "NOTE"; note: string }) =>
+      claimsApi.addClaimComment(id, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: claimKeys.detail(id) });
+      toast.success("Added to the timeline");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useReimburseClaim(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (amount: number) => claimsApi.reimburseClaim(id, amount),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: claimKeys.all });
+      qc.invalidateQueries({ queryKey: claimKeys.detail(id) });
+      toast.success("Reimbursement recorded");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
 export const useSubmitClaim = () =>
   useClaimAction(claimsApi.submitClaim, "Claim submitted — eligibility checked");
 export const useApproveClaim = () =>

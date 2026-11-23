@@ -20,6 +20,7 @@ import {
   Palette,
   Pencil,
   Plus,
+  ShieldCheck,
   Timer,
   Trash2,
   Wrench,
@@ -150,6 +151,14 @@ export function JobCardDetail({ jobId }: { jobId: string }) {
         stats={[{ label: "Total", value: fmtMoney(j.total) }]}
         actions={
           <>
+            {canWrite && (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/dms/warranty-claims/new?job=${j.id}`}>
+                  <ShieldCheck className="size-4" />
+                  Warranty claim
+                </Link>
+              </Button>
+            )}
             {canWrite && assignable && (
               <>
                 <Button

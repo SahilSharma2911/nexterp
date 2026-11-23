@@ -117,9 +117,13 @@ export async function getClaim(id: string): Promise<ClaimDetail | null> {
           vehicle: { select: { vin: true } },
         },
       },
+      events: { orderBy: { at: "desc" } },
+      creditNotes: { orderBy: { noteDate: "desc" } },
     },
   });
   if (!r) return null;
+  const approved = Number(r.approvedAmount);
+  const reimbursed = Number(r.reimbursedAmount);
   return {
     id: r.id,
     name: r.name,
@@ -132,14 +136,62 @@ export async function getClaim(id: string): Promise<ClaimDetail | null> {
     jobCard: await jobCardName(r.jobCardId),
     claimDate: r.claimDate.toISOString(),
     faultCode: r.faultCode,
+    laborCode: r.laborCode,
+    diagnosis: r.diagnosis,
+    partsNeeded: r.partsNeeded,
+    evidence: r.evidence,
+    documents: r.documents,
     description: r.description,
     status: r.status,
     claimAmount: Number(r.claimAmount),
-    approvedAmount: Number(r.approvedAmount),
+    approvedAmount: approved,
+    reimbursedAmount: reimbursed,
+    outstanding:
+      r.status === "APPROVED" || r.status === "SETTLED"
+        ? Math.max(0, round2(approved - reimbursed))
+        : 0,
     oemRef: r.oemRef,
+    expectedReimburseAt: r.expectedReimburseAt
+      ? r.expectedReimburseAt.toISOString()
+      : null,
+    submittedAt: r.submittedAt ? r.submittedAt.toISOString() : null,
+    settledAt: r.settledAt ? r.settledAt.toISOString() : null,
     eligible: r.eligible,
     eligibilityNote: r.eligibilityNote,
     remarks: r.remarks,
+    events: r.events.map((e) => ({
+      id: e.id,
+      kind: e.kind,
+      note: e.note,
+      by: e.by,
+      at: e.at.toISOString(),
+    })),
+    creditNotes: r.creditNotes.map((c) => ({
+      id: c.id,
+      number: c.number,
+      amount: Number(c.amount),
+      noteDate: c.noteDate.toISOString(),
+      status: c.status,
+    })),
+  };
+}
+
+function toClaimData(v: ClaimFormValues) {
+  return {
+    warrantyId: v.warrantyId,
+    jobCardId: v.jobCardId || null,
+    faultCode: v.faultCode?.trim() || null,
+    laborCode: v.laborCode?.trim() || null,
+    diagnosis: v.diagnosis?.trim() || null,
+    partsNeeded: v.partsNeeded?.trim() || null,
+    evidence: (v.evidence ?? []).map((s) => s.trim()).filter(Boolean),
+    documents: (v.documents ?? []).map((s) => s.trim()).filter(Boolean),
+    description: v.description?.trim() || null,
+    claimAmount: round2(v.claimAmount),
+    expectedReimburseAt: v.expectedReimburseAt
+      ? new Date(v.expectedReimburseAt)
+      : null,
+    remarks: v.remarks?.trim() || null,
   };
 }
 
@@ -152,13 +204,9 @@ export async function createClaim(
   const row = await prisma.warrantyClaim.create({
     data: {
       name,
-      warrantyId: values.warrantyId,
-      jobCardId: values.jobCardId || null,
+      ...toClaimData(values),
       claimDate: values.claimDate ? new Date(values.claimDate) : new Date(),
-      faultCode: values.faultCode?.trim() || null,
-      description: values.description?.trim() || null,
-      claimAmount: round2(values.claimAmount),
-      remarks: values.remarks?.trim() || null,
+      events: { create: { kind: "CREATED", note: "Claim drafted" } },
     },
   });
   return { id: row.id, name };
@@ -175,16 +223,102 @@ export async function updateClaim(
   const row = await prisma.warrantyClaim.update({
     where: { id },
     data: {
-      warrantyId: values.warrantyId,
-      jobCardId: values.jobCardId || null,
+      ...toClaimData(values),
       claimDate: values.claimDate ? new Date(values.claimDate) : existing.claimDate,
-      faultCode: values.faultCode?.trim() || null,
-      description: values.description?.trim() || null,
-      claimAmount: round2(values.claimAmount),
-      remarks: values.remarks?.trim() || null,
     },
   });
   return { id: row.id, name: row.name };
+}
+
+// Add an OEM reviewer comment or an internal note to the claim's timeline.
+export async function addClaimEvent(
+  id: string,
+  body: { kind?: "COMMENT" | "NOTE"; note: string; by?: string | null },
+): Promise<void> {
+  const claim = await prisma.warrantyClaim.findUnique({ where: { id } });
+  if (!claim) throw new Error("Claim not found");
+  const note = body.note?.trim();
+  if (!note) throw new Error("A note is required");
+  await prisma.claimEvent.create({
+    data: { claimId: id, kind: body.kind ?? "COMMENT", note, by: body.by ?? null },
+  });
+}
+
+// Record an OEM reimbursement against an approved/settled claim.
+export async function reimburseClaim(
+  id: string,
+  body: { amount: number; by?: string | null },
+): Promise<void> {
+  const claim = await prisma.warrantyClaim.findUnique({ where: { id } });
+  if (!claim) throw new Error("Claim not found");
+  if (claim.status !== "APPROVED" && claim.status !== "SETTLED")
+    throw new Error("Only approved or settled claims can be reimbursed");
+  const amount = round2(body.amount);
+  await prisma.$transaction([
+    prisma.warrantyClaim.update({
+      where: { id },
+      data: { reimbursedAmount: round2(Number(claim.reimbursedAmount) + amount) },
+    }),
+    prisma.claimEvent.create({
+      data: {
+        claimId: id,
+        kind: "REIMBURSED",
+        note: `OEM reimbursed ₹${amount.toLocaleString("en-IN")}`,
+        by: body.by ?? null,
+      },
+    }),
+  ]);
+}
+
+// Pre-populate a new claim from a job card: fault/diagnosis, parts, cost, photos.
+export async function claimDefaultsFromJob(jobCardId: string) {
+  const job = await prisma.jobCard.findUnique({
+    where: { id: jobCardId },
+    select: {
+      id: true,
+      name: true,
+      vehicleId: true,
+      complaint: true,
+      total: true,
+      photos: true,
+      parts: { select: { itemId: true, qty: true } },
+    },
+  });
+  if (!job) return null;
+  const itemIds = [...new Set(job.parts.map((p) => p.itemId))];
+  const items = itemIds.length
+    ? await prisma.item.findMany({
+        where: { id: { in: itemIds } },
+        select: { id: true, itemName: true },
+      })
+    : [];
+  const itemName = new Map(items.map((i) => [i.id, i.itemName]));
+  // Suggest an active warranty on the same vehicle (battery first, else any).
+  const warranties = await prisma.warranty.findMany({
+    where: { vehicleId: job.vehicleId, status: "ACTIVE" },
+    select: { id: true, component: true },
+  });
+  const warrantyId =
+    warranties.find((w) => w.component === "BATTERY")?.id ??
+    warranties[0]?.id ??
+    null;
+  const partsNeeded =
+    job.parts.length > 0
+      ? job.parts
+          .map((p) => `${itemName.get(p.itemId) ?? "Part"} ×${p.qty}`)
+          .join(", ")
+      : null;
+  return {
+    jobCardId: job.id,
+    jobCard: job.name,
+    warrantyId,
+    faultCode: null,
+    diagnosis: job.complaint ?? null,
+    partsNeeded,
+    description: job.complaint ?? null,
+    claimAmount: Number(job.total),
+    photos: job.photos ?? [],
+  };
 }
 
 export async function deleteClaim(id: string): Promise<void> {
@@ -395,6 +529,12 @@ export async function submitClaim(id: string): Promise<void> {
       eligible: report.eligible,
       eligibilityNote: report.note,
       eligibilityChecks: report.checks,
+      events: {
+        create: {
+          kind: "SUBMITTED",
+          note: `Submitted to OEM — ${report.eligible ? "eligible" : "not eligible"}: ${report.note}`,
+        },
+      },
     },
   });
 }
@@ -407,15 +547,22 @@ export async function approveClaim(
   if (!claim) throw new Error("Claim not found");
   if (claim.status !== "SUBMITTED")
     throw new Error("Only submitted claims can be approved");
+  const approved =
+    body.approvedAmount != null
+      ? round2(body.approvedAmount)
+      : Number(claim.claimAmount);
   await prisma.warrantyClaim.update({
     where: { id },
     data: {
       status: "APPROVED",
-      approvedAmount:
-        body.approvedAmount != null
-          ? round2(body.approvedAmount)
-          : claim.claimAmount,
+      approvedAmount: approved,
       oemRef: body.oemRef?.trim() || claim.oemRef,
+      events: {
+        create: {
+          kind: "APPROVED",
+          note: `Approved for ₹${approved.toLocaleString("en-IN")}${body.oemRef ? ` · OEM ${body.oemRef.trim()}` : ""}`,
+        },
+      },
     },
   });
 }
@@ -427,7 +574,10 @@ export async function rejectClaim(id: string): Promise<void> {
     throw new Error("Only submitted claims can be rejected");
   await prisma.warrantyClaim.update({
     where: { id },
-    data: { status: "REJECTED" },
+    data: {
+      status: "REJECTED",
+      events: { create: { kind: "REJECTED", note: "Rejected by OEM" } },
+    },
   });
 }
 
@@ -438,7 +588,11 @@ export async function settleClaim(id: string): Promise<void> {
     throw new Error("Only approved claims can be settled");
   await prisma.warrantyClaim.update({
     where: { id },
-    data: { status: "SETTLED", settledAt: new Date() },
+    data: {
+      status: "SETTLED",
+      settledAt: new Date(),
+      events: { create: { kind: "SETTLED", note: "Marked settled" } },
+    },
   });
 }
 

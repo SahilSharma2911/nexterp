@@ -5,6 +5,7 @@ import type {
   ClaimDetail,
   ClaimEligibility,
   ClaimFormValues,
+  ClaimJobDefaults,
   ClaimListItem,
 } from "./schema";
 
@@ -88,4 +89,23 @@ export async function settleClaim(id: string) {
 
 export async function cancelClaim(id: string) {
   await api.post(`/warranty-claims/${id}/cancel`);
+}
+
+export async function addClaimComment(
+  id: string,
+  body: { kind?: "COMMENT" | "NOTE"; note: string },
+) {
+  await api.post(`/warranty-claims/${id}/comment`, body);
+}
+
+export async function reimburseClaim(id: string, amount: number) {
+  await api.post(`/warranty-claims/${id}/reimburse`, { amount });
+}
+
+export async function fetchClaimJobDefaults(jobCardId: string) {
+  const { data } = await api.get<ClaimJobDefaults>(
+    "/warranty-claims/job-defaults",
+    { params: { jobCardId } },
+  );
+  return data;
 }
