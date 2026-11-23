@@ -128,19 +128,25 @@ export function ItemDetail({ itemId }: { itemId: string }) {
         </CardContent>
       </Card>
 
-      {it.barcode && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <ScanLine className="size-4 text-muted-foreground" />
-              Barcode
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Barcode value={it.barcode} height={64} />
-          </CardContent>
-        </Card>
-      )}
+      {/* Every item is scannable: use the custom barcode if set, otherwise
+          encode the item code (which is always present & unique). */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <ScanLine className="size-4 text-muted-foreground" />
+            Barcode
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center gap-2">
+          <Barcode value={it.barcode || it.itemCode} height={64} />
+          {!it.barcode && (
+            <p className="text-xs text-muted-foreground">
+              Encoded from the item code — set a custom barcode on the item to
+              override.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {it.specifications.length > 0 && (
         <Card>
