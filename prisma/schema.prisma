@@ -1221,6 +1221,7 @@ model Warranty {
   kmLimit      Int? // optional usage cap
   soHThreshold Float? // battery: covered if SoH drops below this %
   status       WarrantyStatus    @default(ACTIVE)
+  autoRegistered Boolean         @default(false) // activated automatically at sale/delivery
   notes        String?
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
@@ -1241,12 +1242,14 @@ model WarrantyClaim {
   jobCardId       String?     @db.Uuid // loose ref to the job that found it
   claimDate       DateTime    @default(now())
   description     String?
+  faultCode       String? // diagnostic trouble code reported for the fault
   status          ClaimStatus @default(DRAFT)
   claimAmount     Decimal     @default(0) @db.Decimal(18, 2)
   approvedAmount  Decimal     @default(0) @db.Decimal(18, 2)
   oemRef          String?
   eligible        Boolean? // verdict computed at submit
   eligibilityNote String?
+  eligibilityChecks Json? // structured per-check breakdown from the last run
   remarks         String?
   submittedAt     DateTime?
   settledAt       DateTime?
@@ -1261,10 +1264,12 @@ model WarrantyClaim {
 
 enum WarrantyComponent {
   VEHICLE
+  POWERTRAIN
   BATTERY
   MOTOR
   CONTROLLER
   CHARGER
+  CORROSION
 }
 
 enum WarrantyStatus {

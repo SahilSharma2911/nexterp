@@ -1,13 +1,17 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { parseSort, type ListParams, type ListResponse } from "@/lib/api-list";
-import { evaluateEligibility } from "@/lib/services/warranty-eligibility";
+import {
+  evaluateEligibilityReport,
+  type EligibilityReportInput,
+} from "@/lib/services/warranty-eligibility";
 import { COMPONENT_LABELS } from "@/modules/dms/warranties/schema";
 import {
   CLAIM_STATUSES,
   CLAIM_STATUS_LABELS,
   type ClaimAnalytics,
   type ClaimDetail,
+  type ClaimEligibility,
   type ClaimFormValues,
   type ClaimListItem,
 } from "@/modules/dms/warranty-claims/schema";
@@ -127,6 +131,7 @@ export async function getClaim(id: string): Promise<ClaimDetail | null> {
     jobCardId: r.jobCardId,
     jobCard: await jobCardName(r.jobCardId),
     claimDate: r.claimDate.toISOString(),
+    faultCode: r.faultCode,
     description: r.description,
     status: r.status,
     claimAmount: Number(r.claimAmount),
@@ -150,6 +155,7 @@ export async function createClaim(
       warrantyId: values.warrantyId,
       jobCardId: values.jobCardId || null,
       claimDate: values.claimDate ? new Date(values.claimDate) : new Date(),
+      faultCode: values.faultCode?.trim() || null,
       description: values.description?.trim() || null,
       claimAmount: round2(values.claimAmount),
       remarks: values.remarks?.trim() || null,
@@ -172,6 +178,7 @@ export async function updateClaim(
       warrantyId: values.warrantyId,
       jobCardId: values.jobCardId || null,
       claimDate: values.claimDate ? new Date(values.claimDate) : existing.claimDate,
+      faultCode: values.faultCode?.trim() || null,
       description: values.description?.trim() || null,
       claimAmount: round2(values.claimAmount),
       remarks: values.remarks?.trim() || null,
@@ -188,28 +195,49 @@ export async function deleteClaim(id: string): Promise<void> {
   await prisma.warrantyClaim.delete({ where: { id } });
 }
 
-// Submit to the OEM — runs the eligibility check against coverage period and
-// (for battery) the vehicle's State-of-Health, storing the verdict.
-export async function submitClaim(id: string): Promise<void> {
+// Gather everything the automated eligibility check needs for one claim:
+// coverage terms, the vehicle's SoH, the odometer + last-service date from its
+// job history, and the reported fault code.
+async function eligibilityContext(claimId: string) {
   const claim = await prisma.warrantyClaim.findUnique({
-    where: { id },
+    where: { id: claimId },
     include: {
-      warranty: { include: { vehicle: { select: { batterySoH: true } } } },
+      warranty: {
+        include: {
+          vehicle: {
+            select: { id: true, vin: true, model: true, batterySoH: true, customerName: true },
+          },
+        },
+      },
     },
   });
-  if (!claim) throw new Error("Claim not found");
-  if (claim.status !== "DRAFT")
-    throw new Error("Only draft claims can be submitted");
-
-  const odometer = claim.jobCardId
-    ? (await prisma.jobCard.findUnique({
-        where: { id: claim.jobCardId },
-        select: { odometer: true },
-      }))?.odometer ?? null
-    : null;
+  if (!claim) return null;
 
   const w = claim.warranty;
-  const verdict = evaluateEligibility({
+
+  // Odometer: prefer the claim's job card, else the latest reading for the car.
+  const claimJob = claim.jobCardId
+    ? await prisma.jobCard.findUnique({
+        where: { id: claim.jobCardId },
+        select: { id: true, name: true, serviceDate: true, odometer: true },
+      })
+    : null;
+
+  const latestOdo = await prisma.jobCard.findFirst({
+    where: { vehicleId: w.vehicleId, odometer: { not: null } },
+    orderBy: { serviceDate: "desc" },
+    select: { odometer: true },
+  });
+  const odometerKm = claimJob?.odometer ?? latestOdo?.odometer ?? null;
+
+  // Last service: most recent job card for the vehicle (any status).
+  const lastService = await prisma.jobCard.findFirst({
+    where: { vehicleId: w.vehicleId },
+    orderBy: { serviceDate: "desc" },
+    select: { serviceDate: true },
+  });
+
+  const input: EligibilityReportInput = {
     component: w.component,
     startDate: w.startDate,
     months: w.months,
@@ -217,17 +245,79 @@ export async function submitClaim(id: string): Promise<void> {
     soHThreshold: w.soHThreshold,
     status: w.status,
     vehicleSoH: w.vehicle.batterySoH,
-    odometerKm: odometer,
+    odometerKm,
+    faultCode: claim.faultCode,
+    lastServiceAt: lastService?.serviceDate ?? null,
     asOf: claim.claimDate,
-  });
+  };
+
+  return { claim, w, claimJob, odometerKm, lastService, input };
+}
+
+// The full automated eligibility report for the claim detail / check page.
+export async function getClaimEligibility(
+  id: string,
+): Promise<ClaimEligibility | null> {
+  const ctx = await eligibilityContext(id);
+  if (!ctx) return null;
+  const { claim, w, claimJob, odometerKm, lastService, input } = ctx;
+  const report = evaluateEligibilityReport(input);
+  const expiry = new Date(w.startDate);
+  expiry.setMonth(expiry.getMonth() + w.months);
+
+  return {
+    eligible: report.eligible,
+    preQualified: report.preQualified,
+    note: report.note,
+    checks: report.checks,
+    coverage: {
+      component: COMPONENT_LABELS[w.component],
+      startDate: w.startDate.toISOString(),
+      expiryDate: expiry.toISOString(),
+      months: w.months,
+      kmLimit: w.kmLimit,
+      soHThreshold: w.soHThreshold,
+      status: w.status,
+    },
+    vehicle: {
+      id: w.vehicle.id,
+      vin: w.vehicle.vin,
+      model: w.vehicle.model,
+      batterySoH: w.vehicle.batterySoH,
+      odometerKm,
+      customerName: w.vehicle.customerName,
+    },
+    job: claimJob
+      ? {
+          id: claimJob.id,
+          name: claimJob.name,
+          serviceDate: claimJob.serviceDate.toISOString(),
+          odometer: claimJob.odometer,
+        }
+      : null,
+    faultCode: claim.faultCode,
+    lastServiceAt: lastService?.serviceDate.toISOString() ?? null,
+  };
+}
+
+// Submit to the OEM — runs the full eligibility report and stores the verdict
+// plus the structured per-check breakdown.
+export async function submitClaim(id: string): Promise<void> {
+  const ctx = await eligibilityContext(id);
+  if (!ctx) throw new Error("Claim not found");
+  if (ctx.claim.status !== "DRAFT")
+    throw new Error("Only draft claims can be submitted");
+
+  const report = evaluateEligibilityReport(ctx.input);
 
   await prisma.warrantyClaim.update({
     where: { id },
     data: {
       status: "SUBMITTED",
       submittedAt: new Date(),
-      eligible: verdict.eligible,
-      eligibilityNote: verdict.note,
+      eligible: report.eligible,
+      eligibilityNote: report.note,
+      eligibilityChecks: report.checks,
     },
   });
 }

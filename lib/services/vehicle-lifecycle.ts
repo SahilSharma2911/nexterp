@@ -2,6 +2,7 @@ import type { Prisma, VehicleStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { postGL, getAccountId } from "@/lib/gl";
 import { postStockLedger } from "@/lib/stock-ledger";
+import { SALE_COVERAGE } from "@/lib/services/warranty-eligibility";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 import type {
@@ -265,6 +266,23 @@ export async function deliverVehicle(
         voucherNo: veh!.vin,
         postingAt: new Date(),
         againstParty: customer,
+      });
+    }
+
+    // Activate the standard OEM warranty pack at the point of sale — each
+    // component with its own terms. Only if the car has no cover yet.
+    const existingCover = await tx.warranty.count({ where: { vehicleId: id } });
+    if (existingCover === 0) {
+      await tx.warranty.createMany({
+        data: SALE_COVERAGE.map((c) => ({
+          vehicleId: id,
+          component: c.component,
+          startDate: new Date(),
+          months: c.months,
+          kmLimit: c.kmLimit,
+          soHThreshold: c.soHThreshold,
+          autoRegistered: true,
+        })),
       });
     }
 

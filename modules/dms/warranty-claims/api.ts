@@ -3,6 +3,7 @@ import type { ListQuery, ListResponse } from "@/lib/api-list";
 import type {
   ClaimAnalytics,
   ClaimDetail,
+  ClaimEligibility,
   ClaimFormValues,
   ClaimListItem,
 } from "./schema";
@@ -24,6 +25,13 @@ export async function fetchClaim(id: string) {
 
 export async function fetchClaimAnalytics() {
   const { data } = await api.get<ClaimAnalytics>("/warranty-claims/analytics");
+  return data;
+}
+
+export async function fetchClaimEligibility(id: string) {
+  const { data } = await api.get<ClaimEligibility>(
+    `/warranty-claims/${id}/eligibility`,
+  );
   return data;
 }
 

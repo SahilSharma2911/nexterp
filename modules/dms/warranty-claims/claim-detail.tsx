@@ -34,9 +34,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { DetailHeader, Field } from "@/components/detail/detail-shell";
 import { useCanWrite } from "@/components/session-context";
-import { cn } from "@/lib/utils";
 import { fmtMoney, fmtDateTime } from "@/lib/format";
 import { ClaimStatusBadge } from "./columns";
+import { EligibilityPanel } from "./eligibility-panel";
 import {
   useApproveClaim,
   useCancelClaim,
@@ -169,28 +169,7 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
         }
       />
 
-      {c.eligible != null && (
-        <div
-          className={cn(
-            "flex items-start gap-2 rounded-lg border p-3 text-sm",
-            c.eligible
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-              : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300",
-          )}
-        >
-          {c.eligible ? (
-            <Check className="mt-0.5 size-4 shrink-0" />
-          ) : (
-            <X className="mt-0.5 size-4 shrink-0" />
-          )}
-          <span>
-            <span className="font-semibold">
-              {c.eligible ? "Eligible" : "Not eligible"}
-            </span>
-            {c.eligibilityNote ? ` — ${c.eligibilityNote}` : ""}
-          </span>
-        </div>
-      )}
+      <EligibilityPanel claimId={c.id} />
 
       <Card>
         <CardHeader>
@@ -256,6 +235,7 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
             value={c.approvedAmount > 0 ? fmtMoney(c.approvedAmount) : dash}
           />
           <Field icon={Hash} label="OEM ref" value={c.oemRef ?? dash} />
+          <Field icon={FileWarning} label="Fault code" value={c.faultCode ?? dash} />
           {c.description && (
             <Field
               icon={FileText}

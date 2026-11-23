@@ -42,6 +42,14 @@ export function useClaimAnalytics() {
   });
 }
 
+export function useClaimEligibility(id?: string) {
+  return useQuery({
+    queryKey: [...claimKeys.all, "eligibility", id ?? ""] as const,
+    queryFn: () => claimsApi.fetchClaimEligibility(id as string),
+    enabled: !!id,
+  });
+}
+
 export function useCreateClaim() {
   const qc = useQueryClient();
   return useMutation({

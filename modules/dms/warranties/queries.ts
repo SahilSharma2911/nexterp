@@ -42,6 +42,27 @@ export function useWarranty(id?: string) {
   });
 }
 
+export function useVehicleRegistration(vehicleId?: string) {
+  return useQuery({
+    queryKey: [...warrantyKeys.all, "registration", vehicleId ?? ""] as const,
+    queryFn: () => warrantiesApi.fetchVehicleRegistration(vehicleId as string),
+    enabled: !!vehicleId,
+  });
+}
+
+export function useRegisterSaleCoverage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vehicleId: string) =>
+      warrantiesApi.registerSaleCoverage(vehicleId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: warrantyKeys.all });
+      toast.success("Warranty coverage registered");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
 export function useCreateWarranty() {
   const qc = useQueryClient();
   return useMutation({

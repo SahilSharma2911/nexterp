@@ -6,8 +6,13 @@ import {
   type Warranty,
   type WarrantyFormValues,
   type WarrantyOption,
+  type WarrantyRegistration,
 } from "@/modules/dms/warranties/schema";
-import { warrantyExpiry, daysBetween } from "@/lib/services/warranty-eligibility";
+import {
+  warrantyExpiry,
+  daysBetween,
+  SALE_COVERAGE,
+} from "@/lib/services/warranty-eligibility";
 
 const SORTABLE = ["startDate", "component", "status", "createdAt"] as const;
 
@@ -39,6 +44,7 @@ function toItem(r: Row): Warranty {
     kmLimit: r.kmLimit,
     soHThreshold: r.soHThreshold,
     status: r.status,
+    autoRegistered: r.autoRegistered,
     notes: r.notes,
     expiryDate: expiry.toISOString(),
     active,
@@ -150,4 +156,110 @@ export async function deleteWarranty(id: string): Promise<void> {
       "Can't delete — this warranty has claims. Void it instead.",
     );
   }
+}
+
+// Per-vehicle "Warranty Registration at Sale" overview: the full coverage pack,
+// the customer/vehicle it belongs to, headline numbers and recent claims.
+export async function getVehicleRegistration(
+  vehicleId: string,
+): Promise<WarrantyRegistration | null> {
+  const vehicle = await prisma.vehicle.findUnique({
+    where: { id: vehicleId },
+    select: {
+      id: true,
+      vin: true,
+      model: true,
+      variant: true,
+      color: true,
+      status: true,
+      batterySoH: true,
+      customerName: true,
+      deliveredAt: true,
+      dealer: { select: { name: true } },
+    },
+  });
+  if (!vehicle) return null;
+
+  const [rows, claims] = await Promise.all([
+    prisma.warranty.findMany({
+      where: { vehicleId },
+      orderBy: { component: "asc" },
+      include: INCLUDE,
+    }),
+    prisma.warrantyClaim.findMany({
+      where: { warranty: { vehicleId } },
+      orderBy: { claimDate: "desc" },
+      take: 8,
+      include: { warranty: { select: { component: true } } },
+    }),
+  ]);
+
+  const covers = rows.map(toItem);
+  const activeCovers = covers.filter((c) => c.active);
+  const nearestExpiry =
+    activeCovers.length > 0
+      ? activeCovers
+          .map((c) => c.expiryDate)
+          .sort((a, b) => a.localeCompare(b))[0]
+      : null;
+
+  return {
+    vehicle: {
+      id: vehicle.id,
+      vin: vehicle.vin,
+      model: vehicle.model,
+      variant: vehicle.variant,
+      color: vehicle.color,
+      status: vehicle.status,
+      batterySoH: vehicle.batterySoH,
+      customerName: vehicle.customerName,
+      deliveredAt: vehicle.deliveredAt ? vehicle.deliveredAt.toISOString() : null,
+      dealer: vehicle.dealer?.name ?? null,
+    },
+    covers,
+    summary: {
+      total: covers.length,
+      active: activeCovers.length,
+      expired: covers.filter((c) => !c.active).length,
+      nearestExpiry,
+      openClaims: claims.filter(
+        (c) => c.status === "DRAFT" || c.status === "SUBMITTED",
+      ).length,
+    },
+    recentClaims: claims.map((c) => ({
+      id: c.id,
+      name: c.name,
+      component: COMPONENT_LABELS[c.warranty.component],
+      status: c.status,
+      claimDate: c.claimDate.toISOString(),
+      claimAmount: Number(c.claimAmount),
+    })),
+  };
+}
+
+// Manually activate the standard OEM warranty pack for a vehicle (e.g. one
+// delivered before auto-registration existed). No-op if cover already exists.
+export async function registerSaleCoverage(
+  vehicleId: string,
+): Promise<{ created: number }> {
+  const vehicle = await prisma.vehicle.findUnique({
+    where: { id: vehicleId },
+    select: { id: true },
+  });
+  if (!vehicle) throw new Error("Vehicle not found");
+  const existing = await prisma.warranty.count({ where: { vehicleId } });
+  if (existing > 0)
+    throw new Error("This vehicle already has warranty coverage registered.");
+  await prisma.warranty.createMany({
+    data: SALE_COVERAGE.map((c) => ({
+      vehicleId,
+      component: c.component,
+      startDate: new Date(),
+      months: c.months,
+      kmLimit: c.kmLimit,
+      soHThreshold: c.soHThreshold,
+      autoRegistered: true,
+    })),
+  });
+  return { created: SALE_COVERAGE.length };
 }

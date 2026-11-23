@@ -130,6 +130,12 @@ export function VehicleDetail({ vehicleId }: { vehicleId: string }) {
             Service history
           </Link>
         </Button>
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/dms/warranties/vehicle/${v.id}`}>
+            <ShieldCheck className="size-4" />
+            Warranty
+          </Link>
+        </Button>
         {canWrite && (
           <>
             <Button asChild size="sm">

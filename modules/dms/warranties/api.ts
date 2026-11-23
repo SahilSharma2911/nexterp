@@ -1,6 +1,11 @@
 import { api } from "@/lib/axios";
 import type { ListQuery, ListResponse } from "@/lib/api-list";
-import type { Warranty, WarrantyFormValues, WarrantyOption } from "./schema";
+import type {
+  Warranty,
+  WarrantyFormValues,
+  WarrantyOption,
+  WarrantyRegistration,
+} from "./schema";
 
 export type WarrantiesQuery = ListQuery & { status: string; component: string };
 
@@ -35,4 +40,18 @@ export async function updateWarranty(id: string, values: WarrantyFormValues) {
 
 export async function deleteWarranty(id: string) {
   await api.delete(`/warranties/${id}`);
+}
+
+export async function fetchVehicleRegistration(vehicleId: string) {
+  const { data } = await api.get<WarrantyRegistration>(
+    `/warranties/vehicle/${vehicleId}`,
+  );
+  return data;
+}
+
+export async function registerSaleCoverage(vehicleId: string) {
+  const { data } = await api.post<{ created: number }>(
+    `/warranties/vehicle/${vehicleId}/register`,
+  );
+  return data;
 }

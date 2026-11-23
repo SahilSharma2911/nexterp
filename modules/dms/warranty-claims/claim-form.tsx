@@ -68,6 +68,7 @@ export function ClaimForm({
         warrantyId: existing.warrantyId,
         jobCardId: existing.jobCardId ?? "",
         claimDate: existing.claimDate ? existing.claimDate.slice(0, 10) : "",
+        faultCode: existing.faultCode ?? "",
         description: existing.description ?? "",
         claimAmount: existing.claimAmount,
         remarks: existing.remarks ?? "",
@@ -151,6 +152,26 @@ export function ClaimForm({
                       onChange={numChange(field.onChange)}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="faultCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fault code</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g. P0A80, BMS-012…"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Diagnostic trouble code — verified against the cover at submit.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

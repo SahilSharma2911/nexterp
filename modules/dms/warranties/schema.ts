@@ -2,19 +2,23 @@ import { z } from "zod";
 
 export const WARRANTY_COMPONENTS = [
   "VEHICLE",
+  "POWERTRAIN",
   "BATTERY",
   "MOTOR",
   "CONTROLLER",
   "CHARGER",
+  "CORROSION",
 ] as const;
 export type WarrantyComponent = (typeof WARRANTY_COMPONENTS)[number];
 
 export const COMPONENT_LABELS: Record<WarrantyComponent, string> = {
   VEHICLE: "Vehicle (bumper-to-bumper)",
+  POWERTRAIN: "Powertrain",
   BATTERY: "Battery",
   MOTOR: "Motor",
   CONTROLLER: "Controller",
   CHARGER: "On-board Charger",
+  CORROSION: "Corrosion / Anti-perforation",
 };
 
 export const WARRANTY_STATUSES = ["ACTIVE", "VOID"] as const;
@@ -55,11 +59,44 @@ export type Warranty = {
   kmLimit: number | null;
   soHThreshold: number | null;
   status: WarrantyStatus;
+  autoRegistered: boolean;
   notes: string | null;
   expiryDate: string;
   active: boolean;
   daysLeft: number;
   claimCount: number;
+};
+
+// Per-vehicle "Warranty Registration at Sale" overview.
+export type WarrantyRegistration = {
+  vehicle: {
+    id: string;
+    vin: string;
+    model: string;
+    variant: string | null;
+    color: string | null;
+    status: string;
+    batterySoH: number | null;
+    customerName: string | null;
+    deliveredAt: string | null;
+    dealer: string | null;
+  };
+  covers: Warranty[];
+  summary: {
+    total: number;
+    active: number;
+    expired: number;
+    nearestExpiry: string | null;
+    openClaims: number;
+  };
+  recentClaims: {
+    id: string;
+    name: string;
+    component: string;
+    status: string;
+    claimDate: string;
+    claimAmount: number;
+  }[];
 };
 
 export type WarrantyOption = {
