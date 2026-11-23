@@ -5,6 +5,8 @@ import { postStockLedger } from "@/lib/stock-ledger";
 export async function resetDb() {
   await prisma.subsidyClaim.deleteMany();
   await prisma.subsidyScheme.deleteMany();
+  await prisma.creditNote.deleteMany(); // FK to claim (set null)
+  await prisma.claimEvent.deleteMany(); // cascades with claim anyway
   await prisma.warrantyClaim.deleteMany();
   await prisma.warranty.deleteMany();
   await prisma.serviceAppointment.deleteMany(); // FK to jobCard + vehicle

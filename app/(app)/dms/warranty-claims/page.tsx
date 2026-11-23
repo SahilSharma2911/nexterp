@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Landmark } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { NewButton } from "@/components/new-button";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,12 @@ export default function WarrantyClaimsPage() {
         subtitle="OEM claims with eligibility checks"
         actions={
           <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link href="/dms/warranty-claims/reconciliation">
+                <Landmark className="size-4" />
+                Reconciliation
+              </Link>
+            </Button>
             <Button asChild variant="outline">
               <Link href="/dms/warranty-claims/check">
                 <ShieldCheck className="size-4" />
