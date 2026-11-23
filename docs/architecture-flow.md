@@ -170,22 +170,28 @@ flowchart LR
 
 ---
 
-## 5. Warranties, claims & subsidies (tracked alongside)
+## 5. Aftersales — warranties, claims, reimbursement, recalls & subsidies
 
 ```mermaid
 flowchart LR
-  VEH[Vehicle] --> WAR[Warranty<br/>component · terms]
-  WAR --> WCL[Warranty Claim<br/>Draft → Submitted → Approved → Settled]
-  JOB[Job Card] -.->|raised from| WCL
-  WCL -->|eligibility check:<br/>period · km · battery SoH| WCL
+  VEH[Vehicle] -->|delivered → auto| WAR[Warranty pack<br/>5 covers · own terms]
+  JOB[Job Card] -->|Warranty claim, pre-filled| WCL[Warranty Claim<br/>Draft → Submitted → Approved → Settled]
+  WAR --> WCL
+  WCL -->|eligibility: period · km · battery SoH<br/>· fault code · maintenance| WCL
+  WCL --> CN[OEM Credit Note<br/>matched / discrepancy · aging]
+
+  VEH --> REC[Recall Campaign<br/>match affected → notify → repair]
 
   VEH --> SUB[Subsidy Claim]
   SCH[Subsidy Scheme] --> SUB
   SUB -->|KYC verified → approve → e-voucher → disburse| SUB
 ```
 
-These don't move core stock; they track OEM reimbursements and government EV
-incentives against the vehicle.
+These don't move core stock; they track **OEM reimbursements** (claims →
+eligibility → credit-note reconciliation), **safety recalls** against affected
+vehicles, and **government EV incentives** — all tied to the vehicle. See
+[`docs/dms/warranty-management.md`](./dms/warranty-management.md) for the full
+warranty / claim / reconciliation / recall flows.
 
 ---
 

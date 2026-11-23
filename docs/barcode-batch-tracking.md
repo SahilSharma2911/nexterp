@@ -25,6 +25,22 @@ the thing it identifies is:
 👉 A **vehicle is simply a "serialised item"** where the VIN is the serial. That
 is why scanning a car to change its status works so naturally.
 
+### Everything is always scannable (no blank barcodes)
+
+Every detail page renders a **scannable Code128** — you never see an empty
+barcode. If no custom barcode was typed in, it **falls back to the thing's own
+natural code**, which always exists and is unique:
+
+| Page | Shows barcode of | Falls back to |
+|---|---|---|
+| **Item** | the item's `barcode` field | its **Item Code** (SKU) |
+| **Vehicle** | — | its **VIN** |
+| **Batch** | the batch's `barcode` field | its **batch number** |
+
+So an item created without a barcode (common) still shows a scannable barcode
+built from its item code, with a caption saying so. Typing a custom barcode on
+the item (e.g. the manufacturer's EAN/UPC) overrides the fallback.
+
 ---
 
 ## 2. Vehicle scan → lifecycle
