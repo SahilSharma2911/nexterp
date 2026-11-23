@@ -99,7 +99,6 @@ export function ItemDetail({ itemId }: { itemId: string }) {
           <Meta label="Unit of Measure" value={it.stockUom} />
           <Meta label="Item Group" value={it.itemGroup ?? "—"} />
           <Meta label="Brand" value={it.brand ?? "—"} />
-          <Meta label="Barcode" value={it.barcode ?? "—"} />
           <Meta label="Tax / HSN Code" value={it.taxCode ?? "—"} />
           <Meta label="Valuation Rate (cost)" value={fmtMoney(it.valuationRate)} />
           <Meta label="Standard Selling Rate" value={fmtMoney(it.salesRate)} />
@@ -139,12 +138,9 @@ export function ItemDetail({ itemId }: { itemId: string }) {
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-2">
           <Barcode value={it.barcode || it.itemCode} height={64} />
-          {!it.barcode && (
-            <p className="text-xs text-muted-foreground">
-              Encoded from the item code — set a custom barcode on the item to
-              override.
-            </p>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Encoded from the item code ({it.barcode || it.itemCode}).
+          </p>
         </CardContent>
       </Card>
 

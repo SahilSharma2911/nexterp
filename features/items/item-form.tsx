@@ -280,19 +280,6 @@ export function ItemForm({ itemId }: { itemId?: string }) {
             />
             <FormField
               control={form.control}
-              name="barcode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Barcode</FormLabel>
-                  <FormControl>
-                    <Input placeholder="EAN / UPC (optional)" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
               name="taxCode"
               render={({ field }) => (
                 <FormItem>
