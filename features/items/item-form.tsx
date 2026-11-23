@@ -15,6 +15,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -239,14 +246,23 @@ export function ItemForm({ itemId }: { itemId?: string }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Unit of Measure</FormLabel>
-                  <FormControl>
-                    <Input list="uom-list" placeholder="Nos" {...field} />
-                  </FormControl>
-                  <datalist id="uom-list">
-                    {COMMON_UOMS.map((u) => (
-                      <option key={u} value={u} />
-                    ))}
-                  </datalist>
+                  <Select value={field.value || undefined} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a unit…" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {(field.value && !COMMON_UOMS.includes(field.value)
+                        ? [field.value, ...COMMON_UOMS]
+                        : COMMON_UOMS
+                      ).map((u) => (
+                        <SelectItem key={u} value={u}>
+                          {u}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormDescription>How it&apos;s counted or sold.</FormDescription>
                   <FormMessage />
                 </FormItem>
