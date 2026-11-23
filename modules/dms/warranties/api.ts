@@ -4,6 +4,7 @@ import type {
   Warranty,
   WarrantyAnalytics,
   WarrantyFormValues,
+  WarrantyInsights,
   WarrantyOption,
   WarrantyRegistration,
 } from "./schema";
@@ -19,6 +20,11 @@ export async function fetchWarranties(params: WarrantiesQuery) {
 
 export async function fetchWarrantyAnalytics() {
   const { data } = await api.get<WarrantyAnalytics>("/warranties/analytics");
+  return data;
+}
+
+export async function fetchWarrantyInsights() {
+  const { data } = await api.get<WarrantyInsights>("/warranties/insights");
   return data;
 }
 

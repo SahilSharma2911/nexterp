@@ -34,6 +34,14 @@ export function useWarrantyAnalytics() {
   });
 }
 
+export function useWarrantyInsights() {
+  return useQuery({
+    queryKey: [...warrantyKeys.all, "insights"] as const,
+    queryFn: () => warrantiesApi.fetchWarrantyInsights(),
+    staleTime: 60_000,
+  });
+}
+
 export function useWarrantyOptions(vehicleId?: string) {
   return useQuery({
     queryKey: [...warrantyKeys.all, "options", vehicleId ?? ""] as const,

@@ -125,3 +125,21 @@ export type WarrantiesTableMeta = {
   sort: string;
   onSort: (field: string) => void;
 };
+
+export type WarrantyInsights = {
+  totalClaims: number;
+  rejectionRate: number; // %
+  approvalRate: number; // %
+  avgClaimValue: number;
+  claimsByModel: { name: string; value: number }[];
+  claimsByDealer: { name: string; value: number }[];
+  topFaultCodes: { name: string; value: number }[];
+  costMonthly: { name: string; value: number }[];
+  costForecast: number;
+  battery: {
+    buckets: { name: string; value: number }[];
+    atRisk: number;
+    avgSoH: number;
+    estimatedLiability: number;
+  };
+};
