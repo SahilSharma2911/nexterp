@@ -13,13 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -40,8 +34,6 @@ import {
   type JobCardFormValues,
 } from "./schema";
 import { useCreateJobCard, useJobCard, useUpdateJobCard } from "./queries";
-
-const UNASSIGNED = "__none__";
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 function numChange(onChange: (v: number | null) => void, allowNull = false) {
@@ -150,20 +142,18 @@ export function JobCardForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Vehicle</FormLabel>
-                  <Select value={field.value || undefined} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select vehicle…" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {vehicleOptions.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.vin} — {v.model}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Combobox
+                      options={vehicleOptions.map((v) => ({
+                        value: v.id,
+                        label: `${v.vin} — ${v.model}`,
+                      }))}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select vehicle…"
+                      searchPlaceholder="Search VIN / model…"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -174,24 +164,21 @@ export function JobCardForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Parts Warehouse</FormLabel>
-                  <Select
-                    value={field.value || UNASSIGNED}
-                    onValueChange={(v) => field.onChange(v === UNASSIGNED ? "" : v)}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value={UNASSIGNED}>— None —</SelectItem>
-                      {warehouseOptions.map((w) => (
-                        <SelectItem key={w.id} value={w.id}>
-                          {w.warehouseName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Combobox
+                      options={[
+                        { value: "", label: "— None —" },
+                        ...warehouseOptions.map((w) => ({
+                          value: w.id,
+                          label: w.warehouseName,
+                        })),
+                      ]}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      placeholder="— None —"
+                      searchPlaceholder="Search warehouses…"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -202,27 +189,21 @@ export function JobCardForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Technician</FormLabel>
-                  <Select
-                    value={field.value || UNASSIGNED}
-                    onValueChange={(v) =>
-                      field.onChange(v === UNASSIGNED ? "" : v)
-                    }
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value={UNASSIGNED}>— Unassigned —</SelectItem>
-                      {technicianOptions.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>
-                          {t.name}
-                          {t.isHVCertified ? " · HV" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Combobox
+                      options={[
+                        { value: "", label: "— Unassigned —" },
+                        ...technicianOptions.map((t) => ({
+                          value: t.id,
+                          label: `${t.name}${t.isHVCertified ? " · HV" : ""}`,
+                        })),
+                      ]}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      placeholder="— Unassigned —"
+                      searchPlaceholder="Search technicians…"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -233,27 +214,21 @@ export function JobCardForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Service Bay</FormLabel>
-                  <Select
-                    value={field.value || UNASSIGNED}
-                    onValueChange={(v) =>
-                      field.onChange(v === UNASSIGNED ? "" : v)
-                    }
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value={UNASSIGNED}>— Unassigned —</SelectItem>
-                      {bayOptions.map((b) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {b.name}
-                          {b.isHV ? " · HV" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Combobox
+                      options={[
+                        { value: "", label: "— Unassigned —" },
+                        ...bayOptions.map((b) => ({
+                          value: b.id,
+                          label: `${b.name}${b.isHV ? " · HV" : ""}`,
+                        })),
+                      ]}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      placeholder="— Unassigned —"
+                      searchPlaceholder="Search bays…"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -380,29 +355,24 @@ export function JobCardForm({
                             name={`parts.${i}.itemId`}
                             render={({ field }) => (
                               <FormItem>
-                                <Select
-                                  value={field.value || undefined}
-                                  onValueChange={(v) => {
-                                    field.onChange(v);
-                                    const opt = itemOptions.find((o) => o.id === v);
-                                    const cur = form.getValues(`parts.${i}.rate`);
-                                    if (opt && (!cur || cur === 0))
-                                      form.setValue(`parts.${i}.rate`, opt.valuationRate);
-                                  }}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger className="w-full">
-                                      <SelectValue placeholder="Select part…" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {itemOptions.map((o) => (
-                                      <SelectItem key={o.id} value={o.id}>
-                                        {o.itemCode} — {o.itemName}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <FormControl>
+                                  <Combobox
+                                    options={itemOptions.map((o) => ({
+                                      value: o.id,
+                                      label: `${o.itemCode} — ${o.itemName}`,
+                                    }))}
+                                    value={field.value}
+                                    onChange={(v) => {
+                                      field.onChange(v);
+                                      const opt = itemOptions.find((o) => o.id === v);
+                                      const cur = form.getValues(`parts.${i}.rate`);
+                                      if (opt && (!cur || cur === 0))
+                                        form.setValue(`parts.${i}.rate`, opt.valuationRate);
+                                    }}
+                                    placeholder="Select part…"
+                                    searchPlaceholder="Search parts…"
+                                  />
+                                </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}

@@ -6,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWarrantyOptions } from "@/modules/dms/warranties/queries";
 import { usePreviewEligibility } from "./queries";
@@ -47,20 +41,13 @@ export function EligibilityCheck() {
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
             <Label className="mb-1.5 block text-xs">Warranty</Label>
-            <Select value={warrantyId || undefined} onValueChange={setWarrantyId}>
-              <SelectTrigger className="w-full">
-                <SelectValue
-                  placeholder={loadingW ? "Loading…" : "Select an active warranty…"}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {warrantyOptions.map((w) => (
-                  <SelectItem key={w.id} value={w.id}>
-                    {w.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              options={warrantyOptions.map((w) => ({ value: w.id, label: w.label }))}
+              value={warrantyId}
+              onChange={setWarrantyId}
+              placeholder={loadingW ? "Loading…" : "Select an active warranty…"}
+              searchPlaceholder="Search warranties…"
+            />
           </div>
           <div>
             <Label className="mb-1.5 block text-xs">Fault code</Label>

@@ -13,13 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -39,8 +33,6 @@ import {
   useCreateAppointment,
   useUpdateAppointment,
 } from "./queries";
-
-const UNASSIGNED = "__none__";
 
 export function AppointmentForm({
   appointmentId,
@@ -111,23 +103,18 @@ export function AppointmentForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Vehicle</FormLabel>
-                  <Select
-                    value={field.value || undefined}
-                    onValueChange={field.onChange}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select vehicle…" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {vehicleOptions.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.vin} — {v.model}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Combobox
+                      options={vehicleOptions.map((v) => ({
+                        value: v.id,
+                        label: `${v.vin} — ${v.model}`,
+                      }))}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select vehicle…"
+                      searchPlaceholder="Search VIN / model…"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -209,27 +196,21 @@ export function AppointmentForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Technician</FormLabel>
-                  <Select
-                    value={field.value || UNASSIGNED}
-                    onValueChange={(v) =>
-                      field.onChange(v === UNASSIGNED ? "" : v)
-                    }
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value={UNASSIGNED}>— Unassigned —</SelectItem>
-                      {techs.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>
-                          {t.name}
-                          {t.isHVCertified ? " · HV" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Combobox
+                      options={[
+                        { value: "", label: "— Unassigned —" },
+                        ...techs.map((t) => ({
+                          value: t.id,
+                          label: `${t.name}${t.isHVCertified ? " · HV" : ""}`,
+                        })),
+                      ]}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      placeholder="— Unassigned —"
+                      searchPlaceholder="Search technicians…"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -240,27 +221,21 @@ export function AppointmentForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Service Bay</FormLabel>
-                  <Select
-                    value={field.value || UNASSIGNED}
-                    onValueChange={(v) =>
-                      field.onChange(v === UNASSIGNED ? "" : v)
-                    }
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value={UNASSIGNED}>— Unassigned —</SelectItem>
-                      {bays.map((b) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {b.name}
-                          {b.isHV ? " · HV" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Combobox
+                      options={[
+                        { value: "", label: "— Unassigned —" },
+                        ...bays.map((b) => ({
+                          value: b.id,
+                          label: `${b.name}${b.isHV ? " · HV" : ""}`,
+                        })),
+                      ]}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      placeholder="— Unassigned —"
+                      searchPlaceholder="Search bays…"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

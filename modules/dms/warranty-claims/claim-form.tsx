@@ -13,13 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -139,20 +133,18 @@ export function ClaimForm({
               render={({ field }) => (
                 <FormItem className="sm:col-span-2">
                   <FormLabel>Warranty</FormLabel>
-                  <Select value={field.value || undefined} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select an active warranty…" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {warrantyOptions.map((w) => (
-                        <SelectItem key={w.id} value={w.id}>
-                          {w.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Combobox
+                      options={warrantyOptions.map((w) => ({
+                        value: w.id,
+                        label: w.label,
+                      }))}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select an active warranty…"
+                      searchPlaceholder="Search warranties…"
+                    />
+                  </FormControl>
                   <FormDescription>
                     Eligibility (coverage, battery SoH, fault code, maintenance) is
                     checked when you submit.

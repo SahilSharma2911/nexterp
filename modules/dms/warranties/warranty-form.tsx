@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -100,23 +101,18 @@ export function WarrantyForm({ warrantyId }: { warrantyId?: string }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Vehicle</FormLabel>
-                  <Select
-                    value={field.value || undefined}
-                    onValueChange={field.onChange}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select vehicle…" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {vehicleOptions.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.vin} — {v.model}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Combobox
+                      options={vehicleOptions.map((v) => ({
+                        value: v.id,
+                        label: `${v.vin} — ${v.model}`,
+                      }))}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select vehicle…"
+                      searchPlaceholder="Search VIN / model…"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

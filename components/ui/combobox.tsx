@@ -5,7 +5,10 @@ import { Popover as PopoverPrimitive } from "radix-ui";
 import { Check, ChevronsUpDown, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// A compact, searchable, scrollable single-select dropdown.
+export type ComboboxOption = { value: string; label: string };
+
+// A compact, searchable, scrollable single-select dropdown. Accepts plain
+// strings or {value, label} objects (for id-based pickers).
 export function Combobox({
   options,
   value,
@@ -15,7 +18,7 @@ export function Combobox({
   emptyText = "No match",
   className,
 }: {
-  options: string[];
+  options: Array<string | ComboboxOption>;
   value?: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -26,10 +29,18 @@ export function Combobox({
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
 
+  const opts: ComboboxOption[] = React.useMemo(
+    () =>
+      options.map((o) => (typeof o === "string" ? { value: o, label: o } : o)),
+    [options],
+  );
+
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
-    return q ? options.filter((o) => o.toLowerCase().includes(q)) : options;
-  }, [options, query]);
+    return q ? opts.filter((o) => o.label.toLowerCase().includes(q)) : opts;
+  }, [opts, query]);
+
+  const selectedLabel = opts.find((o) => o.value === value)?.label;
 
   return (
     <PopoverPrimitive.Root
@@ -50,7 +61,7 @@ export function Combobox({
             className,
           )}
         >
-          <span className="truncate">{value || placeholder}</span>
+          <span className="truncate">{selectedLabel || placeholder}</span>
           <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
         </button>
       </PopoverPrimitive.Trigger>
@@ -79,20 +90,20 @@ export function Combobox({
             ) : (
               filtered.map((o) => (
                 <button
-                  key={o}
+                  key={o.value}
                   type="button"
                   onClick={() => {
-                    onChange(o);
+                    onChange(o.value);
                     setOpen(false);
                     setQuery("");
                   }}
                   className={cn(
                     "flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent focus:bg-accent focus:outline-none",
-                    o === value && "bg-accent/50 font-medium",
+                    o.value === value && "bg-accent/50 font-medium",
                   )}
                 >
-                  <span className="truncate">{o}</span>
-                  {o === value && <Check className="size-3.5 shrink-0" />}
+                  <span className="truncate">{o.label}</span>
+                  {o.value === value && <Check className="size-3.5 shrink-0" />}
                 </button>
               ))
             )}

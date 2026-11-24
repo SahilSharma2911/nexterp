@@ -13,13 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,8 +27,6 @@ import {
   type VehicleFormValues,
 } from "./schema";
 import { useCreateVehicle, useUpdateVehicle, useVehicle } from "./queries";
-
-const UNASSIGNED = "__none__";
 
 function numChange(onChange: (v: number | null) => void, allowNull = false) {
   return (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -240,26 +232,21 @@ export function VehicleForm({ vehicleId }: { vehicleId?: string }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Location (warehouse)</FormLabel>
-                  <Select
-                    value={field.value || UNASSIGNED}
-                    onValueChange={(v) =>
-                      field.onChange(v === UNASSIGNED ? "" : v)
-                    }
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value={UNASSIGNED}>— Unassigned —</SelectItem>
-                      {warehouseOptions.map((w) => (
-                        <SelectItem key={w.id} value={w.id}>
-                          {w.warehouseName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Combobox
+                      options={[
+                        { value: "", label: "— Unassigned —" },
+                        ...warehouseOptions.map((w) => ({
+                          value: w.id,
+                          label: w.warehouseName,
+                        })),
+                      ]}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      placeholder="— Unassigned —"
+                      searchPlaceholder="Search warehouses…"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -270,26 +257,21 @@ export function VehicleForm({ vehicleId }: { vehicleId?: string }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Dealer</FormLabel>
-                  <Select
-                    value={field.value || UNASSIGNED}
-                    onValueChange={(v) =>
-                      field.onChange(v === UNASSIGNED ? "" : v)
-                    }
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value={UNASSIGNED}>— Unassigned —</SelectItem>
-                      {dealerOptions.map((d) => (
-                        <SelectItem key={d.id} value={d.id}>
-                          {d.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Combobox
+                      options={[
+                        { value: "", label: "— Unassigned —" },
+                        ...dealerOptions.map((d) => ({
+                          value: d.id,
+                          label: d.name,
+                        })),
+                      ]}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      placeholder="— Unassigned —"
+                      searchPlaceholder="Search dealers…"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

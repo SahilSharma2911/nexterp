@@ -22,13 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { StatCards, type StatItem } from "@/components/analytics/stat-cards";
 import { CategoryBarChart } from "@/components/analytics/category-bar-chart";
 import { useCanWrite } from "@/components/session-context";
@@ -44,8 +38,6 @@ import {
   useCreateCreditNote,
   useMatchCreditNote,
 } from "./queries";
-
-const UNMATCHED = "__none__";
 
 function compactMoney(v: number) {
   if (Math.abs(v) >= 1e7) return `₹${(v / 1e7).toFixed(2)}Cr`;
@@ -213,27 +205,22 @@ export function ReconciliationView() {
                           : ""}
                       </span>
                       {canWrite ? (
-                        <Select
-                          value={n.claimId ?? UNMATCHED}
-                          onValueChange={(v) =>
-                            match.mutate({
-                              id: n.id,
-                              claimId: v === UNMATCHED ? null : v,
-                            })
+                        <Combobox
+                          className="h-7 w-[170px]"
+                          value={n.claimId ?? ""}
+                          onChange={(v) =>
+                            match.mutate({ id: n.id, claimId: v || null })
                           }
-                        >
-                          <SelectTrigger className="h-7 w-[150px] text-xs">
-                            <SelectValue placeholder="Match to claim" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={UNMATCHED}>Unmatched</SelectItem>
-                            {claimOptions.map((c) => (
-                              <SelectItem key={c.id} value={c.id}>
-                                {c.name} · {fmtMoney(c.approvedAmount)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          placeholder="Match to claim"
+                          searchPlaceholder="Search claims…"
+                          options={[
+                            { value: "", label: "Unmatched" },
+                            ...claimOptions.map((c) => ({
+                              value: c.id,
+                              label: `${c.name} · ${fmtMoney(c.approvedAmount)}`,
+                            })),
+                          ]}
+                        />
                       ) : (
                         <span className="text-xs text-muted-foreground">
                           {n.claimName ?? "—"}
@@ -309,22 +296,19 @@ function AddCreditNoteDialog({
           </div>
           <div>
             <Label className="mb-1.5 block text-xs">Match to claim (optional)</Label>
-            <Select
-              value={claimId || UNMATCHED}
-              onValueChange={(v) => setClaimId(v === UNMATCHED ? "" : v)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Unmatched" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={UNMATCHED}>Unmatched</SelectItem>
-                {claimOptions.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name} · {c.vehicle} · {fmtMoney(c.approvedAmount)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              value={claimId}
+              onChange={setClaimId}
+              placeholder="Unmatched"
+              searchPlaceholder="Search claims…"
+              options={[
+                { value: "", label: "Unmatched" },
+                ...claimOptions.map((c) => ({
+                  value: c.id,
+                  label: `${c.name} · ${c.vehicle} · ${fmtMoney(c.approvedAmount)}`,
+                })),
+              ]}
+            />
           </div>
           <div>
             <Label className="mb-1.5 block text-xs">Notes</Label>
