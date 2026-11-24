@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/page-header";
 import { NewButton } from "@/components/new-button";
 import { ItemsTable } from "@/features/items/items-table";
 import { ItemAnalytics } from "@/features/items/item-analytics";
+import { ItemScanPanel } from "@/features/items/item-scan-panel";
 
 export const metadata = { title: "Items · Seeka Motor" };
 
@@ -19,6 +20,7 @@ export default function ItemsPage() {
       />
       <div className="space-y-6">
         <ItemAnalytics />
+        <ItemScanPanel />
         <ItemsTable />
       </div>
     </>

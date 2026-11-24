@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Boxes, Pencil, ScanLine, Sparkles, Trash2 } from "lucide-react";
+import { Boxes, Pencil, Printer, ScanLine, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +62,12 @@ export function ItemDetail({ itemId }: { itemId: string }) {
             {it.hasVariants && <Badge variant="outline">Template</Badge>}
             {it.variantOfId && <Badge variant="outline">Variant</Badge>}
             {it.disabled && <Badge variant="secondary">Disabled</Badge>}
+            <Button asChild variant="outline">
+              <Link href={`/stock/items/${it.id}/label`}>
+                <Printer className="size-4" />
+                Print labels
+              </Link>
+            </Button>
             {canWrite && (
               <>
                 {it.hasVariants && (
