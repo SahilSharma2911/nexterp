@@ -3,15 +3,11 @@
 export const SPARE_PART_GROUP = "Spare Part";
 export const ACCESSORY_GROUP = "Accessory";
 
+// Minimal set — tyres, batteries, motors etc. are all Spare Parts; fluids are
+// Consumables. Keep it to a handful so items land in an obvious bucket.
 export const COMMON_ITEM_GROUPS = [
-  SPARE_PART_GROUP,
-  ACCESSORY_GROUP,
-  "Consumable",
-  "Battery",
-  "Tyre",
-  "Fluid / Lubricant",
-  "Tool / Equipment",
-  "Merchandise",
-  "Raw Material",
+  SPARE_PART_GROUP, // incl. battery, tyre, motor & other replaceable parts
+  ACCESSORY_GROUP, // add-ons: helmet, mats, charger, covers…
+  "Consumable", // used up in service: fluids, lubricants, cleaners
   "Other",
 ] as const;
