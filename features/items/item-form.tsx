@@ -140,6 +140,7 @@ export function ItemForm({
         brand: existing.brand ?? "",
         barcode: existing.barcode ?? "",
         taxCode: existing.taxCode ?? "",
+        rack: existing.rack ?? "",
         stockUom: existing.stockUom,
         isStockItem: existing.isStockItem,
         hasSerialNo: existing.hasSerialNo,
@@ -314,6 +315,19 @@ export function ItemForm({
                   <FormLabel>Tax / HSN Code</FormLabel>
                   <FormControl>
                     <Input placeholder="Optional" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="rack"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Rack / Location</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. A-3, Shelf 2" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

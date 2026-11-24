@@ -20,6 +20,7 @@ export const itemFormSchema = z.object({
   brand: z.string().trim().optional(),
   barcode: z.string().trim().optional(),
   taxCode: z.string().trim().optional(),
+  rack: z.string().trim().optional(),
   stockUom: z.string().trim().min(1, "UOM is required"),
   isStockItem: z.boolean(),
   hasSerialNo: z.boolean(),
@@ -54,6 +55,7 @@ export const emptyItem: ItemFormValues = {
   brand: "",
   barcode: "",
   taxCode: "",
+  rack: "",
   stockUom: "Nos",
   isStockItem: true,
   hasSerialNo: false,
@@ -81,6 +83,7 @@ export type Item = {
   brand: string | null;
   barcode: string | null;
   taxCode: string | null;
+  rack: string | null;
   stockUom: string;
   isStockItem: boolean;
   hasSerialNo: boolean;

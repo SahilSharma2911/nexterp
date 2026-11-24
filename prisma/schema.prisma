@@ -50,6 +50,7 @@ model Item {
   brand         String?
   barcode       String?
   taxCode       String? // HSN / tax classification code
+  rack          String? // storage location — rack / shelf / bin
   isStockItem   Boolean @default(true)
   hasSerialNo   Boolean @default(false)
   hasBatchNo    Boolean @default(false)

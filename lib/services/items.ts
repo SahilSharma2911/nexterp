@@ -99,6 +99,7 @@ function toItem(r: ItemRow): Item {
     brand: r.brand,
     barcode: r.barcode,
     taxCode: r.taxCode,
+    rack: r.rack,
     stockUom: r.stockUom,
     isStockItem: r.isStockItem,
     hasSerialNo: r.hasSerialNo,
@@ -138,6 +139,7 @@ function toScalarData(v: ItemFormValues) {
     brand: v.brand?.trim() || null,
     barcode: v.barcode?.trim() || null,
     taxCode: v.taxCode?.trim() || null,
+    rack: v.rack?.trim() || null,
     stockUom: v.stockUom.trim() || "Nos",
     isStockItem: v.isStockItem,
     hasSerialNo: v.hasSerialNo,
@@ -185,6 +187,7 @@ export async function listItems(
         { itemGroup: { contains: p.search, mode: "insensitive" } },
         { brand: { contains: p.search, mode: "insensitive" } },
         { barcode: { contains: p.search, mode: "insensitive" } },
+        { rack: { contains: p.search, mode: "insensitive" } },
       ],
     });
   if (filters.group)
