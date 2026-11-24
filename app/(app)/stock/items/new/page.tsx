@@ -3,11 +3,19 @@ import { ItemForm } from "@/features/items/item-form";
 
 export const metadata = { title: "New Item · Seeka Motor" };
 
-export default function NewItemPage() {
+export default async function NewItemPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ group?: string }>;
+}) {
+  const { group } = await searchParams;
   return (
     <>
-      <PageHeader title="New Item" subtitle="Add an item to the catalogue" />
-      <ItemForm />
+      <PageHeader
+        title={group ? `New ${group}` : "New Item"}
+        subtitle="Add an item to the catalogue"
+      />
+      <ItemForm defaultGroup={group} />
     </>
   );
 }

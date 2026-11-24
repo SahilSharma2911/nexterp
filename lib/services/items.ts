@@ -174,18 +174,22 @@ function variantAttrCreate(v: ItemFormValues) {
 
 export async function listItems(
   p: ListParams,
+  filters: { group?: string } = {},
 ): Promise<ListResponse<ItemListItem>> {
-  const where: Prisma.ItemWhereInput = p.search
-    ? {
-        OR: [
-          { itemCode: { contains: p.search, mode: "insensitive" } },
-          { itemName: { contains: p.search, mode: "insensitive" } },
-          { itemGroup: { contains: p.search, mode: "insensitive" } },
-          { brand: { contains: p.search, mode: "insensitive" } },
-          { barcode: { contains: p.search, mode: "insensitive" } },
-        ],
-      }
-    : {};
+  const and: Prisma.ItemWhereInput[] = [];
+  if (p.search)
+    and.push({
+      OR: [
+        { itemCode: { contains: p.search, mode: "insensitive" } },
+        { itemName: { contains: p.search, mode: "insensitive" } },
+        { itemGroup: { contains: p.search, mode: "insensitive" } },
+        { brand: { contains: p.search, mode: "insensitive" } },
+        { barcode: { contains: p.search, mode: "insensitive" } },
+      ],
+    });
+  if (filters.group)
+    and.push({ itemGroup: { equals: filters.group, mode: "insensitive" } });
+  const where: Prisma.ItemWhereInput = and.length ? { AND: and } : {};
   const orderBy = parseSort(p.sort, SORTABLE, { itemCode: "asc" });
 
   const [rows, total] = await Promise.all([

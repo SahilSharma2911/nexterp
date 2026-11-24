@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ImageUpload } from "@/components/image-upload";
 import { emptyItem, itemFormSchema, type ItemFormValues } from "./schema";
 import { COMMON_UOMS } from "./uom";
+import { COMMON_ITEM_GROUPS } from "./item-groups";
 import { useCreateItem, useItem, useUpdateItem } from "./queries";
 
 type FlagName =
@@ -106,7 +107,13 @@ function NumberField({
   );
 }
 
-export function ItemForm({ itemId }: { itemId?: string }) {
+export function ItemForm({
+  itemId,
+  defaultGroup,
+}: {
+  itemId?: string;
+  defaultGroup?: string;
+}) {
   const router = useRouter();
   const isEdit = !!itemId;
   const { data: existing, isLoading } = useItem(itemId);
@@ -115,7 +122,7 @@ export function ItemForm({ itemId }: { itemId?: string }) {
 
   const form = useForm<ItemFormValues>({
     resolver: zodResolver(itemFormSchema),
-    defaultValues: emptyItem,
+    defaultValues: { ...emptyItem, itemGroup: defaultGroup ?? "" },
   });
   const specs = useFieldArray({ control: form.control, name: "specifications" });
   const attrs = useFieldArray({
@@ -265,7 +272,22 @@ export function ItemForm({ itemId }: { itemId?: string }) {
                 <FormItem>
                   <FormLabel>Item Group</FormLabel>
                   <FormControl>
-                    <Input placeholder="Raw Material" {...field} />
+                    <Combobox
+                      options={[
+                        { value: "", label: "— None —" },
+                        ...(field.value &&
+                        !COMMON_ITEM_GROUPS.includes(
+                          field.value as (typeof COMMON_ITEM_GROUPS)[number],
+                        )
+                          ? [field.value]
+                          : []),
+                        ...COMMON_ITEM_GROUPS,
+                      ]}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      placeholder="Select a group…"
+                      searchPlaceholder="Search groups…"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

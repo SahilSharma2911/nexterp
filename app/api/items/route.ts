@@ -8,7 +8,8 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const params = parseListParams(req.nextUrl.searchParams);
-  const data = await listItems(params);
+  const group = req.nextUrl.searchParams.get("group") ?? undefined;
+  const data = await listItems(params, { group });
   return NextResponse.json(data);
 }
 

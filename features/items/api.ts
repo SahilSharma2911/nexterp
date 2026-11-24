@@ -13,6 +13,7 @@ export type ItemsQuery = {
   limit: number;
   q: string;
   sort: string;
+  group?: string;
 };
 
 export async function fetchItems(params: ItemsQuery) {

@@ -10,7 +10,7 @@ import { columns } from "./columns";
 import { useItems } from "./queries";
 import type { ItemsTableMeta } from "./schema";
 
-export function ItemsTable() {
+export function ItemsTable({ group }: { group?: string } = {}) {
   const [params, setParams] = useListParams();
   const [search, setSearch] = useState(params.q);
 
@@ -19,6 +19,7 @@ export function ItemsTable() {
     limit: params.limit,
     q: params.q,
     sort: params.sort,
+    group,
   });
 
   // Debounce the search box into the URL (and reset to page 1).
