@@ -143,3 +143,11 @@ export type ItemAnalytics = {
   stockValue: number; // total valuation across all bins
   byGroup: { name: string; value: number }[];
 };
+
+// Headline stats for one item group (e.g. the Spare Parts / Accessories module).
+export type ItemGroupStats = {
+  total: number;
+  inStock: number;
+  lowStock: number;
+  stockValue: number;
+};

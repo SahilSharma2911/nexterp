@@ -1,6 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { NewButton } from "@/components/new-button";
 import { ItemsTable } from "@/features/items/items-table";
+import { ItemGroupStats } from "@/features/items/item-group-stats";
 import { ACCESSORY_GROUP } from "@/features/items/item-groups";
 
 export const metadata = { title: "Accessories · Seeka Motor" };
@@ -21,7 +22,10 @@ export default function AccessoriesPage() {
           />
         }
       />
-      <ItemsTable group={ACCESSORY_GROUP} />
+      <div className="space-y-6">
+        <ItemGroupStats group={ACCESSORY_GROUP} />
+        <ItemsTable group={ACCESSORY_GROUP} />
+      </div>
     </>
   );
 }

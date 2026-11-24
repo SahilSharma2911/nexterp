@@ -41,6 +41,14 @@ export function useItemAnalytics() {
   });
 }
 
+export function useItemGroupStats(group: string) {
+  return useQuery({
+    queryKey: [...itemKeys.all, "group-stats", group] as const,
+    queryFn: () => itemsApi.fetchItemGroupStats(group),
+    staleTime: 60_000,
+  });
+}
+
 export function useItem(id?: string) {
   return useQuery({
     queryKey: itemKeys.detail(id ?? ""),

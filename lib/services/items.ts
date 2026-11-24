@@ -5,10 +5,40 @@ import type {
   Item,
   ItemAnalytics,
   ItemFormValues,
+  ItemGroupStats,
   ItemListItem,
 } from "@/features/items/schema";
 
 // Management insights for the Items list header.
+// Stats for one item group — powers the Spare Parts / Accessories modules.
+export async function itemGroupStats(group: string): Promise<ItemGroupStats> {
+  const items = await prisma.item.findMany({
+    where: { itemGroup: { equals: group, mode: "insensitive" }, disabled: false },
+    select: { id: true, reorderLevel: true },
+  });
+  const ids = items.map((i) => i.id);
+  const bins = ids.length
+    ? await prisma.bin.groupBy({
+        by: ["itemId"],
+        where: { itemId: { in: ids } },
+        _sum: { actualQty: true, stockValue: true },
+      })
+    : [];
+  const onHand = new Map(bins.map((b) => [b.itemId, b._sum.actualQty ?? 0]));
+  const stockValue = bins.reduce(
+    (s, b) => s + Number(b._sum.stockValue ?? 0),
+    0,
+  );
+  return {
+    total: items.length,
+    inStock: items.filter((i) => (onHand.get(i.id) ?? 0) > 0).length,
+    lowStock: items.filter(
+      (i) => i.reorderLevel > 0 && (onHand.get(i.id) ?? 0) < i.reorderLevel,
+    ).length,
+    stockValue,
+  };
+}
+
 export async function itemAnalytics(): Promise<ItemAnalytics> {
   const [total, stockItems, grouped, stockVal, reorderItems, binSums] =
     await Promise.all([

@@ -4,6 +4,7 @@ import type {
   Item,
   ItemAnalytics,
   ItemFormValues,
+  ItemGroupStats,
   ItemListItem,
   ItemOption,
 } from "./schema";
@@ -33,6 +34,13 @@ export async function fetchItemOptions() {
 export async function fetchItemByBarcode(code: string) {
   const { data } = await api.get<ItemOption | null>("/items/by-barcode", {
     params: { code },
+  });
+  return data;
+}
+
+export async function fetchItemGroupStats(group: string) {
+  const { data } = await api.get<ItemGroupStats>("/items/group-stats", {
+    params: { group },
   });
   return data;
 }

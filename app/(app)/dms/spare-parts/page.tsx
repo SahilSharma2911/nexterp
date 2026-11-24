@@ -1,6 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { NewButton } from "@/components/new-button";
 import { ItemsTable } from "@/features/items/items-table";
+import { ItemGroupStats } from "@/features/items/item-group-stats";
 import { SPARE_PART_GROUP } from "@/features/items/item-groups";
 
 export const metadata = { title: "Spare Parts · Seeka Motor" };
@@ -21,7 +22,10 @@ export default function SparePartsPage() {
           />
         }
       />
-      <ItemsTable group={SPARE_PART_GROUP} />
+      <div className="space-y-6">
+        <ItemGroupStats group={SPARE_PART_GROUP} />
+        <ItemsTable group={SPARE_PART_GROUP} />
+      </div>
     </>
   );
 }
