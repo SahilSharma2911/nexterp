@@ -87,14 +87,14 @@ async function main() {
 
   // Spare parts + accessories (Items), with stock to draw from.
   const parts = {
-    brake: await upsertItem("SP-BRAKE", "Brake Pad Set", 800, "Spare Parts", "8906001000017"),
-    charger: await upsertItem("SP-CHARGER", "Portable Charger", 3500, "Spare Parts", "8906001000024"),
-    coolant: await upsertItem("SP-COOLANT", "Coolant 1L", 400, "Spare Parts", "8906001000031"),
+    brake: await upsertItem("SP-BRAKE", "Brake Pad Set", 800, "Spare Part", "8906001000017"),
+    charger: await upsertItem("SP-CHARGER", "Portable Charger", 3500, "Spare Part", "8906001000024"),
+    coolant: await upsertItem("SP-COOLANT", "Coolant 1L", 400, "Consumable", "8906001000031"),
   };
   const acc = {
-    helmet: await upsertItem("ACC-HELMET", "Helmet", 1500, "Accessories", "8906001000048"),
-    mat: await upsertItem("ACC-MAT", "Floor Mat Set", 900, "Accessories", "8906001000055"),
-    seat: await upsertItem("ACC-SEAT", "Seat Cover", 1200, "Accessories", "8906001000062"),
+    helmet: await upsertItem("ACC-HELMET", "Helmet", 1500, "Accessory", "8906001000048"),
+    mat: await upsertItem("ACC-MAT", "Floor Mat Set", 900, "Accessory", "8906001000055"),
+    seat: await upsertItem("ACC-SEAT", "Seat Cover", 1200, "Accessory", "8906001000062"),
   };
   for (const it of [...Object.values(parts), ...Object.values(acc)])
     await stock(it.id, warehouse.id, 100, Number(it.valuationRate));
