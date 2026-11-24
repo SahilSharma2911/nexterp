@@ -56,7 +56,7 @@ export function Combobox({
           aria-haspopup="listbox"
           aria-expanded={open}
           className={cn(
-            "flex h-8 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+            "flex h-8 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
             !value && "text-muted-foreground",
             className,
           )}
