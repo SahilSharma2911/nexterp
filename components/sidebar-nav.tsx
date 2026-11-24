@@ -38,7 +38,6 @@ import {
   Building2,
   CalendarClock,
   Car,
-  Cog,
   HardHat,
   LayoutGrid,
   Megaphone,
@@ -68,7 +67,6 @@ const HEADING_AREA: Record<string, Area | null> = {
   // Dealership (DMS) split into themed sub-sections, all gated on the dms area.
   Dealership: "dms",
   "Service & Workshop": "dms",
-  "Parts & Accessories": "dms",
   Aftersales: "dms",
   Subsidies: "dms",
 };
@@ -82,7 +80,6 @@ const HEADING_MODULE: Record<string, ModuleId | null> = {
   Accounts: "erp",
   Dealership: "dms",
   "Service & Workshop": "dms",
-  "Parts & Accessories": "dms",
   Aftersales: "dms",
   Subsidies: "dms",
   Settings: null,
@@ -150,6 +147,7 @@ const NAV: NavGroup[] = [
       { href: "/dms/vehicles", label: "Vehicles", icon: Car },
       { href: "/dms/dealers", label: "Dealers", icon: Building2 },
       { href: "/dms/allocation", label: "Allocation", icon: Workflow },
+      { href: "/dms/parts", label: "Parts & Accessories", icon: Puzzle },
     ],
   },
   {
@@ -159,13 +157,6 @@ const NAV: NavGroup[] = [
       { href: "/dms/job-cards", label: "Job Cards", icon: Wrench },
       { href: "/dms/technicians", label: "Technicians", icon: HardHat },
       { href: "/dms/service-bays", label: "Service Bays", icon: LayoutGrid },
-    ],
-  },
-  {
-    heading: "Parts & Accessories",
-    items: [
-      { href: "/dms/spare-parts", label: "Spare Parts", icon: Cog },
-      { href: "/dms/accessories", label: "Accessories", icon: Puzzle },
     ],
   },
   {
