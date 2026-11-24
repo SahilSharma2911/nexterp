@@ -58,6 +58,13 @@ function toItem(r: Row, wh: Map<string, string>): Vehicle {
 }
 
 function toData(v: VehicleFormValues) {
+  const dealerId = v.dealerId || null;
+  // Keep dealer assignment and lifecycle stage consistent: a vehicle with a
+  // dealer is at least ALLOCATED; a plain IN_STOCK vehicle has no dealer. Only
+  // the IN_STOCK↔ALLOCATED boundary is adjusted — later stages are left alone.
+  let status = v.status as VehicleStatus;
+  if (dealerId && status === "IN_STOCK") status = "ALLOCATED";
+  else if (!dealerId && status === "ALLOCATED") status = "IN_STOCK";
   return {
     vin: v.vin.trim(),
     model: v.model.trim(),
@@ -66,12 +73,12 @@ function toData(v: VehicleFormValues) {
     motorSerial: v.motorSerial?.trim() || null,
     batterySerial: v.batterySerial?.trim() || null,
     batterySoH: v.batterySoH ?? null,
-    status: v.status as VehicleStatus,
+    status,
     mfgDate: v.mfgDate ? new Date(v.mfgDate) : null,
     purchaseRate: v.purchaseRate,
     sellingRate: v.sellingRate,
     warehouseId: v.warehouseId || null,
-    dealerId: v.dealerId || null,
+    dealerId,
     imageUrl: v.imageUrl?.trim() || null,
     remarks: v.remarks?.trim() || null,
   };

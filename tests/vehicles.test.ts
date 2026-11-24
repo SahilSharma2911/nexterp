@@ -107,4 +107,19 @@ describe("vehicles service", () => {
     expect(r.warranties[0].component).toMatch(/battery/i);
     expect(r.subsidyClaims[0].scheme).toBe("S1");
   });
+
+  it("keeps dealer and lifecycle stage consistent", async () => {
+    const dealer = await prisma.dealer.create({
+      data: { code: "DLR-X", name: "Dealer X" },
+    });
+    // assigning a dealer to an IN_STOCK vehicle promotes it to ALLOCATED
+    const v = await createVehicle(form({ dealerId: dealer.id, status: "IN_STOCK" }));
+    expect(v.status).toBe("ALLOCATED");
+    expect(v.dealerId).toBe(dealer.id);
+
+    // clearing the dealer on an ALLOCATED vehicle returns it to IN_STOCK
+    const back = await updateVehicle(v.id, form({ dealerId: "", status: "ALLOCATED" }));
+    expect(back.status).toBe("IN_STOCK");
+    expect(back.dealerId).toBeNull();
+  });
 });
